@@ -1,0 +1,157 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: integer-parsing
+  title: SVG integer parsing
+  domain: SVG
+  profile: null
+  summary: Parse the SVG integer data type as an optional sign followed by one or more ASCII decimal digits, with support for the SVG minimum required integer range.
+  non_goals:
+    - Floating-point number parsing.
+    - Length unit parsing.
+    - Attribute-specific integer range restrictions.
+    - List separator grammar.
+    - DOM animated integer interfaces.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-types-integer
+      title: SVG 1.1 Basic Data Types - integer
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeInteger
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 1.1 provides the explicit integer grammar and minimum required range for SVG integer values.
+
+scope:
+  includes:
+    - Single SVG integer values.
+    - Optional plus and minus signs.
+    - One or more ASCII digits.
+    - Support for at least values from -2147483648 through 2147483647.
+    - Attribute boundary whitespace normalization before parsing.
+  excludes:
+    - Decimal points.
+    - Exponent notation.
+    - Unit suffixes.
+    - Multiple integer lists.
+    - Attribute-specific constraints narrower than the generic SVG integer data type.
+  assumptions:
+    - XML attribute normalization has already been performed by Foundation XMLParser before SVG-specific parsing.
+    - Existing consumers can choose their own fallback behavior when integer parsing returns nil.
+
+terminology:
+  - id: integer
+    term: integer
+    definition: An optional sign character followed by one or more digits from 0 through 9.
+    source_refs:
+      - svg11-types-integer
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: An SVG integer must accept an optional plus or minus sign followed by one or more ASCII decimal digits.
+    applies_to:
+      - Single SVG integer values.
+    source_refs:
+      - svg11-types-integer
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: grammar
+    statement: When the sign character is absent, the parsed integer value is non-negative.
+    applies_to:
+      - Single SVG integer values.
+    source_refs:
+      - svg11-types-integer
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: range
+    statement: Unless a particular SVG attribute or property states otherwise, SVG integer support must encompass at least -2147483648 through 2147483647.
+    applies_to:
+      - Generic SVG integer data type support.
+    source_refs:
+      - svg11-types-integer
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST_NOT
+    kind: grammar
+    statement: The integer data type must not accept decimal points, exponent notation, a sign without digits, or unit suffixes.
+    applies_to:
+      - Single SVG integer values.
+    source_refs:
+      - svg11-types-integer
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A candidate integer contains a decimal point, exponent, unit suffix, whitespace inside the token, or no digits.
+    source_behavior: invalid value
+    required_behavior: Return nil to let the caller preserve its attribute-specific fallback behavior.
+    decision_required: false
+    source_refs:
+      - svg11-types-integer
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Return type
+    statement: Store parsed integers in Swift Int while testing the SVG minimum 32-bit signed range.
+    allowed_by:
+      - SVG specifies DOM representation as long, but this package does not expose SVG DOM interfaces.
+    source_refs:
+      - svg11-types-integer
+  - id: IC002
+    topic: Attribute boundary whitespace
+    statement: Trim leading and trailing XML whitespace before parsing a single integer value.
+    allowed_by:
+      - XML attribute values are delivered as strings and SVG integer syntax applies to the attribute value after XML parsing.
+    source_refs:
+      - svg11-types-integer
+
+ambiguities: []
+
+dependencies: []
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-types-integer
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-types-integer
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg11-types-integer
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg11-types-integer
+    map_item_refs: []
