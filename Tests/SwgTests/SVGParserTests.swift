@@ -733,6 +733,38 @@ import Testing
 	#expect(negativeRX.path.commands == [.rect(Rect(x: 1, y: 1, width: 8, height: 4))])
 }
 
+@Test func svgParserUsesRectRYForRoundedCornerEquivalentPaths() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20">
+		<rect id="rounded" x="2" y="3" width="20" height="10" ry="3"/>
+		<rect id="clamped" x="0" y="0" width="6" height="4" ry="10"/>
+		<rect id="negative-ry" x="1" y="1" width="8" height="4" ry="-2"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let rects = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGRectData)? in
+		if case .rect(let rect) = element {
+			return (rect.id, rect)
+		}
+		return nil
+	})
+
+	let rounded = try #require(rects["rounded"])
+	#expect(rounded.rx == 0)
+	#expect(rounded.ry == 3)
+	#expect(rounded.path.commands == [.roundedRect(Rect(x: 2, y: 3, width: 20, height: 10), cornerWidth: 3, cornerHeight: 3)])
+	#expect(rounded.path.svgPathData(precision: 0) == "M 5 3 L 19 3 A 3 3 0 0 1 22 6 L 22 10 A 3 3 0 0 1 19 13 L 5 13 A 3 3 0 0 1 2 10 L 2 6 A 3 3 0 0 1 5 3 Z")
+
+	let clamped = try #require(rects["clamped"])
+	#expect(clamped.ry == 10)
+	#expect(clamped.path.commands == [.roundedRect(Rect(x: 0, y: 0, width: 6, height: 4), cornerWidth: 3, cornerHeight: 2)])
+
+	let negativeRY = try #require(rects["negative-ry"])
+	#expect(negativeRY.ry == 0)
+	#expect(negativeRY.path.commands == [.rect(Rect(x: 1, y: 1, width: 8, height: 4))])
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
