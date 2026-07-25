@@ -21,7 +21,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<percentage>`.
 - [x] `<angle>` units: `deg`, `grad`, `rad`, `turn`.
 - [x] `<time>`.
-- [x] `<frequency>`.
 - [x] `<list-of-Ts>` comma-wsp parsing.
 - [x] `<paint>`.
 - [x] `<url>`.
@@ -135,14 +134,13 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 - [x] Hex color.
 - [ ] Short hex color.
-- [ ] Eight-digit hex with alpha.
 - [ ] `rgb()`.
 - [ ] `rgba()`.
 - [ ] Percentage RGB values.
 - [ ] Named CSS colors.
 - [ ] `transparent`.
 - [ ] `currentColor`.
-- [ ] ICC color and color profiles.
+- [ ] ICC colors.
 
 ## Gradients and Patterns
 
@@ -274,7 +272,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `<script>`.
 - [ ] Event handler attributes.
 - [ ] `pointer-events`.
-- [ ] `cursor`.
 - [ ] `tabindex`.
 - [ ] Accessibility ARIA attributes.
 - [ ] `role`.
