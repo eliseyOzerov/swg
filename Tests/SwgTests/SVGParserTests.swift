@@ -144,6 +144,25 @@ import Testing
 	#expect(abs(rotated.y - 22) < 0.000001)
 }
 
+@Test func svgParserParsesSkewXTransformFunction() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<g id="skewed" transform="skewX(45)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let group) = document.elements.first else {
+		Issue.record("Expected skewX group")
+		return
+	}
+
+	expectTransformApproximately(group.attributes.transform, Transform(a: 1, b: 0, c: 1, d: 1, tx: 0, ty: 0))
+	let point = Point(2, 3).applying(group.attributes.transform)
+	#expect(abs(point.x - 5) < 0.000001)
+	#expect(abs(point.y - 3) < 0.000001)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

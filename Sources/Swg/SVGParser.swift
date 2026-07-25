@@ -1394,6 +1394,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				} else {
 					transform = transform.rotated(by: angle)
 				}
+			case "skewX" where !argTexts.isEmpty:
+				guard let angle = SVGAngleParser.parse(argTexts[0]) else { break }
+				transform = transform.skewedX(by: angle)
 			case "matrix" where args.count == 6:
 				transform = transform.concatenating(Transform(a: args[0], b: args[1], c: args[2], d: args[3], tx: args[4], ty: args[5]))
 			default:

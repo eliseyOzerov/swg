@@ -129,6 +129,10 @@ public struct Transform: Equatable, Hashable, Sendable {
 			.translatedBy(x: -center.x, y: -center.y)
 	}
 
+	public func skewedX(by angle: Double) -> Transform {
+		concatenating(Transform(a: 1, b: 0, c: tan(angle), d: 1, tx: 0, ty: 0))
+	}
+
 	public func concatenating(_ other: Transform) -> Transform {
 		Transform(
 			a: a * other.a + c * other.b,
