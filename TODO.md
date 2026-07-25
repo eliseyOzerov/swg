@@ -85,7 +85,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `preserveAspectRatio` meet.
 - [x] `preserveAspectRatio` slice.
 - [x] `transform` list ordering.
-- [ ] `matrix`.
+- [x] `matrix`.
 - [x] `translate`.
 - [ ] `scale`.
 - [ ] `rotate(angle)`.

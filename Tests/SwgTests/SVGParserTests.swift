@@ -62,6 +62,23 @@ import Testing
 	#expect(Point(1, 0).applying(scaleThenTranslate.attributes.transform) == Point(22, 0))
 }
 
+@Test func svgParserParsesMatrixTransformFunction() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<g id="matrix" transform="matrix(1 2 3 4 5 6)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let group) = document.elements.first else {
+		Issue.record("Expected matrix group")
+		return
+	}
+
+	#expect(group.attributes.transform == Transform(a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6))
+	#expect(Point(7, 8).applying(group.attributes.transform) == Point(36, 52))
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">
