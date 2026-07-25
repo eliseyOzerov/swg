@@ -89,6 +89,46 @@ import Testing
 	#expect(use.href == "preferred")
 }
 
+@Test func svgParserAppliesLangAndXMLLangMetadata() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
+		<g id="section">
+			<path id="mark" d="M0 0 L10 10"/>
+			<text id="label" x="1" y="2" lang="FR-ca" xml:lang="fr-CA">Bonjour<tspan>Salut</tspan><tspan lang="">?</tspan></text>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.language == "en")
+	#expect(document.unknownAttributes["lang"] == nil)
+
+	guard case .group(let group) = document.elements.first else {
+		Issue.record("Expected root element to be a group")
+		return
+	}
+	#expect(group.language == "en")
+
+	guard case .path(let path) = group.children.first else {
+		Issue.record("Expected first child to be a path")
+		return
+	}
+	#expect(path.language == "en")
+
+	guard case .text(let text) = group.children.dropFirst().first else {
+		Issue.record("Expected second child to be text")
+		return
+	}
+	#expect(text.language == "fr-CA")
+	#expect(text.unknownAttributes["lang"] == nil)
+	#expect(text.unknownAttributes["xml:lang"] == nil)
+	#expect(text.spans.map(\.text) == ["Bonjour", "Salut", "?"])
+	#expect(text.spans[0].language == "fr-CA")
+	#expect(text.spans[1].language == "fr-CA")
+	#expect(text.spans[2].language == nil)
+}
+
 @Test func svgParserDecodesXMLPredefinedEntitiesAndCharacterReferences() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

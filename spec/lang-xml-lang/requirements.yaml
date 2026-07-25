@@ -1,0 +1,196 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: lang-xml-lang
+  title: SVG lang and xml:lang language metadata
+  domain: SVG 2
+  profile: null
+  summary: Preserve SVG element language metadata from lang and xml:lang, including inheritance and xml:lang precedence.
+  non_goals:
+    - Validate BCP 47 language tag grammar.
+    - Implement language-dependent text shaping or font selection.
+    - Implement accessibility API mappings.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-lang-xml-lang
+      title: SVG 2 Document Structure, lang and xml:lang attributes
+      url: https://www.w3.org/TR/SVG/struct.html#LangSpaceAttrs
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: xml10-language-identification
+      title: XML 1.0 Language Identification
+      url: https://www.w3.org/TR/xml/#sec-lang-tag
+      version: Fifth Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - lang as a core SVG attribute available on SVG elements.
+    - xml:lang as XML language metadata available on SVG elements in XML documents.
+    - Inheritance when neither language attribute is present.
+    - xml:lang precedence when both language attributes are present.
+    - Empty language values as an explicit unknown-language override.
+  excludes:
+    - BCP 47 validation beyond preserving the supplied string.
+    - Rejecting or warning on mismatched lang and xml:lang values.
+    - Applying language to rendering, shaping, or accessibility output.
+  assumptions:
+    - The parser receives XML attribute names in qualified form, including xml:lang.
+
+terminology:
+  - id: term-lang
+    term: lang
+    definition: The SVG core attribute in no namespace that identifies the primary language for an element's contents and text-bearing attributes.
+    source_refs:
+      - svg2-lang-xml-lang
+  - id: term-xml-lang
+    term: xml:lang
+    definition: The XML language identification attribute that applies to an element and its content unless overridden.
+    source_refs:
+      - xml10-language-identification
+  - id: term-empty-language
+    term: Empty language value
+    definition: An empty language attribute value indicating that the primary language is unknown and overriding inherited language information.
+    source_refs:
+      - svg2-lang-xml-lang
+      - xml10-language-identification
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The lang attribute must be treated as a core SVG attribute that can be specified on any SVG element.
+    applies_to:
+      - SVG elements
+    source_refs:
+      - svg2-lang-xml-lang
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: lang identifies the primary language for an element's contents and for the element attributes that contain text.
+    applies_to:
+      - SVG elements
+    source_refs:
+      - svg2-lang-xml-lang
+    testability: reviewable
+    notes:
+      - This parser bullet exposes the parsed language metadata; downstream language-dependent processing is out of scope.
+  - id: R003
+    normative_strength: MUST
+    kind: inheritance
+    statement: If lang and xml:lang are omitted from an element, that element must use the same language as its parent element, if any.
+    applies_to:
+      - SVG elements
+    source_refs:
+      - svg2-lang-xml-lang
+      - xml10-language-identification
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: precedence
+    statement: If lang and xml:lang are both set on the same SVG element, user agents must use xml:lang and ignore lang when determining the element language.
+    applies_to:
+      - SVG elements
+    source_refs:
+      - svg2-lang-xml-lang
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: conformance
+    statement: If lang and xml:lang are both specified on the same element, their values must match under ASCII case-insensitive comparison.
+    applies_to:
+      - SVG documents
+    source_refs:
+      - svg2-lang-xml-lang
+    testability: reviewable
+    notes:
+      - The parser records xml:lang precedence but does not reject mismatched documents in this bullet.
+  - id: R006
+    normative_strength: MUST
+    kind: value
+    statement: A language attribute value must be a valid BCP 47 language tag or the empty string.
+    applies_to:
+      - lang
+      - xml:lang
+    source_refs:
+      - svg2-lang-xml-lang
+      - xml10-language-identification
+    testability: reviewable
+    notes:
+      - BCP 47 validation is left out of scope for this parser bullet.
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: An empty language attribute value must indicate that the primary language is unknown and override inherited language information.
+    applies_to:
+      - SVG elements
+    source_refs:
+      - svg2-lang-xml-lang
+      - xml10-language-identification
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: lang and xml:lang are both present but do not match under ASCII case-insensitive comparison.
+    source_behavior: invalid document content
+    required_behavior: use xml:lang to determine language
+    decision_required: false
+    source_refs:
+      - svg2-lang-xml-lang
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: BCP 47 validation
+    statement: Store supplied non-empty language tags without validating BCP 47 grammar in this bullet.
+    allowed_by:
+      - TODO.md ordering
+    source_refs:
+      - svg2-lang-xml-lang
+      - xml10-language-identification
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-lang-xml-lang
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-lang-xml-lang
+      - xml10-language-identification
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-lang-xml-lang
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-lang-xml-lang
+      - xml10-language-identification
+    map_item_refs: []

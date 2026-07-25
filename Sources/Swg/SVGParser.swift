@@ -19,12 +19,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let globalAttributeNames: Set<String> = [
 		"class", "clip-path", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
-		"stroke-width", "style", "transform", "visibility", "xml:space"
+		"stroke-width", "style", "transform", "visibility", "lang", "xml:lang", "xml:space"
 	]
 
 	private var viewBox: Rect = .zero
 	private var rootWidth: Double?
 	private var rootHeight: Double?
+	private var rootLanguage: String?
 	private var rootPaintAttributes: SVGPaintAttributes = .defaults
 	private var rootUnknownAttributes: [String: String] = [:]
 	private var elementStack: [SVGElementBuilder] = []
@@ -52,6 +53,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var styleSheet: [String: [String: String]] = [:]
 	private var characterBuffer = ""
 	private var namespaceStack: [SVGNamespaceContext] = [.empty]
+	private var languageStack: [String?] = [nil]
 	private var parsedElementStack: [SVGParsedElement] = []
 
 	public func parse(_ string: String) -> SVGDocument? {
@@ -73,7 +75,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		} else {
 			resolvedViewBox = Rect(x: 0, y: 0, width: 100, height: 100)
 		}
-		return SVGDocument(viewBox: resolvedViewBox, elements: rootElements, defs: defs, unknownAttributes: rootUnknownAttributes)
+		return SVGDocument(viewBox: resolvedViewBox, elements: rootElements, defs: defs, language: rootLanguage, unknownAttributes: rootUnknownAttributes)
 	}
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
@@ -84,6 +86,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		var namespaceContext = namespaceStack.last ?? .empty
 		namespaceContext.applyDeclarations(from: attributes)
 		namespaceStack.append(namespaceContext)
+		let inheritedLanguage = currentLanguage
+		languageStack.append(parseLanguage(attributes, inherited: inheritedLanguage))
 
 		let expandedName = namespaceContext.expandedElementName(for: elementName)
 		let parsedElement = SVGParsedElement(localName: expandedName.localName, namespaceURI: expandedName.namespaceURI)
@@ -137,7 +141,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "g":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Group")
-			let builder = SVGElementBuilder(kind: .group, id: id, attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: []))
+			let builder = SVGElementBuilder(kind: .group, id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
 			if inDefs {
 				defsElementStack.append(builder)
 			} else if !inClipPath && !inMask {
@@ -160,6 +164,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		defer {
 			if !parsedElementStack.isEmpty { parsedElementStack.removeLast() }
 			if !namespaceStack.isEmpty { namespaceStack.removeLast() }
+			if !languageStack.isEmpty { languageStack.removeLast() }
 		}
 		guard let parsedElement, parsedElement.isSVGElement else {
 			characterBuffer = ""
@@ -228,6 +233,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		viewBox = .zero
 		rootWidth = nil
 		rootHeight = nil
+		rootLanguage = nil
 		rootPaintAttributes = .defaults
 		rootUnknownAttributes = [:]
 		elementStack = []
@@ -255,6 +261,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		styleSheet = [:]
 		characterBuffer = ""
 		namespaceStack = [.empty]
+		languageStack = [nil]
 		parsedElementStack = []
 	}
 
@@ -264,38 +271,38 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if let d = attributes["d"] {
 				let attrs = parsePaintAttributes(attributes)
 				let id = resolveID(attributes["id"], elementName: "Path")
-				appendElement(.path(SVGPathData(id: id, d: d, attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: ["d"]))))
+				appendElement(.path(SVGPathData(id: id, d: d, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["d"]))))
 			}
 			return true
 		case "rect":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Rect")
-			appendElement(.rect(SVGRectData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "rx", "ry"]))))
+			appendElement(.rect(SVGRectData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "rx", "ry"]))))
 			return true
 		case "circle":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Circle")
-			appendElement(.circle(SVGCircleData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), r: double(attributes["r"]), attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "r"]))))
+			appendElement(.circle(SVGCircleData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), r: double(attributes["r"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "r"]))))
 			return true
 		case "ellipse":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Ellipse")
-			appendElement(.ellipse(SVGEllipseData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "rx", "ry"]))))
+			appendElement(.ellipse(SVGEllipseData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "rx", "ry"]))))
 			return true
 		case "line":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Line")
-			appendElement(.line(SVGLineData(id: id, x1: double(attributes["x1"]), y1: double(attributes["y1"]), x2: double(attributes["x2"]), y2: double(attributes["y2"]), attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: ["x1", "y1", "x2", "y2"]))))
+			appendElement(.line(SVGLineData(id: id, x1: double(attributes["x1"]), y1: double(attributes["y1"]), x2: double(attributes["x2"]), y2: double(attributes["y2"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["x1", "y1", "x2", "y2"]))))
 			return true
 		case "polygon":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Polygon")
-			appendElement(.polygon(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: ["points"]))))
+			appendElement(.polygon(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["points"]))))
 			return true
 		case "polyline":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Polyline")
-			appendElement(.polyline(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: ["points"]))))
+			appendElement(.polyline(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["points"]))))
 			return true
 		default:
 			return false
@@ -305,7 +312,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseUnknownElementStart(_ elementName: String, namespaceURI: String?, attributes: [String: String]) {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: elementName)
-		let builder = SVGElementBuilder(kind: .unknown(name: elementName, namespaceURI: namespaceURI), id: id, attributes: attrs, unknownAttributes: parseUnknownAttributes(attributes, known: []))
+		let builder = SVGElementBuilder(kind: .unknown(name: elementName, namespaceURI: namespaceURI), id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
 		if inDefs {
 			defsElementStack.append(builder)
 		} else if !inClipPath && !inMask {
@@ -369,13 +376,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseUse(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "Use")
 		let href = parseHref(attributes) ?? ""
-		appendElement(.use(SVGUseData(id: id, href: href, x: double(attributes["x"]), y: double(attributes["y"]), attributes: parsePaintAttributes(attributes), unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y"]))))
+		appendElement(.use(SVGUseData(id: id, href: href, x: double(attributes["x"]), y: double(attributes["y"]), attributes: parsePaintAttributes(attributes), language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y"]))))
 	}
 
 	private func parseImage(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "Image")
 		let href = attributes["href"] ?? xlinkAttribute("href", in: attributes) ?? ""
-		appendElement(.image(SVGImageData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), href: href, attributes: parsePaintAttributes(attributes), unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y", "width", "height"]))))
+		appendElement(.image(SVGImageData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), href: href, attributes: parsePaintAttributes(attributes), language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y", "width", "height"]))))
 	}
 
 	private func xlinkAttribute(_ localName: String, in attributes: [String: String]) -> String? {
@@ -395,6 +402,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fontWeight: attributes["font-weight"] ?? "normal",
 			textAnchor: parseTextAnchor(attributes["text-anchor"]),
 			attributes: attrs,
+			language: currentLanguage,
 			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "font-size", "font-family", "font-weight", "text-anchor"])
 		)
 	}
@@ -402,7 +410,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseTSpanStart(_ attributes: [String: String]) {
 		let buffered = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
 		if !buffered.isEmpty, let textBuilder {
-			textBuilder.spans.append(SVGTextSpan(text: buffered, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil))
+			textBuilder.spans.append(SVGTextSpan(text: buffered, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil, language: parentLanguageForCurrentElement))
 		}
 		characterBuffer = ""
 		xmlSpaceStack.append(parseXMLSpace(attributes["xml:space"], inherited: currentXMLSpaceMode))
@@ -418,13 +426,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			xmlSpaceStack.removeLast()
 		}
 		guard !text.isEmpty, let textBuilder else { return }
-		textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: attributes))
+		textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: attributes, language: currentLanguage))
 	}
 
 	private func finalizeText() {
 		let text = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
 		if !text.isEmpty, let textBuilder {
-			textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil))
+			textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil, language: currentLanguage))
 		}
 		characterBuffer = ""
 
@@ -440,6 +448,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				textAnchor: textBuilder.textAnchor,
 				attributes: textBuilder.attributes,
 				spans: textBuilder.spans,
+				language: textBuilder.language,
 				unknownAttributes: textBuilder.unknownAttributes
 			)))
 		}
@@ -450,6 +459,22 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private var currentXMLSpaceMode: SVGXMLSpaceMode {
 		xmlSpaceStack.last ?? .default
+	}
+
+	private var currentLanguage: String? {
+		languageStack.last ?? nil
+	}
+
+	private var parentLanguageForCurrentElement: String? {
+		guard languageStack.count > 1 else { return nil }
+		return languageStack[languageStack.count - 2]
+	}
+
+	private func parseLanguage(_ attributes: [String: String], inherited: String?) -> String? {
+		guard let rawValue = attributes["xml:lang"] ?? attributes["lang"] else {
+			return inherited
+		}
+		return rawValue.isEmpty ? nil : rawValue
 	}
 
 	private func parseXMLSpace(_ value: String?, inherited: SVGXMLSpaceMode) -> SVGXMLSpaceMode {
@@ -657,6 +682,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 		rootWidth = attributes["width"].flatMap { parseDimension($0) }
 		rootHeight = attributes["height"].flatMap { parseDimension($0) }
+		rootLanguage = currentLanguage
 		rootPaintAttributes = parsePaintAttributes(attributes)
 		rootUnknownAttributes = parseUnknownAttributes(attributes, known: ["viewBox", "width", "height"])
 	}
@@ -881,22 +907,24 @@ private final class SVGElementBuilder {
 	let kind: Kind
 	let id: String
 	let attributes: SVGPaintAttributes
+	let language: String?
 	let unknownAttributes: [String: String]
 	var children: [SVGElement] = []
 
-	init(kind: Kind, id: String, attributes: SVGPaintAttributes, unknownAttributes: [String: String]) {
+	init(kind: Kind, id: String, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
 		self.kind = kind
 		self.id = id
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 
 	func buildElement() -> SVGElement {
 		switch kind {
 		case .group:
-			.group(SVGGroupData(id: id, attributes: attributes, children: children, unknownAttributes: unknownAttributes))
+			.group(SVGGroupData(id: id, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .unknown(let name, let namespaceURI):
-			.unknown(SVGUnknownElementData(id: id, name: name, namespaceURI: namespaceURI, attributes: attributes, children: children, unknownAttributes: unknownAttributes))
+			.unknown(SVGUnknownElementData(id: id, name: name, namespaceURI: namespaceURI, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		}
 	}
 }
@@ -911,10 +939,11 @@ private final class SVGTextBuilder {
 	let fontWeight: String
 	let textAnchor: SVGTextAnchor
 	let attributes: SVGPaintAttributes
+	let language: String?
 	let unknownAttributes: [String: String]
 	var spans: [SVGTextSpan] = []
 
-	init(id: String, x: Double, y: Double, fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, unknownAttributes: [String: String]) {
+	init(id: String, x: Double, y: Double, fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -923,6 +952,7 @@ private final class SVGTextBuilder {
 		self.fontWeight = fontWeight
 		self.textAnchor = textAnchor
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }

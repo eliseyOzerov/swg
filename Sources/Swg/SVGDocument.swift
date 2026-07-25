@@ -5,12 +5,14 @@ public struct SVGDocument: Equatable, Sendable {
 	public var viewBox: Rect
 	public var elements: [SVGElement]
 	public var defs: SVGDefs
+	public var language: String?
 	public var unknownAttributes: [String: String]
 
-	public init(viewBox: Rect, elements: [SVGElement], defs: SVGDefs = SVGDefs(), unknownAttributes: [String: String] = [:]) {
+	public init(viewBox: Rect, elements: [SVGElement], defs: SVGDefs = SVGDefs(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.viewBox = viewBox
 		self.elements = elements
 		self.defs = defs
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 
@@ -83,12 +85,14 @@ public struct SVGPathData: Equatable, Sendable {
 	public let id: String
 	public let d: String
 	public let attributes: SVGPaintAttributes
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, d: String, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, d: String, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.d = d
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -103,9 +107,10 @@ public struct SVGRectData: Equatable, Sendable {
 	public let rx: Double
 	public let ry: Double
 	public let attributes: SVGPaintAttributes
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, x: Double, y: Double, width: Double, height: Double, rx: Double, ry: Double, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, x: Double, y: Double, width: Double, height: Double, rx: Double, ry: Double, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -114,6 +119,7 @@ public struct SVGRectData: Equatable, Sendable {
 		self.rx = rx
 		self.ry = ry
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -125,14 +131,16 @@ public struct SVGCircleData: Equatable, Sendable {
 	public let cy: Double
 	public let r: Double
 	public let attributes: SVGPaintAttributes
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, cx: Double, cy: Double, r: Double, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, cx: Double, cy: Double, r: Double, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.cx = cx
 		self.cy = cy
 		self.r = r
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -145,15 +153,17 @@ public struct SVGEllipseData: Equatable, Sendable {
 	public let rx: Double
 	public let ry: Double
 	public let attributes: SVGPaintAttributes
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, cx: Double, cy: Double, rx: Double, ry: Double, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, cx: Double, cy: Double, rx: Double, ry: Double, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.cx = cx
 		self.cy = cy
 		self.rx = rx
 		self.ry = ry
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -166,15 +176,17 @@ public struct SVGLineData: Equatable, Sendable {
 	public let x2: Double
 	public let y2: Double
 	public let attributes: SVGPaintAttributes
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, x1: Double, y1: Double, x2: Double, y2: Double, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, x1: Double, y1: Double, x2: Double, y2: Double, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.x1 = x1
 		self.y1 = y1
 		self.x2 = x2
 		self.y2 = y2
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -184,12 +196,14 @@ public struct SVGPolygonData: Equatable, Sendable {
 	public let id: String
 	public let points: [Point]
 	public let attributes: SVGPaintAttributes
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, points: [Point], attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, points: [Point], attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.points = points
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -199,12 +213,14 @@ public struct SVGGroupData: Equatable, Sendable {
 	public let id: String
 	public let attributes: SVGPaintAttributes
 	public let children: [SVGElement]
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, attributes: SVGPaintAttributes, children: [SVGElement], unknownAttributes: [String: String] = [:]) {
+	public init(id: String, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.attributes = attributes
 		self.children = children
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -216,14 +232,16 @@ public struct SVGUnknownElementData: Equatable, Sendable {
 	public let namespaceURI: String?
 	public let attributes: SVGPaintAttributes
 	public let children: [SVGElement]
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, name: String, namespaceURI: String?, attributes: SVGPaintAttributes, children: [SVGElement], unknownAttributes: [String: String] = [:]) {
+	public init(id: String, name: String, namespaceURI: String?, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.name = name
 		self.namespaceURI = namespaceURI
 		self.attributes = attributes
 		self.children = children
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -235,14 +253,16 @@ public struct SVGUseData: Equatable, Sendable {
 	public let x: Double
 	public let y: Double
 	public let attributes: SVGPaintAttributes
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, href: String, x: Double, y: Double, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, href: String, x: Double, y: Double, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.href = href
 		self.x = x
 		self.y = y
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -256,9 +276,10 @@ public struct SVGImageData: Equatable, Sendable {
 	public let height: Double
 	public let href: String
 	public let attributes: SVGPaintAttributes
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, x: Double, y: Double, width: Double, height: Double, href: String, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, x: Double, y: Double, width: Double, height: Double, href: String, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -266,6 +287,7 @@ public struct SVGImageData: Equatable, Sendable {
 		self.height = height
 		self.href = href
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -281,9 +303,10 @@ public struct SVGTextData: Equatable, Sendable {
 	public let textAnchor: SVGTextAnchor
 	public let attributes: SVGPaintAttributes
 	public let spans: [SVGTextSpan]
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, x: Double, y: Double, fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, spans: [SVGTextSpan], unknownAttributes: [String: String] = [:]) {
+	public init(id: String, x: Double, y: Double, fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, spans: [SVGTextSpan], language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -293,6 +316,7 @@ public struct SVGTextData: Equatable, Sendable {
 		self.textAnchor = textAnchor
 		self.attributes = attributes
 		self.spans = spans
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
@@ -307,9 +331,10 @@ public struct SVGTextSpan: Equatable, Sendable {
 	public let fontSize: Double?
 	public let fontWeight: String?
 	public let attributes: SVGPaintAttributes?
+	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, fontSize: Double?, fontWeight: String?, attributes: SVGPaintAttributes?, unknownAttributes: [String: String] = [:]) {
+	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, fontSize: Double?, fontWeight: String?, attributes: SVGPaintAttributes?, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.text = text
 		self.x = x
 		self.y = y
@@ -318,6 +343,7 @@ public struct SVGTextSpan: Equatable, Sendable {
 		self.fontSize = fontSize
 		self.fontWeight = fontWeight
 		self.attributes = attributes
+		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
 }
