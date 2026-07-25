@@ -395,7 +395,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseTSpanStart(_ attributes: [String: String]) {
-		let buffered = characterBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
+		let buffered = normalizeDefaultTextWhitespace(characterBuffer)
 		if !buffered.isEmpty, let textBuilder {
 			textBuilder.spans.append(SVGTextSpan(text: buffered, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil))
 		}
@@ -404,7 +404,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func finalizeTSpan() {
-		let text = characterBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
+		let text = normalizeDefaultTextWhitespace(characterBuffer)
 		characterBuffer = ""
 		guard !text.isEmpty, let textBuilder else { return }
 		textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: currentSpanAttrs))
@@ -412,7 +412,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func finalizeText() {
-		let text = characterBuffer.trimmingCharacters(in: .whitespacesAndNewlines)
+		let text = normalizeDefaultTextWhitespace(characterBuffer)
 		if !text.isEmpty, let textBuilder {
 			textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil))
 		}
@@ -435,6 +435,36 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 		textBuilder = nil
 		inText = false
+	}
+
+	private func normalizeDefaultTextWhitespace(_ value: String) -> String {
+		let mapped = value.compactMap { character -> Character? in
+			switch character {
+			case "\n", "\r":
+				nil
+			case "\t", "\u{000C}":
+				" "
+			default:
+				character
+			}
+		}
+		var result = ""
+		var previousWasSpace = true
+		for character in mapped {
+			if character == " " {
+				if !previousWasSpace {
+					result.append(character)
+					previousWasSpace = true
+				}
+			} else {
+				result.append(character)
+				previousWasSpace = false
+			}
+		}
+		if result.last == " " {
+			result.removeLast()
+		}
+		return result
 	}
 
 	private func parseTextAnchor(_ value: String?) -> SVGTextAnchor {

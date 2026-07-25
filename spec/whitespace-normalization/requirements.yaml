@@ -1,0 +1,137 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: whitespace-normalization
+  title: Default SVG text whitespace normalization
+  domain: SVG 2
+  profile: null
+  summary: Normalize whitespace in parsed SVG text content using the default SVG text behavior when no preserving whitespace directive is active.
+  non_goals:
+    - Implement xml:space handling.
+    - Implement CSS white-space property handling.
+    - Implement soft wrapping or full text layout.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-text-whitespace
+      title: SVG 2 Text, White space
+      url: https://www.w3.org/TR/SVG/text.html#WhiteSpace
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-xml-space
+      title: SVG 2 Text, Legacy white-space handling xml:space
+      url: https://www.w3.org/TR/SVG/text.html#LegacyXMLSpace
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Newline removal in default text whitespace processing.
+    - Tab and form-feed conversion to spaces.
+    - Collapsing contiguous spaces to one space.
+    - Trimming leading and trailing spaces after collapse.
+  excludes:
+    - xml:space default/preserve behavior.
+    - CSS white-space parsing.
+    - Text layout, wrapping, glyph positioning, and bidi processing.
+  assumptions:
+    - XMLParser already performs XML-level line-end normalization before text callbacks.
+
+terminology:
+  - id: term-character-data
+    term: Text character data
+    definition: Character data found inside SVG text content elements after XML parsing.
+    source_refs:
+      - svg2-text-whitespace
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: In default SVG text whitespace processing, newline characters in text content must be removed.
+    applies_to:
+      - SVG text parsing
+    source_refs:
+      - svg2-text-whitespace
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Tab and form-feed characters in text content must normalize to spaces.
+    applies_to:
+      - SVG text parsing
+    source_refs:
+      - svg2-text-whitespace
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Contiguous spaces must collapse to one space in default SVG text whitespace processing.
+    applies_to:
+      - SVG text parsing
+    source_refs:
+      - svg2-text-whitespace
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Leading and trailing spaces must be removed after default SVG text whitespace processing.
+    applies_to:
+      - SVG text parsing
+    source_refs:
+      - svg2-text-whitespace
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: xml:space
+    statement: xml:space is intentionally left to the next TODO item so this bullet covers only default normalization.
+    allowed_by:
+      - TODO.md ordering
+    source_refs:
+      - svg2-xml-space
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-text-whitespace
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-text-whitespace
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-text-whitespace
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-text-whitespace
+    map_item_refs: []

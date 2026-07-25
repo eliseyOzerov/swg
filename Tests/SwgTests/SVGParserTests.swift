@@ -217,3 +217,20 @@ import Testing
 	}
 	#expect(circle.unknownAttributes == ["data-dot": "dot-value"])
 }
+
+@Test func svgParserNormalizesDefaultTextWhitespace() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<text id="label" x="1" y="2">  Alpha
+			Beta\t\tGamma  </text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected text element")
+		return
+	}
+	#expect(text.spans.first?.text == "Alpha Beta Gamma")
+}

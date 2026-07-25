@@ -11,7 +11,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] XML comments and processing instructions.
 - [x] Unknown element preservation.
 - [x] Unknown attribute preservation.
-- [ ] Whitespace normalization rules.
+- [x] Whitespace normalization rules.
 - [ ] `xml:space`.
 - [ ] `lang` and `xml:lang`.
 - [ ] `id`.
