@@ -1,0 +1,123 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: preserve-aspect-ratio-meet
+  title: SVG preserveAspectRatio meet
+  domain: SVG 2
+  profile: null
+  summary: The `meet` value preserves aspect ratio by uniformly scaling the entire viewBox to fit inside the viewport and then aligning it.
+  non_goals:
+    - Non-uniform `none` scaling.
+    - `slice` covering behavior.
+    - Exhaustive testing of every align keyword.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-coords-preserve-aspect-ratio
+      title: SVG 2, 8.7 The preserveAspectRatio attribute
+      url: https://www.w3.org/TR/SVG2/coords.html#PreserveAspectRatioAttribute
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-coords-equivalent-transform
+      title: SVG 2, 8.2 Computing the equivalent transform of an SVG viewport
+      url: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes: []
+
+scope:
+  includes:
+    - Uniform scale selection for `meet`.
+    - Center and maximum-edge alignment offsets after `meet` scaling.
+  excludes:
+    - All align keyword permutations.
+  assumptions:
+    - Alignment helper coverage can be expanded later if rendering integration exposes additional risk.
+
+terminology: []
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: For `meet`, the transform must preserve the viewBox aspect ratio.
+    applies_to:
+      - SVGPreserveAspectRatio.viewBoxTransform
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: For `meet`, the entire viewBox must be visible within the SVG viewport and scaled as much as possible while preserving aspect ratio.
+    applies_to:
+      - SVGPreserveAspectRatio.viewBoxTransform
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+      - svg2-coords-equivalent-transform
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: algorithm
+    statement: For `meet` with an alignment other than `none`, the larger of scale-x and scale-y must be set to the smaller scale.
+    applies_to:
+      - SVGPreserveAspectRatio.viewBoxTransform
+    source_refs:
+      - svg2-coords-equivalent-transform
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Alignment keywords must adjust translation so midpoints or maximum edges of the transformed viewBox align with the corresponding viewport positions.
+    applies_to:
+      - SVGPreserveAspectRatio.viewBoxTransform
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+      - svg2-coords-equivalent-transform
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices: []
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+      - svg2-coords-equivalent-transform
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-coords-equivalent-transform
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+      - svg2-coords-equivalent-transform
+    map_item_refs: []
