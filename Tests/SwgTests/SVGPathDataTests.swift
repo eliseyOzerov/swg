@@ -197,6 +197,31 @@ import Testing
 	#expect(largePositiveControl.y < 0)
 }
 
+@Test func svgPathParserCorrectsOutOfRangeArcRadii() throws {
+	func arcCubics(_ data: String) -> [PathCommand] {
+		Array(SVGPathDataParser.parse(data).commands.dropFirst())
+	}
+
+	let corrected = arcCubics("M 0 0 A 20 10 0 0 1 100 0")
+	let negative = arcCubics("M 0 0 A -50 -25 0 0 1 100 0")
+
+	#expect(corrected.count == 2)
+	#expect(negative.count == 2)
+
+	guard case .cubic(let correctedMidpoint, _, _) = corrected[0],
+		  case .cubic(let correctedEnd, _, _) = corrected[1],
+		  case .cubic(let negativeMidpoint, _, _) = negative[0],
+		  case .cubic(let negativeEnd, _, _) = negative[1] else {
+		Issue.record("Expected corrected arcs to be approximated with cubic segments")
+		return
+	}
+
+	#expect(correctedMidpoint.distance(to: Point(50, -25)) < 0.000001)
+	#expect(correctedEnd.distance(to: Point(100, 0)) < 0.000001)
+	#expect(negativeMidpoint.distance(to: Point(50, -25)) < 0.000001)
+	#expect(negativeEnd.distance(to: Point(100, 0)) < 0.000001)
+}
+
 @Test func svgPathDataSerializesEditableCommands() {
 	let path = Path(commands: [
 		.move(to: Point(0, 0)),

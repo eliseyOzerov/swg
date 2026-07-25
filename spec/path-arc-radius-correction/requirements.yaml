@@ -1,0 +1,34 @@
+id: path-arc-radius-correction
+title: SVG path elliptical arc radius correction
+status: requirements
+sources:
+  - id: svg2-paths-out-of-range-arcs
+    title: SVG 2, 9.5.1 Out-of-range elliptical arc parameters
+    url: https://www.w3.org/TR/SVG2/paths.html#ArcOutOfRangeParameters
+    retrieved: 2026-07-25
+  - id: svg2-implnote-arc-conversion
+    title: SVG 2, Appendix B.2 Elliptical arc parameter conversion
+    url: https://www.w3.org/TR/SVG2/implnote.html#ArcConversionEndpointToCenter
+    retrieved: 2026-07-25
+requirements:
+  - id: REQ-PATH-ARC-RADIUS-001
+    text: Negative `rx` or `ry` values in an elliptical arc command must be treated as their absolute values.
+    source: svg2-paths-out-of-range-arcs
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserCorrectsOutOfRangeArcRadii
+  - id: REQ-PATH-ARC-RADIUS-002
+    text: If `rx`, `ry`, and `x-axis-rotation` describe an ellipse that cannot reach from the current point to the endpoint, the radii must be scaled up uniformly until there is exactly one solution.
+    source: svg2-paths-out-of-range-arcs
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserCorrectsOutOfRangeArcRadii
+  - id: REQ-PATH-ARC-RADIUS-003
+    text: Radius correction must preserve the arc endpoint and produce curve geometry rather than dropping or replacing the arc for non-zero radii and distinct endpoints.
+    source: svg2-implnote-arc-conversion
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserCorrectsOutOfRangeArcRadii
+non_goals:
+  - Zero radii and identical endpoint degenerate cases are covered by a separate TODO item.
+  - This item does not require exact cubic control point identity with another renderer.
