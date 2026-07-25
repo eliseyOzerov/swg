@@ -88,3 +88,36 @@ import Testing
 	}
 	#expect(use.href == "preferred")
 }
+
+@Test func svgParserDecodesXMLPredefinedEntitiesAndCharacterReferences() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<text id="label" x="1" y="2">A&amp;B &#x2B; C&lt;D &quot;Q&quot; &apos;Z&apos;</text>
+		<image id="asset" href="icons.svg?name=A&amp;mode=1" x="0" y="0" width="10" height="10"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected first element to be text")
+		return
+	}
+	#expect(text.spans.first?.text == "A&B + C<D \"Q\" 'Z'")
+
+	guard case .image(let image) = document.elements.dropFirst().first else {
+		Issue.record("Expected second element to be image")
+		return
+	}
+	#expect(image.href == "icons.svg?name=A&mode=1")
+}
+
+@Test func svgParserRejectsUndeclaredXMLGeneralEntity() {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<text id="label" x="1" y="2">&missing;</text>
+	</svg>
+	"""
+
+	#expect(SVGParser().parse(svg) == nil)
+}

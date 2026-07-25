@@ -1,0 +1,144 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: xml-entities
+  title: XML entity and character reference handling
+  domain: XML 1.0 / SVG 2
+  profile: null
+  summary: SVG XML parsing must observe XML processor behavior for predefined entity references and numeric character references in content and attribute values.
+  non_goals:
+    - Load or resolve external parsed entities.
+    - Expose entity declaration metadata in the public SVG model.
+    - Preserve unexpanded entity reference nodes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: xml10-references
+      title: XML 1.0 Character and Entity References
+      url: https://www.w3.org/TR/xml/#sec-references
+      version: Fifth Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: xml10-predefined
+      title: XML 1.0 Predefined Entities
+      url: https://www.w3.org/TR/xml/#sec-predefined-ent
+      version: Fifth Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Predefined XML entities in element text.
+    - Numeric character references in element text.
+    - Predefined XML entities in SVG attribute values.
+    - Parse failure for undeclared non-predefined entity references.
+  excludes:
+    - External entity loading.
+    - Parameter entity expansion in DTD subsets.
+    - Validation behavior.
+  assumptions:
+    - Foundation XMLParser is the XML processor used by SVGParser.
+
+terminology:
+  - id: term-reference
+    term: Reference
+    definition: An XML entity reference or character reference.
+    source_refs:
+      - xml10-references
+  - id: term-predefined-entity
+    term: Predefined entity
+    definition: One of amp, lt, gt, apos, or quot, which XML processors recognize without requiring a declaration.
+    source_refs:
+      - xml10-predefined
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: Predefined XML entity references must be recognized without declarations.
+    applies_to:
+      - XML parsing
+    source_refs:
+      - xml10-predefined
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Numeric character references must expand to character data when recognized.
+    applies_to:
+      - XML parsing
+    source_refs:
+      - xml10-predefined
+      - xml10-references
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Entity and character references in attribute values must be included in the attribute value presented to SVG parsing.
+    applies_to:
+      - SVG attribute parsing
+    source_refs:
+      - xml10-references
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: error
+    statement: A non-predefined entity reference without an applicable declaration must make the XML document not well formed.
+    applies_to:
+      - XML parsing
+    source_refs:
+      - xml10-references
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: External entities
+    statement: External entity resolution is intentionally excluded from this bullet until the package has an explicit resource-loading and security policy.
+    allowed_by:
+      - Current package scope
+    source_refs:
+      - xml10-references
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - xml10-predefined
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - xml10-predefined
+      - xml10-references
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - xml10-references
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - xml10-references
+    map_item_refs: []

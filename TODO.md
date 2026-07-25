@@ -7,7 +7,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Core Parsing Infrastructure
 
 - [x] XML namespaces, including default SVG namespace and `xlink`.
-- [ ] XML entity handling.
+- [x] XML entity handling.
 - [ ] XML comments and processing instructions.
 - [ ] Unknown element preservation.
 - [ ] Unknown attribute preservation.
