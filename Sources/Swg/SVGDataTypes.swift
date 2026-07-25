@@ -118,6 +118,26 @@ enum SVGClockValueParser {
 	}
 }
 
+/// Parses reusable SVG frequency values into hertz.
+enum SVGFrequencyParser {
+	private static let units: [(suffix: String, multiplier: Double)] = [
+		("khz", 1000),
+		("hz", 1)
+	]
+
+	static func parse(_ value: String) -> Double? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		let lowercased = trimmed.lowercased()
+		for unit in units where lowercased.hasSuffix(unit.suffix) {
+			let numberText = String(trimmed.dropLast(unit.suffix.count))
+			guard numberText == numberText.trimmingCharacters(in: .whitespacesAndNewlines) else { return nil }
+			guard let number = SVGNumberParser.parse(numberText), number >= 0 else { return nil }
+			return number * unit.multiplier
+		}
+		return nil
+	}
+}
+
 /// Context used to resolve SVG relative length units into user units.
 struct SVGLengthContext: Equatable, Sendable {
 	var fontSize: Double

@@ -153,3 +153,28 @@ import Testing
 	#expect(SVGClockValueParser.parse("indefinite") == nil)
 	#expect(SVGClockValueParser.parse("media") == nil)
 }
+
+@Test func svgFrequencyParserConvertsFrequencyUnitsToHertz() throws {
+	let hertz = try #require(SVGFrequencyParser.parse("440Hz"))
+	let kilohertz = try #require(SVGFrequencyParser.parse("2kHz"))
+	let lowerHertz = try #require(SVGFrequencyParser.parse("200hz"))
+	let mixedKilohertz = try #require(SVGFrequencyParser.parse("1.5KHz"))
+	let exponent = try #require(SVGFrequencyParser.parse("1e3Hz"))
+
+	#expect(abs(hertz - 440) < 0.000001)
+	#expect(abs(kilohertz - 2000) < 0.000001)
+	#expect(abs(lowerHertz - 200) < 0.000001)
+	#expect(abs(mixedKilohertz - 1500) < 0.000001)
+	#expect(abs(exponent - 1000) < 0.000001)
+}
+
+@Test func svgFrequencyParserRejectsMalformedAndNegativeFrequencies() {
+	#expect(SVGFrequencyParser.parse("") == nil)
+	#expect(SVGFrequencyParser.parse("Hz") == nil)
+	#expect(SVGFrequencyParser.parse("440") == nil)
+	#expect(SVGFrequencyParser.parse("440 Hz") == nil)
+	#expect(SVGFrequencyParser.parse("-1Hz") == nil)
+	#expect(SVGFrequencyParser.parse("1MHz") == nil)
+	#expect(SVGFrequencyParser.parse("1khzz") == nil)
+	#expect(SVGFrequencyParser.parse("1%") == nil)
+}

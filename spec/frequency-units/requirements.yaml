@@ -1,0 +1,278 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: frequency-units
+  title: SVG frequency units
+  domain: SVG
+  profile: null
+  summary: Parse SVG frequency values with Hz and kHz units and convert accepted values into hertz. Reject negative and unitless values.
+  non_goals:
+    - Aural property implementation or rendering.
+    - CSS cascade, inheritance, or declaration invalidation behavior.
+    - Frequency lists, calc() expressions, or media-query resolution units.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-frequency
+      title: "SVG 1.1 Basic Data Types: <frequency>"
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeFrequency
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-values-3-frequency
+      title: "CSS Values and Units Level 3: Frequency Units"
+      url: https://www.w3.org/TR/css-values-3/#frequency
+      version: Candidate Recommendation Draft, 22 March 2024
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 1.1 defines frequency values for aural properties by reference to CSS2.
+    - CSS Values Level 3 states modern frequency unit compatibility and canonicalization.
+
+scope:
+  includes:
+    - Scalar frequency values.
+    - Hz and kHz units.
+    - Case-insensitive CSS unit matching.
+    - Conversion to hertz.
+    - Non-negative value validation.
+  excludes:
+    - Unitless frequency values.
+    - Negative frequency values.
+    - Attribute or property integration.
+    - CSS serialization.
+  assumptions:
+    - Package internals use hertz as the canonical representation for parsed frequency values.
+    - The parser reuses the package's existing SVG number parser for the numeric component.
+
+terminology:
+  - id: frequency
+    term: frequency
+    definition: A non-negative number immediately followed by a frequency unit identifier.
+    source_refs:
+      - svg11-frequency
+  - id: hertz
+    term: hertz
+    definition: The canonical frequency unit representing occurrences per second.
+    source_refs:
+      - css-values-3-frequency
+
+structures:
+  - id: S001
+    name: SVG frequency value
+    kind: grammar
+    source_refs:
+      - svg11-frequency
+      - css-values-3-frequency
+    fields:
+      - name: number
+        type: SVG number
+        cardinality: required
+        position: 1
+        constraints:
+          - Must be present before the unit identifier.
+          - Must not be negative.
+        requirement_refs:
+          - R001
+          - R004
+        source_refs:
+          - svg11-frequency
+      - name: unit
+        type: enum
+        cardinality: required
+        position: 2
+        constraints:
+          - Must be Hz or kHz, matched ASCII case-insensitively.
+          - Must immediately follow the numeric component.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg11-frequency
+          - css-values-3-frequency
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: A frequency value must be a number immediately followed by a frequency unit identifier.
+    applies_to:
+      - SVG frequency value
+    source_refs:
+      - svg11-frequency
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Frequency values must support Hz and kHz unit identifiers.
+    applies_to:
+      - SVG frequency value
+    source_refs:
+      - svg11-frequency
+      - css-values-3-frequency
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: CSS frequency unit identifiers must match ASCII case-insensitively.
+    applies_to:
+      - SVG frequency value
+    source_refs:
+      - css-values-3-frequency
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST_NOT
+    kind: range
+    statement: Frequency values must not be negative.
+    applies_to:
+      - SVG frequency value
+    source_refs:
+      - svg11-frequency
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A kilohertz value must convert using 1000 hertz per kilohertz.
+    applies_to:
+      - kHz
+    source_refs:
+      - css-values-3-frequency
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Frequency conversion to hertz
+    kind: algorithm
+    summary: Convert accepted SVG frequency values into hertz.
+    steps:
+      - Trim leading and trailing whitespace.
+      - Parse the numeric component.
+      - Reject the value if the parsed number is negative.
+      - Match the unit identifier case-insensitively.
+      - Return Hz values unchanged.
+      - Return kHz values multiplied by 1000.
+    preconditions:
+      - The input is a scalar frequency candidate.
+    postconditions:
+      - Accepted frequency values have a canonical value in hertz.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - svg11-frequency
+      - css-values-3-frequency
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Missing unit identifier.
+    source_behavior: invalid frequency grammar
+    required_behavior: Reject the value for scalar frequency parsing.
+    decision_required: false
+    source_refs:
+      - svg11-frequency
+  - id: I002
+    condition: Whitespace between the number and unit identifier.
+    source_behavior: invalid frequency grammar
+    required_behavior: Reject the value for scalar frequency parsing.
+    decision_required: false
+    source_refs:
+      - svg11-frequency
+  - id: I003
+    condition: Negative numeric value.
+    source_behavior: invalid frequency range
+    required_behavior: Reject the value for scalar frequency parsing.
+    decision_required: false
+    source_refs:
+      - svg11-frequency
+  - id: I004
+    condition: Unit identifier outside Hz or kHz.
+    source_behavior: invalid frequency grammar
+    required_behavior: Reject the value for scalar frequency parsing.
+    decision_required: false
+    source_refs:
+      - svg11-frequency
+      - css-values-3-frequency
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: The parser must expose accepted frequencies in hertz because CSS Values identifies hertz as the canonical frequency unit.
+    derived_from:
+      - R002
+      - R005
+    reasoning: SVG defines Hz and kHz units, and CSS Values defines kHz as 1000 Hz with Hz as canonical.
+    source_refs:
+      - svg11-frequency
+      - css-values-3-frequency
+
+implementation_choices:
+  - id: IC001
+    topic: Number grammar
+    statement: This package uses its SVG number parser for the numeric component so SVG attribute-compatible exponents and signs are handled consistently, while still rejecting negative results.
+    allowed_by:
+      - svg11-frequency
+    source_refs:
+      - svg11-frequency
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG number syntax
+    reason: Frequency parsing depends on the numeric component.
+    source_refs:
+      - svg11-frequency
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-frequency
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-frequency
+      - css-values-3-frequency
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-values-3-frequency
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg11-frequency
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-values-3-frequency
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg11-frequency
+      - css-values-3-frequency
+    map_item_refs: []

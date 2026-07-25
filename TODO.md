@@ -21,7 +21,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] Percentage lengths.
 - [x] Angle units: `deg`, `grad`, `rad`, `turn`.
 - [x] Time units for animations.
-- [ ] Frequency units.
+- [x] Frequency units.
 - [ ] List parsing with comma and whitespace separators.
 - [ ] Paint value parsing.
 - [ ] IRI and functional IRI parsing.
