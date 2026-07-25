@@ -99,11 +99,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 - [ ] Presentation attributes.
 - [ ] Inline `style` attribute.
-- [x] `<style>` element class selector.
-- [ ] Type selectors.
-- [ ] ID selectors.
-- [ ] Multiple classes.
-- [ ] Selector specificity.
+- [x] `<style>` element.
 - [ ] Inheritance.
 - [ ] `inherit`.
 - [ ] `currentColor`.
@@ -180,8 +176,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] Mask luminance and alpha behavior.
 - [ ] `opacity`.
 - [ ] Group opacity.
-- [ ] `mix-blend-mode`.
-- [ ] `isolation`.
 - [ ] Overflow clipping.
 
 ## Filters
