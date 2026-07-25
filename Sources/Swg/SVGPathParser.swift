@@ -570,6 +570,13 @@ public extension SVGPolylineData {
 	}
 }
 
+public extension SVGPolygonData {
+	/// The closed equivalent path for this polygon.
+	var path: Path {
+		Path.polygon(points)
+	}
+}
+
 private struct PathCommandBuilder {
 	var commands: [PathCommand] = []
 

@@ -1,0 +1,308 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: polygon
+  title: polygon element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the polygon element, including
+    points parsing, omitted points behavior, odd coordinate error handling, and
+    closed equivalent path generation.
+  non_goals:
+    - CSS geometry property cascade for points.
+    - DOM SVGAnimatedPoints and SVGPointList interfaces.
+    - Stroke rendering behavior.
+    - Fill-rule rendering behavior.
+    - PathLength behavior.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: basic-shapes-polygon
+      title: Basic Shapes - polygon
+      artifact_path: spec/polygon/requirements.yaml
+  canonical_sources:
+    - id: svg2-shapes-polygon
+      title: SVG 2 Basic Shapes - The polygon element
+      url: https://www.w3.org/TR/SVG2/shapes.html#PolygonElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Recognizing polygon as an SVG graphics, renderable, shape element.
+    - Parsing the points attribute as a list of coordinate pairs in user coordinates.
+    - Treating an omitted points attribute as valid but non-rendering.
+    - Treating an odd number of coordinate values as an error case.
+    - Producing a closed equivalent path with a moveto to the first point, lineto commands for subsequent points, and a closepath command.
+  excludes:
+    - CSS geometry property cascade for points.
+    - DOM SVGAnimatedPoints and SVGPointList interfaces.
+    - PathLength behavior.
+    - Rendering backend fill or stroke behavior.
+  assumptions:
+    - >
+      The package can represent parsed points as an ordered array of Point values.
+    - >
+      The package can expose polygon geometry as a closed Path containing move,
+      line, and close commands.
+    - >
+      The package may reuse existing points-list parsing recovery for odd
+      coordinate values because the source maps the error behavior to path
+      parsing behavior without defining a separate polygon-only algorithm.
+
+terminology:
+  - id: term-polygon
+    term: polygon
+    definition: >
+      A basic SVG shape element that defines a closed shape made from connected
+      straight line segments.
+    source_refs:
+      - svg2-shapes-polygon
+  - id: term-points
+    term: points
+    definition: >
+      The ordered coordinate values that make up the polygon, grouped into
+      coordinate pairs in the user coordinate system.
+    source_refs:
+      - svg2-shapes-polygon
+
+structures:
+  - id: S001
+    name: polygon geometry
+    kind: structure
+    source_refs:
+      - svg2-shapes-polygon
+    fields:
+      - name: points
+        type: points
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Value is one or more numbers parsed into coordinate pairs.
+          - Initial value is none.
+          - Odd coordinate values put the element in error.
+          - All coordinate values are in the user coordinate system.
+        requirement_refs:
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-shapes-polygon
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A polygon element is an SVG graphics, renderable, shape element.
+    applies_to:
+      - polygon element
+    source_refs:
+      - svg2-shapes-polygon
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The points attribute defines the coordinate pairs that make up the
+      polygon, with all coordinates in the user coordinate system.
+    applies_to:
+      - polygon points
+    source_refs:
+      - svg2-shapes-polygon
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: default
+    statement: >
+      A missing points value is valid for a polygon but does not render.
+    applies_to:
+      - polygon points
+    source_refs:
+      - svg2-shapes-polygon
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: error
+    statement: >
+      If the points attribute provides an odd number of coordinate values, the
+      polygon element is in error with the same user agent behavior as an
+      incorrectly specified path element.
+    applies_to:
+      - polygon points
+    source_refs:
+      - svg2-shapes-polygon
+    testability: testable
+    notes:
+      - >
+        The polygon section does not repeat the polyline section's explicit
+        final-coordinate-dropping sentence, but it points to the same path error
+        behavior.
+  - id: R005
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The equivalent path for a polygon performs an absolute moveto to the first
+      coordinate pair and then an absolute lineto for each subsequent coordinate
+      pair.
+    applies_to:
+      - polygon equivalent path
+    source_refs:
+      - svg2-shapes-polygon
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: path
+    statement: >
+      A polygon equivalent path performs a closepath command after its line
+      commands.
+    applies_to:
+      - polygon equivalent path
+    source_refs:
+      - svg2-shapes-polygon
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: polygon equivalent path
+    kind: algorithm
+    summary: >
+      Build a closed path by moving to the first point, drawing straight line
+      segments to each later point, and closing the shape.
+    steps:
+      - If the points list is empty, return no rendering path.
+      - Move to the first coordinate pair.
+      - For each later coordinate pair, draw a line to that coordinate pair.
+      - Close the path.
+    preconditions: []
+    postconditions:
+      - A non-empty polygon equivalent path ends with a closepath command.
+    requirement_refs:
+      - R005
+      - R006
+    source_refs:
+      - svg2-shapes-polygon
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Odd number of coordinate values in points.
+    source_behavior: MUST
+    required_behavior: Handle as an error equivalent to incorrectly specified path data.
+    decision_required: false
+    source_refs:
+      - svg2-shapes-polygon
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, a parsed polygon must expose a closed Path equivalent
+      to Path.polygon(points).
+    derived_from:
+      - R005
+      - R006
+      - ALG001
+    reasoning: >
+      The package already has a Path polygon helper whose behavior matches the
+      SVG equivalent path algorithm for a non-empty polygon.
+    source_refs:
+      - svg2-shapes-polygon
+  - id: D002
+    normative_strength: MUST
+    statement: >
+      For this package, a polygon with no parsed points must expose no path
+      commands.
+    derived_from:
+      - R003
+      - ALG001
+    reasoning: >
+      The source says the initial points value is valid but does not render, so
+      a path-facing API should expose no commands for the non-rendering shape.
+    source_refs:
+      - svg2-shapes-polygon
+
+implementation_choices:
+  - id: IC001
+    topic: Odd coordinate recovery
+    statement: >
+      The parser may drop the final odd coordinate for polygons, matching its
+      polyline behavior and preserving all complete coordinate pairs.
+    allowed_by:
+      - R004
+    source_refs:
+      - svg2-shapes-polygon
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Units
+    reason: >
+      Coordinate conversion and user coordinate system semantics depend on SVG
+      unit and coordinate-system rules.
+    source_refs:
+      - svg2-shapes-polygon
+  - id: DEP002
+    kind: source-section
+    title: SVG 2 Paths
+    reason: >
+      The polygon odd-coordinate error case references behavior for incorrectly
+      specified path elements.
+    source_refs:
+      - svg2-shapes-polygon
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polygon
+    map_item_refs:
+      - basic-shapes-polygon
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polygon
+    map_item_refs:
+      - basic-shapes-polygon
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polygon
+    map_item_refs:
+      - basic-shapes-polygon
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polygon
+    map_item_refs:
+      - basic-shapes-polygon
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polygon
+    map_item_refs:
+      - basic-shapes-polygon
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polygon
+    map_item_refs:
+      - basic-shapes-polygon

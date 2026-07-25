@@ -92,6 +92,7 @@ public struct Path: Equatable, Hashable, Sendable {
 	}
 
 	public static func polygon(_ points: [Point]) -> Path {
+		guard !points.isEmpty else { return Path() }
 		var path = polyline(points)
 		path.close()
 		return path

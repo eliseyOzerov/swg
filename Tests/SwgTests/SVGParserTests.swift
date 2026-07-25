@@ -953,6 +953,45 @@ import Testing
 	#expect(defaulted.path.commands == [])
 }
 
+@Test func svgParserPreservesPolygonElementsAndClosedEquivalentPaths() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 40 40">
+		<polygon id="triangle" points="-2,3 4,8 12,18" fill="#336699" data-note="kept"/>
+		<polygon id="odd" points="0 0 5 5 9"/>
+		<polygon id="defaulted"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let polygons = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGPolygonData)? in
+		if case .polygon(let polygon) = element {
+			return (polygon.id, polygon)
+		}
+		return nil
+	})
+
+	let triangle = try #require(polygons["triangle"])
+	#expect(triangle.points == [Point(-2, 3), Point(4, 8), Point(12, 18)])
+	#expect(triangle.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(triangle.unknownAttributes == ["data-note": "kept"])
+	let expectedCommands: [PathCommand] = [
+		.move(to: Point(-2, 3)),
+		.line(to: Point(4, 8)),
+		.line(to: Point(12, 18)),
+		.close,
+	]
+	#expect(triangle.path.commands == expectedCommands)
+	#expect(triangle.path.svgPathData(precision: 0) == "M -2 3 L 4 8 L 12 18 Z")
+
+	let odd = try #require(polygons["odd"])
+	#expect(odd.points == [Point(0, 0), Point(5, 5)])
+	#expect(odd.path.commands == [.move(to: Point(0, 0)), .line(to: Point(5, 5)), .close])
+
+	let defaulted = try #require(polygons["defaulted"])
+	#expect(defaulted.points == [])
+	#expect(defaulted.path.commands == [])
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
