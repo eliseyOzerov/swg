@@ -64,6 +64,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 	case polygon(SVGPolygonData)
 	case polyline(SVGPolygonData)
 	case group(SVGGroupData)
+	case `switch`(SVGSwitchData)
 	case svg(SVGViewportData)
 	case unknown(SVGUnknownElementData)
 	case use(SVGUseData)
@@ -80,6 +81,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 		case .polygon(let data): [data.id]
 		case .polyline(let data): [data.id]
 		case .group(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
+		case .switch(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .svg(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .unknown(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .use(let data): [data.id]
@@ -219,6 +221,23 @@ public struct SVGPolygonData: Equatable, Sendable {
 
 /// Data for an SVG `<g>` group element with child elements.
 public struct SVGGroupData: Equatable, Sendable {
+	public let id: String
+	public let attributes: SVGPaintAttributes
+	public let children: [SVGElement]
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.attributes = attributes
+		self.children = children
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<switch>` element after conditional child selection.
+public struct SVGSwitchData: Equatable, Sendable {
 	public let id: String
 	public let attributes: SVGPaintAttributes
 	public let children: [SVGElement]

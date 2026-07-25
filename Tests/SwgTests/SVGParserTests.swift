@@ -389,6 +389,51 @@ import Testing
 	#expect(external.href == "sprite.svg")
 }
 
+@Test func svgParserSelectsFirstPassingSwitchChild() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<switch id="choice" fill="#336699">
+			<path id="empty-extension" requiredExtensions="" d="M0 0 L1 1"/>
+			<path id="unsupported-extension" requiredExtensions="https://example.com/unsupported" d="M1 1 L2 2"/>
+			<g id="french" systemLanguage="fr" display="inline">
+				<path id="french-child" d="M2 2 L3 3"/>
+			</g>
+			<g id="english" systemLanguage="en" display="none">
+				<path id="english-child" d="M3 3 L4 4"/>
+			</g>
+			<path id="fallback" d="M4 4 L5 5"/>
+		</switch>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser(languagePreferences: ["en"]).parse(svg))
+
+	#expect(document.elementIDs == ["choice", "english", "english-child"])
+
+	guard case .switch(let choice) = document.elements.first else {
+		Issue.record("Expected root element to be a switch")
+		return
+	}
+	#expect(choice.id == "choice")
+	#expect(choice.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(choice.children.count == 1)
+
+	guard case .group(let english) = choice.children.first else {
+		Issue.record("Expected selected switch child to be a group")
+		return
+	}
+	#expect(english.id == "english")
+	#expect(english.attributes.display == .none)
+	#expect(english.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .path(let englishChild) = english.children.first else {
+		Issue.record("Expected selected switch group child to be a path")
+		return
+	}
+	#expect(englishChild.id == "english-child")
+	#expect(englishChild.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

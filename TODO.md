@@ -36,7 +36,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<defs>`.
 - [x] `<symbol>`.
 - [x] `<use>`.
-- [ ] `<switch>`.
+- [x] `<switch>`.
 - [ ] `<view>`.
 - [ ] `<a>`.
 - [ ] `<title>`.

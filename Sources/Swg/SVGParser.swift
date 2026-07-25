@@ -19,9 +19,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let globalAttributeNames: Set<String> = [
 		"class", "clip-path", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
-		"stroke-width", "style", "transform", "visibility", "lang", "xml:lang", "xml:space"
+		"stroke-width", "style", "transform", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage"
 	]
 
+	private let supportedExtensions: Set<String>
+	private let languagePreferences: [String]
 	private var viewBox: Rect = .zero
 	private var rootPreserveAspectRatio: SVGPreserveAspectRatio = .default
 	private var rootID: String?
@@ -59,6 +61,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var languageStack: [String?] = [nil]
 	private var viewportContextStack: [SVGLengthContext] = [.default]
 	private var parsedElementStack: [SVGParsedElement] = []
+
+	public init(supportedExtensions: Set<String> = [], languagePreferences: [String] = []) {
+		self.supportedExtensions = supportedExtensions
+		self.languagePreferences = languagePreferences.map { $0.lowercased() }
+		super.init()
+	}
 
 	public func parse(_ string: String) -> SVGDocument? {
 		guard let data = string.data(using: .utf8) else { return nil }
@@ -98,6 +106,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		parsedElementStack.append(parsedElement)
 		guard parsedElement.isSVGElement else { return }
 		let elementName = parsedElement.localName
+		if parsedElement.hasSkippedAncestor(in: parsedElementStack.dropLast()) {
+			parsedElementStack[parsedElementStack.count - 1].role = .skipped
+			return
+		}
+		if let switchBuilder = currentOpenContainerBuilder, switchBuilder.isSwitch {
+			if switchBuilder.switchHasSelectedChild || !conditionalAttributesPass(attributes) {
+				parsedElementStack[parsedElementStack.count - 1].role = .skipped
+				return
+			}
+			switchBuilder.switchHasSelectedChild = true
+		}
 
 		switch elementName {
 		case "svg":
@@ -111,6 +130,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			inDefs = true
 		case "symbol":
 			parseSymbolStart(attributes)
+		case "switch":
+			parseSwitchStart(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .switchContainer
 		case "style":
 			inStyleElement = true
 			styleText = ""
@@ -183,6 +205,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			characterBuffer = ""
 			return
 		}
+		if parsedElement.role == .skipped {
+			characterBuffer = ""
+			return
+		}
 		let elementName = parsedElement.localName
 
 		switch elementName {
@@ -196,6 +222,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "symbol":
 			finalizeSymbolElement()
 			popViewportContext()
+		case "switch":
+			finalizeContainerElement()
 		case "style":
 			styleText += characterBuffer
 			characterBuffer = ""
@@ -358,6 +386,19 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		)
 		symbolElementStack.append(builder)
 		pushViewportContext(width: width, height: height, base: viewportContext)
+	}
+
+	private func parseSwitchStart(_ attributes: [String: String]) {
+		let attrs = parsePaintAttributes(attributes)
+		let id = resolveID(attributes["id"], elementName: "Switch")
+		let builder = SVGElementBuilder(kind: .switch, id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
+		if !symbolElementStack.isEmpty {
+			symbolElementStack.append(builder)
+		} else if inDefs {
+			defsElementStack.append(builder)
+		} else if !inClipPath && !inMask {
+			elementStack.append(builder)
+		}
 	}
 
 	private func parseUnknownElementStart(_ elementName: String, namespaceURI: String?, attributes: [String: String]) {
@@ -711,6 +752,33 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func finalizeSymbolElement() {
 		guard let builder = symbolElementStack.popLast() else { return }
 		defs.symbols[builder.id] = builder.buildSymbolData()
+	}
+
+	private var currentOpenContainerBuilder: SVGElementBuilder? {
+		symbolElementStack.last ?? defsElementStack.last ?? elementStack.last
+	}
+
+	private func conditionalAttributesPass(_ attributes: [String: String]) -> Bool {
+		requiredExtensionsPass(attributes["requiredExtensions"]) && systemLanguagePass(attributes["systemLanguage"])
+	}
+
+	private func requiredExtensionsPass(_ value: String?) -> Bool {
+		guard let value else { return true }
+		let tokens = value.split(whereSeparator: { $0.isWhitespace }).map(String.init)
+		guard !tokens.isEmpty else { return false }
+		return tokens.allSatisfy { supportedExtensions.contains($0) }
+	}
+
+	private func systemLanguagePass(_ value: String?) -> Bool {
+		guard let value else { return true }
+		let tags = value.split(separator: ",").map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+		guard !tags.isEmpty, !languagePreferences.isEmpty, !tags.contains("") else { return false }
+		for preference in languagePreferences {
+			for tag in tags where tag == preference || tag.hasPrefix("\(preference)-") {
+				return true
+			}
+		}
+		return false
 	}
 
 	private func parsePaintAttributes(_ attributes: [String: String]) -> SVGPaintAttributes {
@@ -1067,12 +1135,18 @@ private struct SVGParsedElement {
 	func hasSVGAncestor<S: Sequence>(in ancestors: S) -> Bool where S.Element == SVGParsedElement {
 		ancestors.contains { $0.isSVGElement }
 	}
+
+	func hasSkippedAncestor<S: Sequence>(in ancestors: S) -> Bool where S.Element == SVGParsedElement {
+		ancestors.contains { $0.role == .skipped }
+	}
 }
 
 private enum SVGParsedElementRole {
 	case normal
 	case svgContainer
+	case switchContainer
 	case unknownContainer
+	case skipped
 }
 
 private enum SVGXMLSpaceMode {
@@ -1104,6 +1178,7 @@ private extension SVGElement {
 		case .polygon(let data): data.id
 		case .polyline(let data): data.id
 		case .group(let data): data.id
+		case .switch(let data): data.id
 		case .svg(let data): data.id
 		case .unknown(let data): data.id
 		case .use(let data): data.id
@@ -1117,6 +1192,7 @@ private extension SVGElement {
 private final class SVGElementBuilder {
 	enum Kind {
 		case group
+		case `switch`
 		case svg(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio)
 		case symbol(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio, refX: String?, refY: String?)
 		case unknown(name: String, namespaceURI: String?)
@@ -1128,9 +1204,17 @@ private final class SVGElementBuilder {
 	let language: String?
 	let unknownAttributes: [String: String]
 	var children: [SVGElement] = []
+	var switchHasSelectedChild = false
 
 	var isSymbol: Bool {
 		if case .symbol = kind {
+			return true
+		}
+		return false
+	}
+
+	var isSwitch: Bool {
+		if case .switch = kind {
 			return true
 		}
 		return false
@@ -1148,6 +1232,8 @@ private final class SVGElementBuilder {
 		switch kind {
 		case .group:
 			.group(SVGGroupData(id: id, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
+		case .switch:
+			.switch(SVGSwitchData(id: id, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .svg(let x, let y, let width, let height, let viewBox, let preserveAspectRatio):
 			.svg(SVGViewportData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .symbol:
@@ -1161,7 +1247,7 @@ private final class SVGElementBuilder {
 		switch kind {
 		case .symbol(let x, let y, let width, let height, let viewBox, let preserveAspectRatio, let refX, let refY):
 			SVGSymbolData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, refX: refX, refY: refY, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes)
-		case .group, .svg, .unknown:
+		case .group, .switch, .svg, .unknown:
 			SVGSymbolData(id: id, x: 0, y: 0, width: 0, height: 0, viewBox: nil, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes)
 		}
 	}

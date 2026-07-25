@@ -1,0 +1,307 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: switch
+  title: switch element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the switch element as a renderable
+    conditional container that selects the first direct child whose conditional
+    processing attributes evaluate to true.
+  non_goals:
+    - Full rendering of all possible graphics elements.
+    - User-interface management of language preferences.
+    - Script, style, animation, and multimedia processing behavior.
+    - SMIL allowReorder behavior beyond preserving document-order evaluation.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-switch
+      title: Document and Container Elements - switch
+      artifact_path: spec/switch/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-switch
+      title: SVG 2 Document Structure - The switch element
+      url: https://www.w3.org/TR/SVG2/struct.html#SwitchElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - Recognizing switch as a renderable container element.
+    - Evaluating requiredExtensions and systemLanguage on direct child elements in order.
+    - Selecting only the first direct child for which all conditional attributes are true.
+    - Treating omitted conditional attributes as true.
+    - Treating empty requiredExtensions or systemLanguage values as false.
+    - Ignoring display and visibility when deciding whether a switch child passes.
+  excludes:
+    - Fetching or validating external extension definitions.
+    - Complete BCP 47 language validation.
+    - Script and style processing inside switch.
+    - DOM interface conformance.
+  assumptions:
+    - >
+      A parser-oriented implementation may represent a switch container with
+      only its selected renderable child in the output tree.
+    - >
+      Supported extensions and user language preferences are implementation
+      inputs, not fixed by the SVG document itself.
+
+terminology:
+  - id: term-switch
+    term: switch
+    definition: >
+      An SVG renderable container that conditionally processes one direct child
+      based on conditional processing attributes.
+    source_refs:
+      - svg2-struct-switch
+  - id: term-conditional-processing-attribute
+    term: conditional processing attribute
+    definition: >
+      An attribute that controls whether the element on which it appears is
+      processed; SVG 2 defines requiredExtensions and systemLanguage.
+    source_refs:
+      - svg2-struct-switch
+
+structures:
+  - id: S001
+    name: switch container
+    kind: structure
+    source_refs:
+      - svg2-struct-switch
+    fields:
+      - name: children
+        type: svg-element-list
+        cardinality: zero-or-one-selected-direct-child
+        position: child-content
+        constraints:
+          - Switch is a container element.
+          - Direct children are evaluated in document order.
+          - Only the first passing child is rendered.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-struct-switch
+      - name: requiredExtensions
+        type: whitespace-separated-url-token-list
+        cardinality: zero-or-one
+        position: direct-child-attribute
+        constraints:
+          - Omitted values evaluate true.
+          - Empty values evaluate false.
+          - All listed extensions must be supported for the attribute to evaluate true.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-struct-switch
+      - name: systemLanguage
+        type: comma-separated-language-tag-list
+        cardinality: zero-or-one
+        position: direct-child-attribute
+        constraints:
+          - Omitted values evaluate true.
+          - Empty values evaluate false.
+          - A matching user language preference makes the attribute evaluate true.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-struct-switch
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A switch element must be treated as an SVG renderable container element.
+    applies_to:
+      - switch element
+    source_refs:
+      - svg2-struct-switch
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: ordering
+    statement: >
+      A switch element must evaluate requiredExtensions and systemLanguage on
+      its direct child elements in document order.
+    applies_to:
+      - switch direct children
+    source_refs:
+      - svg2-struct-switch
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      A switch element must process and render the first direct child for which
+      all conditional processing attributes evaluate true; all other children
+      are bypassed and not rendered.
+    applies_to:
+      - switch direct children
+    source_refs:
+      - svg2-struct-switch
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      requiredExtensions evaluates true when omitted, false when empty, and true
+      only when all listed extension URL references are supported.
+    applies_to:
+      - requiredExtensions
+    source_refs:
+      - svg2-struct-switch
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      systemLanguage evaluates true when omitted, false when empty, and true
+      when a listed language tag matches user language preferences according to
+      SVG's case-insensitive exact-or-prefix language matching rule.
+    applies_to:
+      - systemLanguage
+    source_refs:
+      - svg2-struct-switch
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: >
+      display and visibility values must not affect switch child conditional
+      true/false testing.
+    applies_to:
+      - switch direct children
+    source_refs:
+      - svg2-struct-switch
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Switch direct-child selection
+    kind: algorithm
+    summary: >
+      Evaluate direct children in document order, selecting the first whose
+      requiredExtensions and systemLanguage attributes both evaluate true.
+    steps:
+      - Start with no selected direct child.
+      - For each direct child in document order, evaluate requiredExtensions.
+      - Evaluate systemLanguage for the same child.
+      - Select the first child for which both evaluations are true.
+      - Bypass all remaining direct children.
+    preconditions: []
+    postconditions:
+      - At most one direct child contributes renderable content for the switch.
+    requirement_refs:
+      - R002
+      - R003
+    source_refs:
+      - svg2-struct-switch
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Empty requiredExtensions or systemLanguage value.
+    source_behavior: REQUIRED
+    required_behavior: The attribute evaluates false.
+    decision_required: false
+    source_refs:
+      - svg2-struct-switch
+
+recommendations:
+  - id: N001
+    normative_strength: RECOMMENDED
+    statement: >
+      Authors should include a catch-all choice at the end of a switch when no
+      language alternative may match.
+    source_refs:
+      - svg2-struct-switch
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      A parser that emits a render tree must avoid placing bypassed switch
+      children in the rendered element tree.
+    derived_from:
+      - R003
+    reasoning: >
+      Bypassed children are not rendered, so including them as rendered children
+      would contradict switch selection behavior.
+    source_refs:
+      - svg2-struct-switch
+
+implementation_choices:
+  - id: IC001
+    topic: Supported extensions and language preferences
+    statement: >
+      The specification defines evaluation semantics but leaves supported
+      extension capabilities and user language preferences to the user agent.
+    allowed_by:
+      - R004
+      - R005
+    source_refs:
+      - svg2-struct-switch
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Conditional Processing
+    reason: Switch behavior depends on requiredExtensions and systemLanguage.
+    source_refs:
+      - svg2-struct-switch
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-switch
+    map_item_refs:
+      - document-container-elements-switch
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-struct-switch
+    map_item_refs:
+      - document-container-elements-switch
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-struct-switch
+    map_item_refs:
+      - document-container-elements-switch
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-struct-switch
+    map_item_refs:
+      - document-container-elements-switch
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-struct-switch
+    map_item_refs:
+      - document-container-elements-switch
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-struct-switch
+    map_item_refs:
+      - document-container-elements-switch
