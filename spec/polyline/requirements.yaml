@@ -1,0 +1,276 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: polyline
+  title: polyline element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the polyline element, including
+    points parsing, odd coordinate recovery, non-rendering empty points, and
+    open equivalent path generation.
+  non_goals:
+    - CSS geometry property cascade for points.
+    - DOM SVGAnimatedPoints and SVGPointList interfaces.
+    - Stroke rendering behavior.
+    - PathLength behavior.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: basic-shapes-polyline
+      title: Basic Shapes - polyline
+      artifact_path: spec/polyline/requirements.yaml
+  canonical_sources:
+    - id: svg2-shapes-polyline
+      title: SVG 2 Basic Shapes - The polyline element
+      url: https://www.w3.org/TR/SVG2/shapes.html#PolylineElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Recognizing polyline as an SVG graphics, renderable, shape element.
+    - Parsing the points attribute as a list of coordinate pairs in user coordinates.
+    - Treating an omitted points attribute as valid but non-rendering.
+    - Dropping the final coordinate when points contains an odd number of coordinate values.
+    - Producing an open equivalent path with a moveto to the first point and lineto commands for subsequent points.
+  excludes:
+    - CSS geometry property cascade for points.
+    - DOM SVGAnimatedPoints and SVGPointList interfaces.
+    - PathLength behavior.
+    - Rendering backend stroke behavior.
+  assumptions:
+    - >
+      The package can represent parsed points as an ordered array of Point values.
+    - >
+      The package can expose polyline geometry as an open Path containing move
+      and line commands.
+
+terminology:
+  - id: term-polyline
+    term: polyline
+    definition: >
+      A basic SVG shape element that defines connected straight line segments,
+      typically as an open shape.
+    source_refs:
+      - svg2-shapes-polyline
+  - id: term-points
+    term: points
+    definition: >
+      The ordered coordinate values that make up the polyline, grouped into
+      coordinate pairs in the user coordinate system.
+    source_refs:
+      - svg2-shapes-polyline
+
+structures:
+  - id: S001
+    name: polyline geometry
+    kind: structure
+    source_refs:
+      - svg2-shapes-polyline
+    fields:
+      - name: points
+        type: points
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Value is one or more numbers parsed into coordinate pairs.
+          - Initial value is none.
+          - Odd coordinate values are an error; the final odd coordinate is dropped.
+          - All coordinate values are in the user coordinate system.
+        requirement_refs:
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-shapes-polyline
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A polyline element is an SVG graphics, renderable, shape element.
+    applies_to:
+      - polyline element
+    source_refs:
+      - svg2-shapes-polyline
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The points attribute defines the coordinate pairs that make up the
+      polyline, with all coordinates in the user coordinate system.
+    applies_to:
+      - polyline points
+    source_refs:
+      - svg2-shapes-polyline
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: default
+    statement: >
+      A missing points value is valid for a polyline but does not render.
+    applies_to:
+      - polyline points
+    source_refs:
+      - svg2-shapes-polyline
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: error
+    statement: >
+      If the points attribute provides an odd number of coordinate values, the
+      final odd coordinate is dropped and the rest of the shape is rendered.
+    applies_to:
+      - polyline points
+    source_refs:
+      - svg2-shapes-polyline
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The equivalent path for a polyline performs an absolute moveto to the
+      first coordinate pair and then an absolute lineto for each subsequent
+      coordinate pair.
+    applies_to:
+      - polyline equivalent path
+    source_refs:
+      - svg2-shapes-polyline
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST_NOT
+    kind: path
+    statement: >
+      A polyline equivalent path must not implicitly close the shape.
+    applies_to:
+      - polyline equivalent path
+    source_refs:
+      - svg2-shapes-polyline
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: polyline equivalent path
+    kind: algorithm
+    summary: >
+      Build an open path by moving to the first point and drawing straight line
+      segments to each later point.
+    steps:
+      - If the points list is empty, return no path commands.
+      - Move to the first coordinate pair.
+      - For each later coordinate pair, draw a line to that coordinate pair.
+    preconditions: []
+    postconditions:
+      - The path is open and contains no close command unless explicitly added by a different SVG construct.
+    requirement_refs:
+      - R005
+      - R006
+    source_refs:
+      - svg2-shapes-polyline
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Odd number of coordinate values in points.
+    source_behavior: MUST
+    required_behavior: Drop the final odd coordinate and render the remaining coordinate pairs.
+    decision_required: false
+    source_refs:
+      - svg2-shapes-polyline
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, a parsed polyline must expose an open Path equivalent
+      to Path.polyline(points).
+    derived_from:
+      - R005
+      - R006
+      - ALG001
+    reasoning: >
+      The package already has a Path polyline helper whose behavior directly
+      matches the SVG equivalent path algorithm for polyline.
+    source_refs:
+      - svg2-shapes-polyline
+
+implementation_choices:
+  - id: IC001
+    topic: Data model
+    statement: >
+      The parser may store polyline and polygon points in different Swift data
+      types because their equivalent paths differ in closepath behavior.
+    allowed_by:
+      - R005
+      - R006
+    source_refs:
+      - svg2-shapes-polyline
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Units
+    reason: >
+      Coordinate conversion and user coordinate system semantics depend on SVG
+      unit and coordinate-system rules.
+    source_refs:
+      - svg2-shapes-polyline
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polyline
+    map_item_refs:
+      - basic-shapes-polyline
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polyline
+    map_item_refs:
+      - basic-shapes-polyline
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polyline
+    map_item_refs:
+      - basic-shapes-polyline
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polyline
+    map_item_refs:
+      - basic-shapes-polyline
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polyline
+    map_item_refs:
+      - basic-shapes-polyline
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-polyline
+    map_item_refs:
+      - basic-shapes-polyline

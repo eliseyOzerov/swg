@@ -563,6 +563,13 @@ public extension SVGLineData {
 	}
 }
 
+public extension SVGPolylineData {
+	/// The open equivalent path for this polyline.
+	var path: Path {
+		Path.polyline(points)
+	}
+}
+
 private struct PathCommandBuilder {
 	var commands: [PathCommand] = []
 

@@ -914,6 +914,45 @@ import Testing
 	#expect(defaulted.path.commands == expectedDefaultedCommands)
 }
 
+@Test func svgParserPreservesPolylineElementsAndOpenEquivalentPaths() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 40 40">
+		<polyline id="zigzag" points="-2,3 4,8 12,18" fill="none" stroke="#336699" data-note="kept"/>
+		<polyline id="odd" points="0 0 5 5 9"/>
+		<polyline id="defaulted"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let polylines = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGPolylineData)? in
+		if case .polyline(let polyline) = element {
+			return (polyline.id, polyline)
+		}
+		return nil
+	})
+
+	let zigzag = try #require(polylines["zigzag"])
+	#expect(zigzag.points == [Point(-2, 3), Point(4, 8), Point(12, 18)])
+	#expect(zigzag.attributes.fill == .none)
+	#expect(zigzag.attributes.stroke == .color(Color(0.2, 0.4, 0.6)))
+	#expect(zigzag.unknownAttributes == ["data-note": "kept"])
+	let expectedCommands: [PathCommand] = [
+		.move(to: Point(-2, 3)),
+		.line(to: Point(4, 8)),
+		.line(to: Point(12, 18)),
+	]
+	#expect(zigzag.path.commands == expectedCommands)
+	#expect(zigzag.path.svgPathData(precision: 0) == "M -2 3 L 4 8 L 12 18")
+
+	let odd = try #require(polylines["odd"])
+	#expect(odd.points == [Point(0, 0), Point(5, 5)])
+	#expect(odd.path.commands == [.move(to: Point(0, 0)), .line(to: Point(5, 5))])
+
+	let defaulted = try #require(polylines["defaulted"])
+	#expect(defaulted.points == [])
+	#expect(defaulted.path.commands == [])
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

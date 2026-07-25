@@ -185,7 +185,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 	case ellipse(SVGEllipseData)
 	case line(SVGLineData)
 	case polygon(SVGPolygonData)
-	case polyline(SVGPolygonData)
+	case polyline(SVGPolylineData)
 	case group(SVGGroupData)
 	case `switch`(SVGSwitchData)
 	case link(SVGLinkData)
@@ -335,8 +335,25 @@ public struct SVGLineData: Equatable, Sendable {
 	}
 }
 
-/// Data for an SVG `<polygon>` or `<polyline>` element.
+/// Data for an SVG `<polygon>` element.
 public struct SVGPolygonData: Equatable, Sendable {
+	public let id: String
+	public let points: [Point]
+	public let attributes: SVGPaintAttributes
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, points: [Point], attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.points = points
+		self.attributes = attributes
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<polyline>` element.
+public struct SVGPolylineData: Equatable, Sendable {
 	public let id: String
 	public let points: [Point]
 	public let attributes: SVGPaintAttributes

@@ -52,7 +52,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<circle>` element.
 - [x] `<ellipse>` element.
 - [x] `<line>` element.
-- [ ] `<polyline>` element.
+- [x] `<polyline>` element.
 - [ ] `<polygon>` element.
 - [ ] Geometry properties: `x`, `y`, `cx`, `cy`, `r`, `rx`, `ry`, `width`, `height`.
 

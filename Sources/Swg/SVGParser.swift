@@ -452,7 +452,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Polyline")
 			setCurrentParsedElementID(id)
-			appendElement(.polyline(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["points"]))))
+			appendElement(.polyline(SVGPolylineData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["points"]))))
 			return true
 		default:
 			return false
