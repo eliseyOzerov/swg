@@ -1,0 +1,227 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: skewy-transform
+  title: SVG skewY transform function
+  domain: SVG 2 / CSS Transforms Level 1
+  profile: null
+  summary: The SVG `skewY` transform function skews local coordinates along the y-axis by an angle interpreted from a unitless SVG number as degrees.
+  non_goals:
+    - `skewX`.
+    - CSS `skew()`.
+    - Transform-list ordering.
+    - 3D transform functions.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-coords-transform-property
+      title: SVG 2, 8.5 The transform property
+      url: https://www.w3.org/TR/SVG2/coords.html#TransformProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-transforms-svg-transform-syntax
+      title: CSS Transforms Module Level 1, 7.2 Syntax of the SVG transform attribute
+      url: https://www.w3.org/TR/css-transforms-1/#svg-transform
+      version: Candidate Recommendation 14 February 2019
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-transforms-svg-functions
+      title: CSS Transforms Module Level 1, 7.3 SVG transform functions
+      url: https://www.w3.org/TR/css-transforms-1/#svg-transform-functions
+      version: Candidate Recommendation 14 February 2019
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-transforms-mathematical-description
+      title: CSS Transforms Module Level 1, 14 Mathematical Description of Transform Functions
+      url: https://www.w3.org/TR/css-transforms-1/#mathematical-description
+      version: Candidate Recommendation 14 February 2019
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 requires support for the transform property and presentation attribute as defined by CSS Transforms Level 1.
+    - CSS Transforms states that `skew()` is not supported by SVG transform attributes, while `skewY` is part of the SVG transform grammar.
+
+scope:
+  includes:
+    - Parsing valid one-argument `skewY` transform functions in SVG transform attributes.
+    - Interpreting unitless SVG `skewY` numbers as degree angles.
+    - Applying the y-axis skew transform to points.
+  excludes:
+    - `skewX`.
+    - CSS `skew()`.
+    - Malformed skew argument recovery.
+  assumptions:
+    - The package stores transform angles internally in radians.
+
+terminology:
+  - id: term-skewy-transform
+    term: skewY transform
+    definition: A transform function that skews coordinates along the y-axis by the given angle.
+    source_refs:
+      - css-transforms-svg-functions
+      - css-transforms-mathematical-description
+
+structures:
+  - id: S001
+    name: skewY(angle)
+    kind: transform-function
+    source_refs:
+      - css-transforms-svg-transform-syntax
+      - css-transforms-svg-functions
+    fields:
+      - name: angle
+        type: number
+        cardinality: required
+        position: 1
+        constraints:
+          - Unitless SVG `skewY` values are interpreted as CSS angle values in degrees.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - css-transforms-svg-transform-syntax
+          - css-transforms-svg-functions
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: conformance
+    statement: SVG user agents must support the transform property and presentation attribute as defined by CSS Transforms Level 1.
+    applies_to:
+      - SVGParser.parseTransform
+    source_refs:
+      - svg2-coords-transform-property
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The SVG transform attribute `skewY` function must accept one number argument.
+    applies_to:
+      - SVGParser.parseTransform
+    source_refs:
+      - css-transforms-svg-transform-syntax
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: The SVG `skewY` number argument must be interpreted as a CSS angle value in degrees.
+    applies_to:
+      - SVGAngleParser
+      - SVGParser.parseTransform
+    source_refs:
+      - css-transforms-svg-functions
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: A `skewY` transform must skew the y coordinate by the x coordinate multiplied by the tangent of the angle, while leaving the x coordinate unchanged.
+    applies_to:
+      - Transform
+      - Point.applying
+      - SVGParser.parseTransform
+    source_refs:
+      - css-transforms-mathematical-description
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Equivalent skewY matrix
+    kind: algorithm
+    summary: Compose the current transform with a 2D matrix whose y-skew coefficient is `tan(angle)`.
+    steps:
+      - Interpret the SVG number argument as degrees.
+      - Convert the angle to the package's internal angular representation.
+      - Set the y-skew matrix coefficient to `tan(angle)`.
+      - Leave x coordinates unchanged.
+    preconditions:
+      - The SVG `skewY` function has exactly one valid number argument.
+    postconditions:
+      - A point `(x, y)` maps to `(x, tan(angle) * x + y)`.
+    requirement_refs:
+      - R003
+      - R004
+    source_refs:
+      - css-transforms-svg-functions
+      - css-transforms-mathematical-description
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `skewY` transform with anything other than one valid number argument.
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - css-transforms-svg-transform-syntax
+
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Internal angle representation
+    statement: The source defines SVG `skewY` input values as numbers interpreted as degrees, but does not require a particular internal representation.
+    allowed_by:
+      - css-transforms-svg-functions
+    source_refs:
+      - css-transforms-svg-functions
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: CSS Transforms Module Level 1, 7.2 Syntax of the SVG transform attribute
+    reason: Defines `skewY` as an SVG transform attribute function with one numeric argument.
+    source_refs:
+      - css-transforms-svg-transform-syntax
+  - id: DEP002
+    kind: source-section
+    title: CSS Transforms Module Level 1, 7.3 SVG transform functions
+    reason: Defines unitless `skewY` numbers as CSS angles in degrees.
+    source_refs:
+      - css-transforms-svg-functions
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-coords-transform-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-transforms-svg-transform-syntax
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-transforms-svg-functions
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-transforms-mathematical-description
+    map_item_refs: []
+  - item_id: ALG001
+    item_type: algorithm
+    source_refs:
+      - css-transforms-svg-functions
+      - css-transforms-mathematical-description
+    map_item_refs: []
+  - item_id: S001
+    item_type: structure
+    source_refs:
+      - css-transforms-svg-transform-syntax
+      - css-transforms-svg-functions
+    map_item_refs: []
