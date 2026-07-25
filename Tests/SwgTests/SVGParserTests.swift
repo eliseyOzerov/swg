@@ -38,6 +38,48 @@ import Testing
 	#expect(path.attributes.strokeWidth == 2)
 }
 
+@Test func svgParserParsesPaintValuesAndFallbacks() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<g id="inherited" fill="red">
+			<path id="none" d="M0 0 L1 1" fill="none" stroke="currentColor"/>
+			<path id="fallbackColor" d="M0 0 L1 1" fill="url(#missing) #336699"/>
+			<path id="fallbackNone" d="M0 0 L1 1" fill="url(#missing) none"/>
+			<path id="fallbackCurrent" d="M0 0 L1 1" stroke="url(#missing) currentColor"/>
+			<path id="context" d="M0 0 L1 1" fill="context-fill" stroke="context-stroke"/>
+			<path id="invalid" d="M0 0 L1 1" fill="url(#first) url(#second)"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let group) = document.elements.first else {
+		Issue.record("Expected root element to be a group")
+		return
+	}
+	let paths = Dictionary(uniqueKeysWithValues: group.children.compactMap { element -> (String, SVGPathData)? in
+		if case .path(let path) = element {
+			return (path.id, path)
+		}
+		return nil
+	})
+	let none = try #require(paths["none"])
+	let fallbackColor = try #require(paths["fallbackColor"])
+	let fallbackNone = try #require(paths["fallbackNone"])
+	let fallbackCurrent = try #require(paths["fallbackCurrent"])
+	let context = try #require(paths["context"])
+	let invalid = try #require(paths["invalid"])
+
+	#expect(none.attributes.fill == .none)
+	#expect(none.attributes.stroke == .currentColor)
+	#expect(fallbackColor.attributes.fill == .urlWithFallback("missing", .color(Color(0.2, 0.4, 0.6))))
+	#expect(fallbackNone.attributes.fill == .urlWithFallback("missing", .none))
+	#expect(fallbackCurrent.attributes.stroke == .urlWithFallback("missing", .currentColor))
+	#expect(context.attributes.fill == .contextFill)
+	#expect(context.attributes.stroke == .contextStroke)
+	#expect(invalid.attributes.fill == .color(.red))
+}
+
 @Test func svgParserUsesAngleUnitsForRotateTransforms() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

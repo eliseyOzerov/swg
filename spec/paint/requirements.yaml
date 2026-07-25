@@ -1,0 +1,269 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: paint
+  title: SVG paint value parsing
+  domain: SVG 2 painting / SVG 1.1 paint data type
+  profile: null
+  summary: Parse SVG <paint> values used by fill and stroke into explicit paint alternatives, including solid colors, no paint, paint server references with fallbacks, and context paint keywords.
+  non_goals:
+    - Implement complete CSS Color Module Level 3 color syntax.
+    - Implement complete <url> parsing beyond local paint server references.
+    - Resolve paint server references against defs.
+    - Render context-fill or context-stroke.
+    - Implement ICC color profile lookup.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-specifying-paint
+      title: SVG 2 Painting, Specifying paint
+      url: https://www.w3.org/TR/SVG2/painting.html#SpecifyingPaint
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-specifying-paint
+      title: SVG 1.1 Painting, Specifying paint
+      url: https://www.w3.org/TR/SVG11/painting.html#SpecifyingPaint
+      version: SVG 1.1 Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-paint-type
+      title: SVG 1.1 Basic Data Types, <paint>
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypePaint
+      version: SVG 1.1 Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+    - SVG 2 changes invalid paint-server fallback behavior from SVG 1.1 by saying no paint is rendered for the layer when no fallback is given.
+
+scope:
+  includes:
+    - The <paint> alternatives none, color, URL reference with optional fallback, context-fill, and context-stroke.
+    - currentColor as a color value accepted by SVG paint.
+    - Parsing paint server fallback values that are none, currentColor, or a supported color syntax.
+  excludes:
+    - Full CSS Color Module Level 3 parsing.
+    - Full URL tokenization and URL normalization.
+    - Paint server resolution and renderer fallback behavior.
+    - ICC color precedence or profile lookup.
+  assumptions:
+    - The parser may preserve unresolved paint server references structurally for downstream renderers.
+    - Until the <url> bullet is implemented, local fragment URLs of the form url(#id) are the supported paint server references.
+
+terminology:
+  - id: term-paint
+    term: <paint>
+    definition: A value that specifies how a fill or stroke paint layer is painted.
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-paint-type
+  - id: term-paint-server
+    term: paint server
+    definition: An element such as a gradient or pattern that supplies paint through a URL reference.
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+  - id: term-fallback-paint
+    term: fallback paint
+    definition: An optional none or color value following a URL paint reference, used if the paint server reference cannot be resolved.
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: The paint parser must accept the keyword none as a paint value representing no paint.
+    applies_to:
+      - fill
+      - stroke
+      - SVGPaint
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The paint parser must accept supported color values as solid color paint.
+    applies_to:
+      - fill
+      - stroke
+      - SVGPaint
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    testability: testable
+    notes:
+      - Complete color syntax remains covered by separate color TODO bullets.
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: The paint parser must accept currentColor as a paint value.
+    applies_to:
+      - fill
+      - stroke
+      - SVGPaint
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    testability: testable
+    notes:
+      - SVG 2 includes currentColor through CSS color syntax; SVG 1.1 names it directly.
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The paint parser must accept URL paint server references and preserve the reference target.
+    applies_to:
+      - fill
+      - stroke
+      - SVGPaint
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    testability: testable
+    notes:
+      - Full <url> parsing remains covered by the separate <url> TODO bullet.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A URL paint server reference may be followed by an optional fallback paint value of none, currentColor, or supported color.
+    applies_to:
+      - fill
+      - stroke
+      - SVGPaint
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: The paint parser must accept context-fill and context-stroke as paint values.
+    applies_to:
+      - fill
+      - stroke
+      - SVGPaint
+    source_refs:
+      - svg2-specifying-paint
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: A URL fallback must not itself be another URL paint server reference.
+    applies_to:
+      - fill
+      - stroke
+      - SVGPaint
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A paint value not matching any supported <paint> alternative.
+    source_behavior: INVALID
+    required_behavior: reject the parsed paint value and preserve the inherited or initial paint already in effect.
+    decision_required: false
+    source_refs:
+      - svg2-specifying-paint
+  - id: I002
+    condition: A URL paint server reference with another URL as fallback.
+    source_behavior: INVALID
+    required_behavior: reject the parsed paint value and preserve the inherited or initial paint already in effect.
+    decision_required: false
+    source_refs:
+      - svg2-specifying-paint
+
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Unsupported ICC colors
+    statement: Until ICC color support is implemented, an optional ICC color segment is not represented and does not override the supported sRGB color fallback.
+    allowed_by:
+      - ICC color profiles are not yet a supported TODO bullet.
+    source_refs:
+      - svg11-specifying-paint
+  - id: IC002
+    topic: Invalid paint value handling
+    statement: The parser keeps the previously inherited or initial paint value when a fill or stroke attribute does not parse as <paint>.
+    allowed_by:
+      - Existing parser fallback behavior for unsupported presentation values
+    source_refs:
+      - svg2-specifying-paint
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: work-item
+    title: <url>
+    reason: Full URL tokenization and IRI handling are tracked as the next Basic Data Types TODO bullet.
+    source_refs:
+      - svg2-specifying-paint
+  - id: DEP002
+    kind: work-item
+    title: SVG color coverage
+    reason: Full CSS Color Module Level 3 syntax and SVG color keywords are tracked by separate color TODO bullets.
+    source_refs:
+      - svg2-specifying-paint
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-specifying-paint
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-specifying-paint
+      - svg11-specifying-paint
+    map_item_refs: []

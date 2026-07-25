@@ -636,8 +636,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func applyPresentationAttributes(_ attributes: [String: String], to result: inout SVGPaintAttributes) {
-		if let fill = attributes["fill"] { result.fill = parsePaint(fill) }
-		if let stroke = attributes["stroke"] { result.stroke = parsePaint(stroke) }
+		if let fill = attributes["fill"], let paint = parsePaint(fill) { result.fill = paint }
+		if let stroke = attributes["stroke"], let paint = parsePaint(stroke) { result.stroke = paint }
 		if let value = attributes["stroke-width"], let number = parseNumber(value) { result.strokeWidth = number }
 		if let cap = attributes["stroke-linecap"] { result.strokeLineCap = parseLineCap(cap) }
 		if let join = attributes["stroke-linejoin"] { result.strokeLineJoin = parseLineJoin(join) }
@@ -702,13 +702,32 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return "\(elementName) \(count)"
 	}
 
-	private func parsePaint(_ value: String) -> SVGPaint {
-		let trimmed = value.trimmingCharacters(in: .whitespaces)
-		if trimmed == "none" { return .none }
+	private func parsePaint(_ value: String) -> SVGPaint? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed == "none" { return SVGPaint.none }
 		if trimmed == "currentColor" { return .currentColor }
-		if trimmed.hasPrefix("url(#"), let id = parseURLID(trimmed) { return .url(id) }
+		if trimmed == "context-fill" { return .contextFill }
+		if trimmed == "context-stroke" { return .contextStroke }
+		if let paint = parsePaintServerReference(trimmed) { return paint }
 		if let color = parseColor(trimmed) { return .color(color) }
-		return .color(.black)
+		return nil
+	}
+
+	private func parsePaintServerReference(_ value: String) -> SVGPaint? {
+		guard value.hasPrefix("url("), let closingParenthesis = value.firstIndex(of: ")") else { return nil }
+		let urlText = String(value[...closingParenthesis])
+		guard let id = parseURLID(urlText) else { return nil }
+		let fallbackText = value[value.index(after: closingParenthesis)...].trimmingCharacters(in: .whitespacesAndNewlines)
+		guard !fallbackText.isEmpty else { return .url(id) }
+		guard let fallback = parsePaintFallback(fallbackText) else { return nil }
+		return .urlWithFallback(id, fallback)
+	}
+
+	private func parsePaintFallback(_ value: String) -> SVGPaint? {
+		if value == "none" { return SVGPaint.none }
+		if value == "currentColor" { return .currentColor }
+		if let color = parseColor(value) { return .color(color) }
+		return nil
 	}
 
 	private func parseColor(_ value: String) -> Color? {

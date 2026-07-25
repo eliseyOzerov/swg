@@ -23,7 +23,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<time>`.
 - [x] `<frequency>`.
 - [x] `<list-of-Ts>` comma-wsp parsing.
-- [ ] `<paint>`.
+- [x] `<paint>`.
 - [ ] `<url>`.
 
 ## Document and Container Elements

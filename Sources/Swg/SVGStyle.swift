@@ -70,6 +70,9 @@ public enum SVGPaint: Equatable, Sendable {
 	case color(Color)
 	case currentColor
 	case url(String)
+	indirect case urlWithFallback(String, SVGPaint)
+	case contextFill
+	case contextStroke
 }
 
 /// SVG visibility property value.
