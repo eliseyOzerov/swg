@@ -69,12 +69,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `Z` / `z` closepath.
 - [x] Implicit repeated commands after `M`.
 - [x] Implicit repeated commands for non-`M` commands.
-- [x] Compact number tokenization such as `M10-20`.
-- [x] Exponent tokenization.
-- [x] Arc large-arc and sweep flag combinations.
-- [x] Arc radius correction.
-- [x] Degenerate arc handling.
-- [x] Path data error recovery.
 
 ## Coordinate Systems and Transforms
 
@@ -156,26 +150,25 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `spreadMethod="reflect"`.
 - [ ] `spreadMethod="repeat"`.
 - [ ] `<pattern>`.
-- [ ] Pattern content coordinate systems.
-- [ ] Paint server fallback colors.
+- [ ] `patternContentUnits`.
 
 ## Clipping, Masking, and Compositing
 
 - [ ] `<clipPath>`.
 - [ ] `clip-path`.
 - [ ] `clip-rule`.
-- [ ] Clip path units.
-- [ ] Nested clip paths.
+- [ ] `clipPathUnits`.
 - [ ] `<mask>`.
 - [ ] `mask`.
-- [ ] Mask coordinate systems.
-- [ ] Mask luminance and alpha behavior.
+- [ ] `maskUnits`.
+- [ ] `maskContentUnits`.
 - [ ] `opacity`.
 
 ## Filters
 
 - [ ] `<filter>`.
-- [ ] Filter primitive region calculation.
+- [ ] `filterUnits`.
+- [ ] `primitiveUnits`.
 - [ ] `<feGaussianBlur>`.
 - [ ] `<feDropShadow>`.
 - [ ] `<feBlend>`.
@@ -207,8 +200,8 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `<text>`.
 - [ ] `<tspan>`.
 - [ ] `<textPath>`.
-- [ ] Text `x`, `y`, `dx`, `dy`.
-- [ ] Text `rotate`.
+- [ ] `x`, `y`, `dx`, `dy` on text content elements.
+- [ ] `rotate` on text content elements.
 - [ ] `text-anchor`.
 - [ ] `dominant-baseline`.
 - [ ] `alignment-baseline`.
@@ -236,9 +229,9 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `marker-start`.
 - [ ] `marker-mid`.
 - [ ] `marker-end`.
-- [ ] Marker orientation.
-- [ ] Marker units.
-- [ ] Marker viewBox.
+- [ ] `orient`.
+- [ ] `markerUnits`.
+- [ ] `viewBox`.
 
 ## Animation and Dynamic SVG
 
@@ -248,14 +241,16 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `<set>`.
 - [ ] `<discard>`.
 - [ ] `<mpath>`.
-- [ ] Timing attributes.
-- [ ] Value interpolation.
-- [ ] Additive and accumulate behavior.
+- [ ] `begin`, `dur`, `end`, `min`, `max`.
+- [ ] `restart`, `repeatCount`, `repeatDur`.
+- [ ] `calcMode`, `values`, `keyTimes`, `keySplines`.
+- [ ] `additive`.
+- [ ] `accumulate`.
 
 ## Scripting and Interactivity
 
 - [ ] `<script>`.
-- [ ] Event handler attributes.
+- [ ] `on*` event attributes.
 - [ ] `pointer-events`.
 - [ ] `tabindex`.
 - [ ] `role`.
