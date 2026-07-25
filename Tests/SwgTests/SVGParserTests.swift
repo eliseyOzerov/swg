@@ -79,6 +79,30 @@ import Testing
 	#expect(Point(7, 8).applying(group.attributes.transform) == Point(36, 52))
 }
 
+@Test func svgParserParsesScaleTransformFunction() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<g id="uniform" transform="scale(2)"/>
+		<g id="nonuniform" transform="scale(2 3)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let uniform) = document.elements.first else {
+		Issue.record("Expected uniform scale group")
+		return
+	}
+	guard case .group(let nonuniform) = document.elements.dropFirst().first else {
+		Issue.record("Expected non-uniform scale group")
+		return
+	}
+
+	#expect(uniform.attributes.transform == Transform(a: 2, b: 0, c: 0, d: 2, tx: 0, ty: 0))
+	#expect(Point(4, 5).applying(uniform.attributes.transform) == Point(8, 10))
+	#expect(nonuniform.attributes.transform == Transform(a: 2, b: 0, c: 0, d: 3, tx: 0, ty: 0))
+	#expect(Point(4, 5).applying(nonuniform.attributes.transform) == Point(8, 15))
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

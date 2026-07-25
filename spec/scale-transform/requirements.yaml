@@ -1,0 +1,168 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: scale-transform
+  title: SVG scale transform function
+  domain: SVG 2 / CSS Transforms Level 1
+  profile: null
+  summary: The `scale` transform function scales local coordinates along the x and y axes, using the first scale value for both axes when no second value is supplied.
+  non_goals:
+    - Transform-list ordering.
+    - Individual matrix, translate, rotate, or skew functions.
+    - 3D scale functions.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-coords-transform-property
+      title: SVG 2, 8.5 The transform property
+      url: https://www.w3.org/TR/SVG2/coords.html#TransformProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-transforms-transform-functions
+      title: CSS Transforms Module Level 1, 9 The Transform Functions
+      url: https://www.w3.org/TR/css-transforms-1/#transform-functions
+      version: Candidate Recommendation 14 February 2019
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-transforms-mathematical-description
+      title: CSS Transforms Module Level 1, 14 Mathematical Description of Transform Functions
+      url: https://www.w3.org/TR/css-transforms-1/#mathematical-description
+      version: Candidate Recommendation 14 February 2019
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 requires support for the transform property and presentation attribute as defined by CSS Transforms Level 1.
+
+scope:
+  includes:
+    - Parsing `scale` transform functions with one or two numeric parameters.
+    - Mapping uniform and non-uniform scale values into the package's 2D affine transform representation.
+    - Applying parsed scale transforms to points.
+  excludes:
+    - 3D scale functions.
+    - Scale interpolation.
+    - Percent scale values.
+  assumptions:
+    - The package supports SVG transform attribute numeric syntax for `scale`.
+
+terminology:
+  - id: term-scale-transform
+    term: scale transform
+    definition: A transform function that changes coordinate magnitudes along the x and y axes.
+    source_refs:
+      - css-transforms-transform-functions
+
+structures:
+  - id: S001
+    name: scale(sx, sy)
+    kind: transform-function
+    source_refs:
+      - css-transforms-transform-functions
+      - css-transforms-mathematical-description
+    fields:
+      - name: sx
+        type: number
+        cardinality: required
+        position: 1
+        constraints:
+          - Scales x coordinates.
+        requirement_refs:
+          - R002
+        source_refs:
+          - css-transforms-mathematical-description
+      - name: sy
+        type: number
+        cardinality: optional
+        position: 2
+        constraints:
+          - Scales y coordinates.
+          - Defaults to `sx` when omitted.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - css-transforms-transform-functions
+          - css-transforms-mathematical-description
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: conformance
+    statement: SVG user agents must support the transform property and presentation attribute as defined by CSS Transforms Level 1.
+    applies_to:
+      - SVGParser.parseTransform
+    source_refs:
+      - svg2-coords-transform-property
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A 2D scale transform must scale x coordinates by `sx` and y coordinates by `sy`.
+    applies_to:
+      - Transform
+      - Point.applying
+      - SVGParser.parseTransform
+    source_refs:
+      - css-transforms-mathematical-description
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: A one-parameter `scale` transform must use the same scale value for both x and y coordinates.
+    applies_to:
+      - Transform
+      - SVGParser.parseTransform
+    source_refs:
+      - css-transforms-transform-functions
+      - css-transforms-mathematical-description
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices: []
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: CSS Transforms Module Level 1, 14 Mathematical Description of Transform Functions
+    reason: Defines 2D scale as a transform matrix operation.
+    source_refs:
+      - css-transforms-mathematical-description
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-coords-transform-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-transforms-mathematical-description
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-transforms-transform-functions
+      - css-transforms-mathematical-description
+    map_item_refs: []
+  - item_id: S001
+    item_type: structure
+    source_refs:
+      - css-transforms-transform-functions
+      - css-transforms-mathematical-description
+    map_item_refs: []
