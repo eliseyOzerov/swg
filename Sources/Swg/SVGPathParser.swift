@@ -494,6 +494,22 @@ public extension SVGRectData {
 	}
 }
 
+public extension SVGCircleData {
+	/// The equivalent path for this circle.
+	var path: Path {
+		guard r > 0 else { return Path() }
+		let center = Point(cx, cy)
+		return Path(commands: [
+			.move(to: Point(cx + r, cy)),
+			.arc(center: center, radius: r, startAngle: 0, endAngle: .pi / 2, clockwise: true),
+			.arc(center: center, radius: r, startAngle: .pi / 2, endAngle: .pi, clockwise: true),
+			.arc(center: center, radius: r, startAngle: .pi, endAngle: .pi * 3 / 2, clockwise: true),
+			.arc(center: center, radius: r, startAngle: .pi * 3 / 2, endAngle: .pi * 2, clockwise: true),
+			.close,
+		])
+	}
+}
+
 private struct PathCommandBuilder {
 	var commands: [PathCommand] = []
 

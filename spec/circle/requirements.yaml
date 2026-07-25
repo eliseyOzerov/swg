@@ -1,0 +1,344 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: circle
+  title: circle element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the circle element, including
+    center/radius geometry, invalid negative radius handling, and equivalent
+    path generation.
+  non_goals:
+    - CSS geometry property cascade beyond XML attributes.
+    - Percentage radius resolution.
+    - DOM interface conformance.
+    - Rendering backend behavior.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: basic-shapes-circle
+      title: Basic Shapes - circle
+      artifact_path: spec/circle/requirements.yaml
+  canonical_sources:
+    - id: svg2-shapes-circle
+      title: SVG 2 Basic Shapes - The circle element
+      url: https://www.w3.org/TR/SVG2/shapes.html#CircleElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Recognizing circle as an SVG graphics, renderable, shape element.
+    - Parsing cx and cy as circle center coordinates.
+    - Parsing r as the circle radius.
+    - Treating negative r values as invalid.
+    - Producing no equivalent path for non-positive effective radius values.
+    - Producing a circle equivalent path made of four quarter-circle arc segments.
+  excludes:
+    - CSS geometry property cascade.
+    - Percentage radius resolution.
+    - Arc-to-cubic flattening quality.
+    - Rendering backend behavior.
+  assumptions:
+    - >
+      The package can use a compact internal circular arc command for each
+      equivalent quarter arc while preserving the same geometry required by SVG 2.
+    - >
+      A negative r value may be represented as a zero numeric fallback after
+      being ignored as an invalid author value.
+
+terminology:
+  - id: term-circle
+    term: circle
+    definition: >
+      A basic SVG shape element defined by a center point and a radius.
+    source_refs:
+      - svg2-shapes-circle
+  - id: term-circle-center
+    term: circle center
+    definition: >
+      The point identified by the cx and cy geometry properties.
+    source_refs:
+      - svg2-shapes-circle
+  - id: term-circle-radius
+    term: circle radius
+    definition: >
+      The r geometry property used as both the x- and y-axis radius of the
+      equivalent circular arcs.
+    source_refs:
+      - svg2-shapes-circle
+
+structures:
+  - id: S001
+    name: circle geometry
+    kind: structure
+    source_refs:
+      - svg2-shapes-circle
+    fields:
+      - name: cx
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the x-coordinate of the circle center.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-shapes-circle
+      - name: cy
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the y-coordinate of the circle center.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-shapes-circle
+      - name: r
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the circle radius.
+          - Negative values are illegal and ignored as parsing errors.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg2-shapes-circle
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A circle element is an SVG graphics, renderable, shape element.
+    applies_to:
+      - circle element
+    source_refs:
+      - svg2-shapes-circle
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The cx and cy attributes define the coordinates of the center of the
+      circle.
+    applies_to:
+      - circle geometry
+    source_refs:
+      - svg2-shapes-circle
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The r attribute defines the radius of the circle.
+    applies_to:
+      - circle geometry
+    source_refs:
+      - svg2-shapes-circle
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: error
+    statement: >
+      A negative r value is illegal and must be ignored as a parsing error.
+    applies_to:
+      - circle radius
+    source_refs:
+      - svg2-shapes-circle
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The equivalent path for a circle consists of four elliptical arc segments,
+      each covering one quarter of the circle.
+    applies_to:
+      - circle equivalent path
+    source_refs:
+      - svg2-shapes-circle
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The equivalent path begins at the 3 o'clock point on the circle radius
+      and proceeds clockwise before transformations.
+    applies_to:
+      - circle equivalent path
+    source_refs:
+      - svg2-shapes-circle
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The rx and ry parameters for each equivalent arc command are both equal
+      to the used value of r after conversion to local user units.
+    applies_to:
+      - circle equivalent path
+    source_refs:
+      - svg2-shapes-circle
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: circle equivalent path
+    kind: algorithm
+    summary: >
+      Build an equivalent path from the center and radius by moving to the
+      rightmost point and adding four quarter-circle arcs around the center.
+    steps:
+      - Move to (cx + r, cy).
+      - Add an arc to (cx, cy + r).
+      - Add an arc to (cx - r, cy).
+      - Add an arc to (cx, cy - r).
+      - Add a final arc that completes the segment and closes the path.
+    preconditions:
+      - r is positive.
+    postconditions:
+      - The path covers the same geometry as the circle.
+    requirement_refs:
+      - R005
+      - R006
+      - R007
+    source_refs:
+      - svg2-shapes-circle
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Negative r.
+    source_behavior: MUST
+    required_behavior: Ignore as a parsing error.
+    decision_required: false
+    source_refs:
+      - svg2-shapes-circle
+  - id: I002
+    condition: Non-positive effective r.
+    source_behavior: DESCRIPTIVE
+    required_behavior: Do not produce visible circle geometry.
+    decision_required: false
+    source_refs:
+      - svg2-shapes-circle
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, a parsed circle with a positive radius must expose a
+      Path that moves to (cx + r, cy), contains four circular arc commands
+      centered at (cx, cy), and closes after the final arc.
+    derived_from:
+      - R005
+      - R006
+      - R007
+      - ALG001
+    reasoning: >
+      The package exposes equivalent geometry through Path commands; four
+      quarter-circle arc commands preserve the SVG equivalent path geometry.
+    source_refs:
+      - svg2-shapes-circle
+  - id: D002
+    normative_strength: MUST
+    statement: >
+      For this package, a circle with a non-positive effective radius must
+      expose an empty equivalent Path.
+    derived_from:
+      - R003
+      - R004
+    reasoning: >
+      Non-positive radius values cannot produce visible circle geometry, and a
+      negative authored radius is ignored as invalid.
+    source_refs:
+      - svg2-shapes-circle
+
+implementation_choices:
+  - id: IC001
+    topic: Arc representation
+    statement: >
+      The source defines the equivalent path in SVG path syntax, but this
+      package may represent each quarter arc with its structured circular arc
+      command until SVG arc commands are represented independently.
+    allowed_by:
+      - R005
+      - R006
+      - R007
+    source_refs:
+      - svg2-shapes-circle
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Units
+    reason: >
+      Percentage radius resolution depends on SVG length and percentage unit rules.
+    source_refs:
+      - svg2-shapes-circle
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-circle
+    map_item_refs:
+      - basic-shapes-circle
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-circle
+    map_item_refs:
+      - basic-shapes-circle
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-circle
+    map_item_refs:
+      - basic-shapes-circle
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-circle
+    map_item_refs:
+      - basic-shapes-circle
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-circle
+    map_item_refs:
+      - basic-shapes-circle
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-circle
+    map_item_refs:
+      - basic-shapes-circle
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-circle
+    map_item_refs:
+      - basic-shapes-circle

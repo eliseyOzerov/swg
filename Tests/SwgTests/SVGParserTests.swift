@@ -765,6 +765,52 @@ import Testing
 	#expect(negativeRY.path.commands == [.rect(Rect(x: 1, y: 1, width: 8, height: 4))])
 }
 
+@Test func svgParserPreservesCircleElementsAndEquivalentPaths() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30">
+		<circle id="dot" cx="10" cy="20" r="5" fill="#336699" data-note="kept"/>
+		<circle id="defaulted"/>
+		<circle id="negative-radius" cx="1" cy="2" r="-3"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let circles = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGCircleData)? in
+		if case .circle(let circle) = element {
+			return (circle.id, circle)
+		}
+		return nil
+	})
+
+	let dot = try #require(circles["dot"])
+	#expect(dot.cx == 10)
+	#expect(dot.cy == 20)
+	#expect(dot.r == 5)
+	#expect(dot.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(dot.unknownAttributes == ["data-note": "kept"])
+	let center = Point(10, 20)
+	let expectedCommands: [PathCommand] = [
+		.move(to: Point(15, 20)),
+		.arc(center: center, radius: 5, startAngle: 0, endAngle: .pi / 2, clockwise: true),
+		.arc(center: center, radius: 5, startAngle: .pi / 2, endAngle: .pi, clockwise: true),
+		.arc(center: center, radius: 5, startAngle: .pi, endAngle: .pi * 3 / 2, clockwise: true),
+		.arc(center: center, radius: 5, startAngle: .pi * 3 / 2, endAngle: .pi * 2, clockwise: true),
+		.close,
+	]
+	#expect(dot.path.commands == expectedCommands)
+	#expect(dot.path.svgPathData(precision: 0) == "M 15 20 A 5 5 0 0 1 10 25 A 5 5 0 0 1 5 20 A 5 5 0 0 1 10 15 A 5 5 0 0 1 15 20 Z")
+
+	let defaulted = try #require(circles["defaulted"])
+	#expect(defaulted.cx == 0)
+	#expect(defaulted.cy == 0)
+	#expect(defaulted.r == 0)
+	#expect(defaulted.path.commands == [])
+
+	let negativeRadius = try #require(circles["negative-radius"])
+	#expect(negativeRadius.r == 0)
+	#expect(negativeRadius.path.commands == [])
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
