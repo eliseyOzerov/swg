@@ -43,11 +43,30 @@ import Testing
 	#expect(SVGLengthParser.parse("25.4mm") == 96)
 }
 
-@Test func svgLengthParserRejectsRelativePercentAndUppercaseUnitsForAbsoluteParsing() {
-	#expect(SVGLengthParser.parse("10em") == nil)
-	#expect(SVGLengthParser.parse("10ex") == nil)
-	#expect(SVGLengthParser.parse("10rem") == nil)
+@Test func svgLengthParserConvertsFontRelativeUnitsToUserUnits() {
+	let context = SVGLengthContext(fontSize: 20, rootFontSize: 18, xHeight: 9, zeroAdvance: 11)
+
+	#expect(SVGLengthParser.parse("2em", context: context) == 40)
+	#expect(SVGLengthParser.parse("2ex", context: context) == 18)
+	#expect(SVGLengthParser.parse("2ch", context: context) == 22)
+	#expect(SVGLengthParser.parse("2rem", context: context) == 36)
+}
+
+@Test func svgLengthParserUsesFontMetricFallbacksForExAndCh() {
+	let horizontal = SVGLengthContext(fontSize: 20, rootFontSize: 16)
+	let upright = SVGLengthContext(fontSize: 20, rootFontSize: 16, isUprightText: true)
+
+	#expect(SVGLengthParser.parse("2ex", context: horizontal) == 20)
+	#expect(SVGLengthParser.parse("2ch", context: horizontal) == 20)
+	#expect(SVGLengthParser.parse("2ch", context: upright) == 40)
+}
+
+@Test func svgLengthParserRejectsViewportPercentAndUppercaseUnits() {
 	#expect(SVGLengthParser.parse("10vw") == nil)
+	#expect(SVGLengthParser.parse("10vh") == nil)
+	#expect(SVGLengthParser.parse("10vmin") == nil)
+	#expect(SVGLengthParser.parse("10vmax") == nil)
 	#expect(SVGLengthParser.parse("10%") == nil)
 	#expect(SVGLengthParser.parse("10PX") == nil)
+	#expect(SVGLengthParser.parse("10EM") == nil)
 }

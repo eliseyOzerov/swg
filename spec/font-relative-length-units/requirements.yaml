@@ -1,0 +1,322 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: font-relative-length-units
+  title: SVG font-relative length units
+  domain: SVG
+  profile: null
+  summary: Parse scalar SVG length values using em, ex, ch, and rem units and resolve them into user-unit values from font metric context.
+  non_goals:
+    - Viewport-relative length units such as vw, vh, vmin, and vmax.
+    - Percentage length resolution.
+    - Angle, time, frequency, list, paint, IRI, and functional IRI parsing.
+    - Full CSS cascade, inheritance, or selector handling for font-size.
+    - Measuring x-height or zero glyph advance from actual platform fonts.
+    - Complete vertical writing-mode support beyond the ch fallback needed for this work item.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-types-length
+      title: SVG 1.1 Basic Data Types - length
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeLength
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-values-font-relative-lengths
+      title: CSS Values and Units Level 3 - Font-relative Lengths
+      url: https://www.w3.org/TR/css-values-3/#font-relative-lengths
+      version: Candidate Recommendation Draft, 22 March 2024
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-svg-length-value
+      title: SVG 2 Basic Data Types - SVGLength value
+      url: https://www.w3.org/TR/SVG/types.html#__svg__SVGLength__value
+      version: Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 1.1 explicitly includes em and ex in SVG presentation-attribute length syntax.
+    - CSS Values Level 3 defines the broader font-relative length units em, ex, ch, and rem.
+    - SVG 2 describes conversion of SVGLength values using font size as a conversion basis when associated element context exists, or the initial font-size value when it does not.
+
+scope:
+  includes:
+    - Single scalar SVG length values using lowercase em, ex, ch, or rem suffixes.
+    - Conversion of font-relative values into Double user-unit values using supplied font metric context.
+    - Default conversion when no associated SVG element or font metric context exists.
+    - Root svg width and height fallback viewBox behavior for font-relative lengths using the default context.
+  excludes:
+    - Uppercase unit spelling in SVG XML presentation attributes.
+    - Viewport-relative units, percentages, and calc().
+    - Font metric lookup from CoreText, UIKit, AppKit, or SwiftUI.
+    - Attribute-specific percentage bases and range restrictions.
+  assumptions:
+    - The package's existing initial font size is 16 user units.
+    - The default no-element context uses the initial font size for both the current element and root font-size bases.
+    - ch fallback is treated as horizontal/general text unless a caller explicitly supplies upright text context.
+
+terminology:
+  - id: font-relative-length
+    term: font-relative length
+    definition: A relative length whose used value is resolved from current or root font metrics.
+    source_refs:
+      - css-values-font-relative-lengths
+  - id: em
+    term: em
+    definition: A font-relative unit equal to the computed font size of the element.
+    source_refs:
+      - css-values-font-relative-lengths
+  - id: rem
+    term: rem
+    definition: A font-relative unit equal to the em value of the root element.
+    source_refs:
+      - css-values-font-relative-lengths
+
+structures:
+  - id: S001
+    name: Font metric context
+    kind: structure
+    source_refs:
+      - css-values-font-relative-lengths
+      - svg2-svg-length-value
+    fields:
+      - name: fontSize
+        type: length
+        cardinality: required
+        position: null
+        constraints:
+          - Provides the current element font-size basis for em and unresolved ex/ch values.
+        requirement_refs:
+          - R002
+          - R004
+          - R005
+        source_refs:
+          - css-values-font-relative-lengths
+      - name: rootFontSize
+        type: length
+        cardinality: required
+        position: null
+        constraints:
+          - Provides the root font-size basis for rem values.
+        requirement_refs:
+          - R003
+        source_refs:
+          - css-values-font-relative-lengths
+      - name: xHeight
+        type: length
+        cardinality: optional
+        position: null
+        constraints:
+          - If unavailable, ex resolves as 0.5em.
+        requirement_refs:
+          - R004
+        source_refs:
+          - css-values-font-relative-lengths
+      - name: zeroAdvance
+        type: length
+        cardinality: optional
+        position: null
+        constraints:
+          - If unavailable, ch resolves from the CSS fallback.
+        requirement_refs:
+          - R005
+        source_refs:
+          - css-values-font-relative-lengths
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: SVG length parsing must accept lowercase em, ex, ch, and rem unit identifiers immediately after a valid scalar number.
+    applies_to:
+      - Single SVG length values.
+    source_refs:
+      - svg11-types-length
+      - css-values-font-relative-lengths
+    testability: testable
+    notes:
+      - ch and rem come from CSS Values Level 3 rather than SVG 1.1's older length grammar.
+  - id: R002
+    normative_strength: MUST
+    kind: conversion
+    statement: An em length value must convert by multiplying its numeric factor by the current font-size basis.
+    applies_to:
+      - em lengths.
+    source_refs:
+      - css-values-font-relative-lengths
+      - svg2-svg-length-value
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: conversion
+    statement: A rem length value must convert by multiplying its numeric factor by the root font-size basis.
+    applies_to:
+      - rem lengths.
+    source_refs:
+      - css-values-font-relative-lengths
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: conversion
+    statement: An ex length value must convert by multiplying its numeric factor by the x-height basis, falling back to 0.5em when that metric is unavailable.
+    applies_to:
+      - ex lengths.
+    source_refs:
+      - css-values-font-relative-lengths
+      - svg2-svg-length-value
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: conversion
+    statement: A ch length value must convert by multiplying its numeric factor by the zero glyph advance basis, falling back to 0.5em for horizontal/general text and 1em for upright vertical text when that metric is unavailable.
+    applies_to:
+      - ch lengths.
+    source_refs:
+      - css-values-font-relative-lengths
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST_NOT
+    kind: scope
+    statement: This work item must not mark viewport-relative units, percentages, or uppercase unit spellings as accepted font-relative coverage.
+    applies_to:
+      - Single SVG XML attribute length values.
+    source_refs:
+      - svg11-types-length
+      - css-values-font-relative-lengths
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Font-relative length conversion
+    kind: algorithm
+    summary: Convert a parsed numeric factor and font-relative unit suffix into user units.
+    steps:
+      - Parse the numeric factor using the SVG number grammar.
+      - If the suffix is em, multiply by the current font-size basis.
+      - If the suffix is rem, multiply by the root font-size basis.
+      - If the suffix is ex, multiply by the x-height basis or 0.5 times the current font-size basis if no x-height basis is available.
+      - If the suffix is ch, multiply by the zero glyph advance basis or the CSS fallback if no zero glyph advance basis is available.
+      - Otherwise, defer to other completed length unit parsing or return nil.
+    preconditions: []
+    postconditions:
+      - Returned values are in user units.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - css-values-font-relative-lengths
+      - svg2-svg-length-value
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Uppercase or mixed-case SVG XML presentation-attribute unit spelling.
+    source_behavior: MUST_NOT
+    required_behavior: Reject for SVG XML attribute parsing in this package.
+    decision_required: false
+    source_refs:
+      - svg11-types-length
+  - id: I002
+    condition: Font metric measurement is unavailable.
+    source_behavior: MUST
+    required_behavior: Use CSS's fallback metrics for ex and ch conversion.
+    decision_required: false
+    source_refs:
+      - css-values-font-relative-lengths
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: When no associated element context is provided, font-relative length conversion must use the package's initial/default font metrics so scalar parsing is deterministic.
+    derived_from:
+      - svg2-svg-length-value
+      - package-existing-default-font-size
+    reasoning: SVG 2 resolves no-associated-element SVGLength values against the initial font-size property; the package already uses 16 as its initial text font size.
+    source_refs:
+      - svg2-svg-length-value
+
+implementation_choices:
+  - id: IC001
+    topic: Default initial font size
+    statement: Use 16 user units as the initial/default font size until a broader CSS font-size implementation exists.
+    allowed_by:
+      - svg2-svg-length-value
+    source_refs:
+      - svg2-svg-length-value
+  - id: IC002
+    topic: Font metric inputs
+    statement: Accept supplied x-height and zero-advance values in context rather than measuring platform fonts in this work item.
+    allowed_by:
+      - css-values-font-relative-lengths
+    source_refs:
+      - css-values-font-relative-lengths
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG length grammar
+    reason: Provides SVG attribute length grammar and lowercase unit requirements.
+    source_refs:
+      - svg11-types-length
+  - id: DEP002
+    kind: source-section
+    title: CSS font-relative lengths
+    reason: Defines em, ex, ch, and rem conversion bases and fallbacks.
+    source_refs:
+      - css-values-font-relative-lengths
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+      - css-values-font-relative-lengths
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-values-font-relative-lengths
+      - svg2-svg-length-value
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-values-font-relative-lengths
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-values-font-relative-lengths
+      - svg2-svg-length-value
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-values-font-relative-lengths
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+      - css-values-font-relative-lengths
+    map_item_refs: []

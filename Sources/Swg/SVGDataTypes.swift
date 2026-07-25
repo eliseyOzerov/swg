@@ -23,8 +23,41 @@ enum SVGIntegerParser {
 	}
 }
 
-/// Parses reusable SVG primitive data types such as unitless and absolute lengths.
+/// Context used to resolve SVG font-relative length units into user units.
+struct SVGLengthContext: Equatable, Sendable {
+	var fontSize: Double
+	var rootFontSize: Double
+	var xHeight: Double?
+	var zeroAdvance: Double?
+	var isUprightText: Bool
+
+	static let `default` = SVGLengthContext(fontSize: 16, rootFontSize: 16)
+
+	init(fontSize: Double = 16, rootFontSize: Double = 16, xHeight: Double? = nil, zeroAdvance: Double? = nil, isUprightText: Bool = false) {
+		self.fontSize = fontSize
+		self.rootFontSize = rootFontSize
+		self.xHeight = xHeight
+		self.zeroAdvance = zeroAdvance
+		self.isUprightText = isUprightText
+	}
+
+	var resolvedXHeight: Double {
+		xHeight ?? fontSize * 0.5
+	}
+
+	var resolvedZeroAdvance: Double {
+		zeroAdvance ?? (isUprightText ? fontSize : fontSize * 0.5)
+	}
+}
+
+/// Parses reusable SVG primitive data types such as unitless and scalar lengths.
 enum SVGLengthParser {
+	private static let fontRelativeUnits: [(suffix: String, resolve: @Sendable (SVGLengthContext) -> Double)] = [
+		("rem", { $0.rootFontSize }),
+		("em", { $0.fontSize }),
+		("ex", { $0.resolvedXHeight }),
+		("ch", { $0.resolvedZeroAdvance })
+	]
 	private static let absoluteUnits: [(suffix: String, multiplier: Double)] = [
 		("px", 1),
 		("in", 96),
@@ -34,8 +67,13 @@ enum SVGLengthParser {
 		("mm", 96 / 25.4)
 	]
 
-	static func parse(_ value: String) -> Double? {
+	static func parse(_ value: String, context: SVGLengthContext = .default) -> Double? {
 		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		for unit in fontRelativeUnits where trimmed.hasSuffix(unit.suffix) {
+			let numberText = String(trimmed.dropLast(unit.suffix.count))
+			guard let number = SVGNumberParser.parse(numberText) else { return nil }
+			return number * unit.resolve(context)
+		}
 		for unit in absoluteUnits where trimmed.hasSuffix(unit.suffix) {
 			let numberText = String(trimmed.dropLast(unit.suffix.count))
 			guard let number = SVGNumberParser.parse(numberText) else { return nil }
