@@ -1236,7 +1236,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			}
 		}
 		if let value = attributes["fill-rule"] {
-			result.fillRule = isInheritKeyword(value) ? inherited.fillRule : value == "evenodd" ? .evenOdd : .winding
+			if isInheritKeyword(value) {
+				result.fillRule = inherited.fillRule
+			} else if let fillRule = parseFillRule(value) {
+				result.fillRule = fillRule
+			}
 		}
 		if let value = attributes["visibility"] {
 			result.visibility = isInheritKeyword(value) ? inherited.visibility : value == "hidden" ? .hidden : value == "collapse" ? .collapse : .visible
@@ -1287,6 +1291,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 		guard let parsed else { return nil }
 		return min(max(parsed, 0), 1)
+	}
+
+	private func parseFillRule(_ value: String) -> FillRule? {
+		switch value.trimmingCharacters(in: .whitespacesAndNewlines) {
+		case "nonzero":
+			return .winding
+		case "evenodd":
+			return .evenOdd
+		default:
+			return nil
+		}
 	}
 
 	private func parseVectorEffect(_ value: String) -> SVGVectorEffect? {
