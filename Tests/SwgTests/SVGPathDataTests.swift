@@ -40,6 +40,17 @@ import Testing
 	])
 }
 
+@Test func svgPathParserTokenizesExponentNumbers() {
+	let path = SVGPathDataParser.parse("M1e2-3e2L.5e1-.25e2h1e1-2E+1")
+
+	#expect(path.commands == [
+		.move(to: Point(100, -300)),
+		.line(to: Point(5, -25)),
+		.line(to: Point(15, -25)),
+		.line(to: Point(-5, -25)),
+	])
+}
+
 @Test func svgPathParserTreatsRepeatedLineArgumentsAsImplicitCommands() {
 	let path = SVGPathDataParser.parse("M 0 0 L 10 0 20 10 h 5 5 v 5 -10")
 

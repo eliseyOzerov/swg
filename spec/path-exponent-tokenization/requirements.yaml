@@ -1,0 +1,267 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: path-exponent-tokenization
+  title: Exponent path number tokenization
+  domain: SVG path data
+  profile: null
+  summary: >
+    Capture path data number tokenization for scientific notation, including
+    lowercase and uppercase exponent markers and signed exponent values.
+  non_goals:
+    - Compact non-exponent number boundaries such as M10-20.
+    - Full path data error recovery.
+    - Deciding malformed exponent behavior beyond rejecting it as a complete number.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: path-data-exponent-tokenization
+      title: Path Data - exponent tokenization
+      artifact_path: spec/path-exponent-tokenization/requirements.yaml
+  canonical_sources:
+    - id: svg2-path-data-grammar
+      title: SVG 2 Paths - Grammar for path data
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataBNF
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-path-data-grammar
+      title: SVG 1.1 Paths - Path data grammar
+      url: https://www.w3.org/TR/SVG11/paths.html#PathDataBNF
+      version: SVG 1.1 Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - >
+      SVG 2's path data grammar page provides the current path-data grammar and
+      maximal-consumption rule. SVG 1.1's path data grammar explicitly spells
+      out the exponent production used for path numbers.
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Lowercase `e` exponent marker in path numbers.
+    - Uppercase `E` exponent marker in path numbers.
+    - Optional plus or minus sign after the exponent marker.
+    - Exponent-tokenized values feeding normal path command parsing.
+  excludes:
+    - Error recovery for missing exponent digits.
+    - Non-exponent compact coordinate boundaries.
+    - Generic SVG attribute number parsing outside path data.
+  assumptions:
+    - >
+      The package exposes path tokenizer behavior through parsed PathCommand
+      values rather than through a public token stream.
+
+terminology:
+  - id: term-exponent
+    term: exponent
+    definition: >
+      The path-number suffix formed from an `e` or `E`, an optional sign, and a
+      digit sequence.
+    source_refs:
+      - svg11-path-data-grammar
+  - id: term-floating-point-constant
+    term: floating-point constant
+    definition: >
+      A path-number grammar form that may include a fractional constant followed
+      by an optional exponent, or a digit sequence followed by an exponent.
+    source_refs:
+      - svg11-path-data-grammar
+
+structures:
+  - id: S001
+    name: Path exponent token
+    kind: structure
+    source_refs:
+      - svg11-path-data-grammar
+    fields:
+      - name: marker
+        type: literal
+        cardinality: required
+        position: after-significand
+        constraints:
+          - Must be `e` or `E`.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg11-path-data-grammar
+      - name: sign
+        type: sign
+        cardinality: optional
+        position: after-marker
+        constraints:
+          - May be `+` or `-`.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg11-path-data-grammar
+      - name: digits
+        type: digit-sequence
+        cardinality: required
+        position: after-marker-or-sign
+        constraints:
+          - Must contain one or more digits.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg11-path-data-grammar
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: tokenization
+    statement: >
+      A path data number can include an exponent marker written as lowercase e
+      or uppercase E.
+    applies_to:
+      - path data tokenizer
+    source_refs:
+      - svg11-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: tokenization
+    statement: >
+      The exponent marker can be followed by an optional plus or minus sign.
+    applies_to:
+      - path data tokenizer
+    source_refs:
+      - svg11-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: tokenization
+    statement: >
+      The exponent sign, when present, is part of the exponent and does not
+      split the number into a new coordinate.
+    applies_to:
+      - path data tokenizer
+    source_refs:
+      - svg11-path-data-grammar
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: integration
+    statement: >
+      Exponent-tokenized numbers must feed path command parsing as normal
+      numeric coordinate values.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg11-path-data-grammar
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Exponent marker without following digit sequence.
+    source_behavior: invalid path number grammar.
+    required_behavior: null
+    decision_required: false
+    source_refs:
+      - svg11-path-data-grammar
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, exponent number tokenization must produce the same
+      resolved PathCommand values as equivalent path data using decimal or
+      integer coordinates with explicit separators.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+    reasoning: >
+      The tokenizer is internal, so conformance is observed through parsed path
+      command output.
+    source_refs:
+      - svg11-path-data-grammar
+      - svg2-path-data-grammar
+
+implementation_choices: []
+
+ambiguities:
+  - id: A001
+    question: >
+      SVG 2's path data grammar page does not spell out the exponent production
+      in the same detail as SVG 1.1.
+    impact: >
+      Exponent support remains necessary for compatibility with SVG path data
+      grammar as explicitly defined by SVG 1.1 and already supported by the
+      package's general SVG number parsing.
+    options:
+      - Cite SVG 1.1 for the exponent production and SVG 2 for current path grammar context.
+    source_refs:
+      - svg2-path-data-grammar
+      - svg11-path-data-grammar
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG path data grammar
+    reason: >
+      Exponent tokenization is defined by the path data number grammar and used
+      by path coordinate parsing.
+    source_refs:
+      - svg11-path-data-grammar
+      - svg2-path-data-grammar
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-path-data-grammar
+    map_item_refs:
+      - path-data-exponent-tokenization
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-path-data-grammar
+    map_item_refs:
+      - path-data-exponent-tokenization
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg11-path-data-grammar
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-exponent-tokenization
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg11-path-data-grammar
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-exponent-tokenization
+  - item_id: I001
+    item_type: invalid_or_unsupported_input
+    source_refs:
+      - svg11-path-data-grammar
+    map_item_refs:
+      - path-data-exponent-tokenization
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg11-path-data-grammar
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-exponent-tokenization
