@@ -1,0 +1,302 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: rect
+  title: rect element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the rect element as an
+    axis-aligned, renderable basic shape with square-corner equivalent path
+    behavior.
+  non_goals:
+    - Rounded-corner behavior from rx and ry.
+    - CSS geometry property cascade beyond XML attributes.
+    - DOM interface conformance.
+    - Stroke outline computation.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: basic-shapes-rect
+      title: Basic Shapes - rect
+      artifact_path: spec/rect/requirements.yaml
+  canonical_sources:
+    - id: svg2-shapes-overview
+      title: SVG 2 Basic Shapes - Introduction and definitions
+      url: https://www.w3.org/TR/SVG2/shapes.html#Introduction
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-shapes-rect
+      title: SVG 2 Basic Shapes - The rect element
+      url: https://www.w3.org/TR/SVG2/shapes.html#RectElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - Recognizing rect as an SVG graphics, renderable, shape element.
+    - Preserving rect id, paint attributes, language, and unknown attributes.
+    - Parsing x and y as the left and top edges of the rectangle.
+    - Parsing width and height as the overall dimensions of the rectangle.
+    - Producing a square-corner equivalent path for positive dimensions.
+    - Treating zero or negative dimensions as non-renderable in the equivalent path.
+  excludes:
+    - Rounded-corner rx and ry calculations.
+    - Geometry properties supplied through CSS cascade.
+    - DOM interfaces.
+    - Platform drawing APIs.
+  assumptions:
+    - >
+      A parser-oriented implementation may keep rect as structured data and
+      provide an equivalent Path value for downstream CGPath or SwiftUI
+      conversion.
+    - >
+      Ignored negative width or height values fall back to the package's
+      zero-size representation, which produces no equivalent path commands.
+
+terminology:
+  - id: term-basic-shape
+    term: basic shape
+    definition: >
+      A graphics element defined by straight lines and curves, including rect.
+    source_refs:
+      - svg2-shapes-overview
+  - id: term-rect
+    term: rect
+    definition: >
+      An SVG shape element defining an axis-aligned rectangle in the current
+      user coordinate system.
+    source_refs:
+      - svg2-shapes-rect
+  - id: term-equivalent-path
+    term: equivalent path
+    definition: >
+      A path construction that represents the same mathematical shape as a
+      basic shape element.
+    source_refs:
+      - svg2-shapes-overview
+      - svg2-shapes-rect
+
+structures:
+  - id: S001
+    name: rect geometry
+    kind: structure
+    source_refs:
+      - svg2-shapes-rect
+    fields:
+      - name: x
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Refers to the left edge of the rectangle.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-shapes-rect
+      - name: y
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Refers to the top edge of the rectangle.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-shapes-rect
+      - name: width
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the overall width.
+          - Negative values are illegal.
+          - A zero computed value disables rendering.
+        requirement_refs:
+          - R004
+          - R005
+        source_refs:
+          - svg2-shapes-rect
+      - name: height
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the overall height.
+          - Negative values are illegal.
+          - A zero computed value disables rendering.
+        requirement_refs:
+          - R004
+          - R005
+        source_refs:
+          - svg2-shapes-rect
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A rect element is an SVG graphics, renderable, shape element.
+    applies_to:
+      - rect element
+    source_refs:
+      - svg2-shapes-rect
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      A rect element defines a rectangle that is axis-aligned with the current
+      user coordinate system.
+    applies_to:
+      - rect element
+    source_refs:
+      - svg2-shapes-rect
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The x and y coordinates refer to the rectangle's left and top edges.
+    applies_to:
+      - rect geometry
+    source_refs:
+      - svg2-shapes-rect
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The width and height properties define the rectangle's overall width and
+      height.
+    applies_to:
+      - rect geometry
+    source_refs:
+      - svg2-shapes-rect
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: error
+    statement: >
+      A negative width or height value is illegal and must be ignored as a
+      parsing error.
+    applies_to:
+      - rect geometry
+    source_refs:
+      - svg2-shapes-rect
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: rendering
+    statement: >
+      A computed width or height of zero disables rendering of the rect element.
+    applies_to:
+      - rect equivalent path
+    source_refs:
+      - svg2-shapes-rect
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: algorithm
+    statement: >
+      A square-corner rect is mathematically equivalent to a closed path around
+      the rectangle's four corners.
+    applies_to:
+      - rect equivalent path
+    source_refs:
+      - svg2-shapes-overview
+      - svg2-shapes-rect
+    testability: testable
+    notes: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Negative width or height.
+    source_behavior: MUST_NOT
+    required_behavior: Ignore as a parsing error.
+    decision_required: false
+    source_refs:
+      - svg2-shapes-rect
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, a rect with non-positive effective dimensions must
+      produce no equivalent path commands.
+    derived_from:
+      - R005
+      - R006
+    reasoning: >
+      The package represents shape rendering through Path commands; if zero
+      dimensions disable rendering, and ignored negative dimensions fall back to
+      zero, the equivalent path is empty.
+    source_refs:
+      - svg2-shapes-rect
+
+implementation_choices:
+  - id: IC001
+    topic: Rounded-corner sequencing
+    statement: >
+      Rounded-corner rx and ry behavior is intentionally deferred to the
+      dedicated rx and ry TODO bullets.
+    allowed_by:
+      - R007
+    source_refs:
+      - svg2-shapes-rect
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Units
+    reason: >
+      Rect geometry values are ultimately lengths or percentages resolved into
+      user units.
+    source_refs:
+      - svg2-shapes-rect
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-rect
+    map_item_refs:
+      - basic-shapes-rect
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-rect
+    map_item_refs:
+      - basic-shapes-rect
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-rect
+    map_item_refs:
+      - basic-shapes-rect
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-overview
+      - svg2-shapes-rect
+    map_item_refs:
+      - basic-shapes-rect

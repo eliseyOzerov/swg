@@ -46,7 +46,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Basic Shapes
 
 - [x] `<path>` element.
-- [ ] `<rect>` element.
+- [x] `<rect>` element.
 - [ ] `<rect>` rounded corners with `rx`.
 - [ ] `<rect>` rounded corners with `ry`.
 - [ ] `<circle>` element.

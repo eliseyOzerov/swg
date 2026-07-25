@@ -458,6 +458,14 @@ public extension SVGPathData {
 	}
 }
 
+public extension SVGRectData {
+	/// The square-corner equivalent path for this rectangle.
+	var path: Path {
+		guard width > 0, height > 0 else { return Path() }
+		return Path(commands: [.rect(Rect(x: x, y: y, width: width, height: height))])
+	}
+}
+
 private struct PathCommandBuilder {
 	var commands: [PathCommand] = []
 

@@ -657,6 +657,50 @@ import Testing
 	#expect(entry.children.compactMap(\.text) == ["Decorative"])
 }
 
+@Test func svgParserPreservesRectElementsAndEquivalentSquareCornerPaths() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en" fill="red">
+		<rect id="box" x="2" y="3" width="10" height="6" fill="#336699" data-note="kept"/>
+		<rect id="defaulted" width="4" height="5"/>
+		<rect id="zero-width" x="1" y="1" width="0" height="5"/>
+		<rect id="negative-width" x="1" y="1" width="-3" height="5"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let rects = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGRectData)? in
+		if case .rect(let rect) = element {
+			return (rect.id, rect)
+		}
+		return nil
+	})
+
+	#expect(document.elementIDs == ["box", "defaulted", "zero-width", "negative-width"])
+
+	let box = try #require(rects["box"])
+	#expect(box.x == 2)
+	#expect(box.y == 3)
+	#expect(box.width == 10)
+	#expect(box.height == 6)
+	#expect(box.language == "en")
+	#expect(box.unknownAttributes == ["data-note": "kept"])
+	#expect(box.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(box.path.commands == [.rect(Rect(x: 2, y: 3, width: 10, height: 6))])
+	#expect(box.path.svgPathData(precision: 0) == "M 2 3 L 12 3 L 12 9 L 2 9 Z")
+
+	let defaulted = try #require(rects["defaulted"])
+	#expect(defaulted.x == 0)
+	#expect(defaulted.y == 0)
+	#expect(defaulted.width == 4)
+	#expect(defaulted.height == 5)
+	#expect(defaulted.attributes.fill == .color(.red))
+	#expect(defaulted.path.commands == [.rect(Rect(x: 0, y: 0, width: 4, height: 5))])
+
+	#expect(rects["zero-width"]?.path.commands == [])
+	#expect(rects["negative-width"]?.width == 0)
+	#expect(rects["negative-width"]?.path.commands == [])
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
