@@ -104,7 +104,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `fill-opacity`.
 - [x] `fill-rule: nonzero`.
 - [x] `fill-rule: evenodd`.
-- [ ] `stroke`.
+- [x] `stroke`.
 - [x] `stroke-width`.
 - [ ] `stroke-opacity`.
 - [ ] `stroke-linecap: butt`.

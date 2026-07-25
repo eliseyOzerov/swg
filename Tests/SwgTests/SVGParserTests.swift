@@ -342,6 +342,56 @@ import Testing
 	#expect(paths["inline"]?.attributes.fill == .color(.blue))
 }
 
+@Test func svgParserAppliesStrokePaintInitialInheritanceAndCascade() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.outline { stroke: #336699; }
+			.none { stroke: none; }
+			.context { stroke: context-stroke; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" stroke="red">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="classed" class="outline" d="M0 0 L10 10"/>
+			<path id="none" class="none" d="M0 0 L10 10"/>
+			<path id="url" d="M0 0 L10 10" stroke="url(#paint) blue"/>
+			<path id="current" d="M0 0 L10 10" color="#336699" stroke="currentColor"/>
+			<path id="context" class="context" d="M0 0 L10 10"/>
+			<path id="inline" class="outline" d="M0 0 L10 10" style="stroke: green"/>
+			<path id="invalid" d="M0 0 L10 10" stroke="bogus"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.stroke == SVGPaint.none)
+	#expect(paths["inherited"]?.attributes.stroke == .color(.red))
+	#expect(paths["classed"]?.attributes.stroke == .color(Color(0.2, 0.4, 0.6)))
+	#expect(paths["none"]?.attributes.stroke == SVGPaint.none)
+	#expect(paths["url"]?.attributes.stroke == .urlWithFallback("paint", .color(.blue)))
+	#expect(paths["current"]?.attributes.stroke == .currentColor)
+	#expect(paths["context"]?.attributes.stroke == .contextStroke)
+	#expect(paths["inline"]?.attributes.stroke == .color(.green))
+	#expect(paths["invalid"]?.attributes.stroke == .color(.red))
+}
+
 @Test func svgParserAppliesFillOpacityInitialInheritancePercentagesAndClamping() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

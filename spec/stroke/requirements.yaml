@@ -1,0 +1,278 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stroke
+  title: Stroke paint property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of the `stroke` property as the paint used along a graphical element's outline.
+  non_goals:
+    - "`stroke-opacity`, covered by a separate Painting TODO bullet."
+    - "`stroke-width`, line caps, joins, miter limit, dashing, and stroke shape computation, covered by separate Painting TODO bullets."
+    - Renderer conversion of stroked outlines into filled geometry.
+    - Complete color syntax beyond the package's currently supported `<paint>` subset.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-stroke-property
+      title: "SVG 2 Painting: Specifying stroke paint: the stroke property"
+      url: https://www.w3.org/TR/SVG/painting.html#StrokeProperty
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-paint-value
+      title: "SVG 2 Painting: Specifying paint"
+      url: https://www.w3.org/TR/SVG/painting.html#SpecifyingPaint
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `stroke` with value `<paint>`, initial value `none`, inheritance yes, and computed value as specified with colors computed and URLs made absolute.
+    - The shared `<paint>` grammar includes `none`, color values, URL paint-server references with optional fallback, `context-fill`, and `context-stroke`.
+    - This package implements `<paint>` coverage incrementally; this bullet verifies `stroke` consumes the supported paint subset.
+
+scope:
+  includes:
+    - Parser output for the supported `stroke` property on SVG shapes and renderable containers.
+    - Initial `stroke` value of `none`.
+    - Inheritance of `stroke` from parent elements.
+    - "Supported paint values: `none`, supported colors, `currentColor`, URL paint-server references with supported fallback, `context-fill`, and `context-stroke`."
+    - "Supported cascade inputs: presentation attributes, class style rules, and inline style declarations."
+    - Invalid `stroke` values leaving the current inherited or default value unchanged.
+  excludes:
+    - Renderer stroking, path widening, and paint-server resolution.
+    - Complete CSS Color Level 3 syntax support.
+    - The visual behavior of unresolved context paint when no context element exists.
+  assumptions:
+    - The parser stores the specified paint as `SVGPaintAttributes.stroke`.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+    - URL values may be preserved as local fragment identifiers until a renderer resolves them.
+
+terminology:
+  - id: term-stroke
+    term: stroke
+    definition: The SVG painting operation that paints along the outline of a shape or glyph.
+    source_refs:
+      - svg2-stroke-property
+  - id: term-paint
+    term: paint
+    definition: A paint specification such as no paint, a color, a paint-server URL with optional fallback, or a context paint value.
+    source_refs:
+      - svg2-paint-value
+  - id: term-paint-server
+    term: paint server
+    definition: An SVG element such as a gradient or pattern that supplies paint through a URL reference.
+    source_refs:
+      - svg2-paint-value
+
+structures:
+  - id: S001
+    name: Stroke paint parser state
+    kind: structure
+    source_refs:
+      - svg2-stroke-property
+      - svg2-paint-value
+    fields:
+      - name: stroke
+        type: SVGPaint
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is `none`.
+          - Value grammar is `<paint>`.
+          - The property is inherited.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-stroke-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `stroke` property must accept a `<paint>` value.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-property
+      - svg2-paint-value
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `stroke` value must be `none`.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`stroke` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The computed `stroke` value must preserve the specified paint semantics, with color values computed and URL values suitable for resolution.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-property
+      - svg2-paint-value
+    testability: testable
+    notes:
+      - Parser-visible URL absolutization is limited by the package's current local-fragment URL representation.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `stroke` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-property
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: The stroke operation must paint along the outline of the current graphical element using the current `stroke` paint.
+    applies_to:
+      - SVG stroke painting
+    source_refs:
+      - svg2-stroke-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the paint value for renderer consumption; renderer coverage is outside this work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `stroke` value is not valid for the supported `<paint>` subset.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-property
+      - svg2-paint-value
+  - id: I002
+    condition: A paint-server URL cannot be resolved by a renderer and no fallback is provided.
+    source_behavior: REQUIRED
+    required_behavior: The source requires no paint to be rendered for that layer; parser-side URL preservation may defer that decision to a renderer.
+    decision_required: false
+    source_refs:
+      - svg2-paint-value
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `stroke` declaration must expose the inherited parent stroke paint.
+    derived_from:
+      - R003
+      - R004
+    reasoning: Because `stroke` is inherited and computed as paint semantics, inherited parser state must preserve the parent's supported paint value.
+    source_refs:
+      - svg2-stroke-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may expose the specified stroke paint as `SVGPaintAttributes.stroke` without resolving paint servers during parsing.
+    allowed_by:
+      - The source defines painting semantics, not parser storage shape.
+    source_refs:
+      - svg2-stroke-property
+      - svg2-paint-value
+
+ambiguities:
+  - id: A001
+    question: Should the parser expose absolute URL resolution for `stroke` paint-server references before renderer integration?
+    impact: SVG 2 computed values make URL values absolute, but the current parser API stores local fragment identifiers.
+    options:
+      - Preserve local fragment IDs in parser output and resolve later.
+      - Add document-base URL support to parser output in a future URL-resolution work item.
+    source_refs:
+      - svg2-stroke-property
+      - svg2-paint-value
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 paint value grammar
+    reason: The `stroke` property uses the shared `<paint>` value grammar.
+    source_refs:
+      - svg2-paint-value
+  - id: DEP002
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`stroke` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-property
+      - svg2-paint-value
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-property
+      - svg2-paint-value
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-property
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-property
+    map_item_refs: []
