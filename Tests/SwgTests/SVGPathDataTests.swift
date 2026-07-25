@@ -222,6 +222,25 @@ import Testing
 	#expect(negativeEnd.distance(to: Point(100, 0)) < 0.000001)
 }
 
+@Test func svgPathParserHandlesDegenerateArcs() {
+	let sameEndpoint = SVGPathDataParser.parse("M 10 10 A 20 20 0 0 1 10 10 L 20 20")
+	let zeroRX = SVGPathDataParser.parse("M 0 0 A 0 10 0 0 1 20 0")
+	let zeroRY = SVGPathDataParser.parse("M 0 0 A 10 0 0 0 1 20 0")
+
+	#expect(sameEndpoint.commands == [
+		.move(to: Point(10, 10)),
+		.line(to: Point(20, 20)),
+	])
+	#expect(zeroRX.commands == [
+		.move(to: Point(0, 0)),
+		.line(to: Point(20, 0)),
+	])
+	#expect(zeroRY.commands == [
+		.move(to: Point(0, 0)),
+		.line(to: Point(20, 0)),
+	])
+}
+
 @Test func svgPathDataSerializesEditableCommands() {
 	let path = Path(commands: [
 		.move(to: Point(0, 0)),

@@ -1,0 +1,30 @@
+id: path-degenerate-arcs
+title: SVG path degenerate elliptical arc handling
+status: requirements
+sources:
+  - id: svg2-paths-out-of-range-arcs
+    title: SVG 2, 9.5.1 Out-of-range elliptical arc parameters
+    url: https://www.w3.org/TR/SVG2/paths.html#ArcOutOfRangeParameters
+    retrieved: 2026-07-25
+requirements:
+  - id: REQ-PATH-DEGENERATE-ARCS-001
+    text: If an elliptical arc endpoint is identical to the current point, the arc segment must be omitted entirely.
+    source: svg2-paths-out-of-range-arcs
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserHandlesDegenerateArcs
+  - id: REQ-PATH-DEGENERATE-ARCS-002
+    text: If either `rx` or `ry` is zero, the elliptical arc command must be treated as a straight line segment joining the endpoints.
+    source: svg2-paths-out-of-range-arcs
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserHandlesDegenerateArcs
+  - id: REQ-PATH-DEGENERATE-ARCS-003
+    text: Degenerate arc handling must leave the parser's current point consistent for subsequent path commands.
+    source: svg2-paths-out-of-range-arcs
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserHandlesDegenerateArcs
+non_goals:
+  - Radius scale-up correction for non-degenerate arcs is covered by a separate TODO item.
+  - Path data syntax errors are covered by a separate TODO item.
