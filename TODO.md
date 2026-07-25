@@ -12,19 +12,19 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Basic Data Types
 
-- [x] Number parsing, including signs, decimals, and exponents.
-- [x] Integer parsing.
-- [x] Length parsing without units.
-- [x] Absolute length units: `px`, `pt`, `pc`, `mm`, `cm`, `in`.
-- [x] Font-relative length units: `em`, `ex`, `ch`, `rem`.
-- [x] Viewport-relative length units: `vw`, `vh`, `vmin`, `vmax`.
-- [x] Percentage lengths.
-- [x] Angle units: `deg`, `grad`, `rad`, `turn`.
-- [x] Time units for animations.
-- [x] Frequency units.
-- [ ] List parsing with comma and whitespace separators.
-- [ ] Paint value parsing.
-- [ ] IRI and functional IRI parsing.
+- [x] `<number>`.
+- [x] `<integer>`.
+- [x] `<length>` without units.
+- [x] Absolute `<length>` units: `px`, `pt`, `pc`, `mm`, `cm`, `in`.
+- [x] Font-relative `<length>` units: `em`, `ex`, `ch`, `rem`.
+- [x] Viewport-relative `<length>` units: `vw`, `vh`, `vmin`, `vmax`.
+- [x] `<percentage>`.
+- [x] `<angle>` units: `deg`, `grad`, `rad`, `turn`.
+- [x] `<time>`.
+- [x] `<frequency>`.
+- [ ] `<list-of-Ts>` comma-wsp parsing.
+- [ ] `<paint>`.
+- [ ] `<url>`.
 
 ## Document and Container Elements
 
@@ -42,7 +42,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `<title>`.
 - [ ] `<desc>`.
 - [ ] `<metadata>`.
-- [ ] `<unknown>` / foreign unknown SVG elements.
+- [ ] `<unknown>`.
 
 ## Basic Shapes
 
@@ -55,7 +55,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `<line>` element.
 - [ ] `<polyline>` element.
 - [ ] `<polygon>` element.
-- [ ] Geometry properties as CSS properties for `x`, `y`, `cx`, `cy`, `r`, `rx`, `ry`, `width`, `height`.
+- [ ] Geometry properties: `x`, `y`, `cx`, `cy`, `r`, `rx`, `ry`, `width`, `height`.
 
 ## Path Data
 
@@ -94,10 +94,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `rotate(angle cx cy)`.
 - [ ] `skewX`.
 - [ ] `skewY`.
-- [ ] Transform inheritance.
-- [ ] Gradient transforms.
-- [ ] Pattern transforms.
-- [ ] Vector-effect transforms.
+- [ ] `vector-effect`.
 
 ## Styling and Cascade
 
@@ -109,12 +106,9 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] Multiple classes.
 - [ ] Selector specificity.
 - [ ] Inheritance.
-- [ ] CSS custom properties.
 - [ ] `inherit`.
-- [ ] `initial`.
-- [ ] `unset`.
 - [ ] `currentColor`.
-- [ ] Media queries.
+- [ ] `<style>` `media`.
 
 ## Painting
 
@@ -141,7 +135,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `shape-rendering`.
 - [ ] `text-rendering`.
 - [ ] `image-rendering`.
-- [ ] Markers on stroked paths.
 
 ## Colors
 
@@ -231,13 +224,13 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] Text `rotate`.
 - [ ] `text-anchor`.
 - [ ] `dominant-baseline`.
-- [ ] Baseline alignment.
-- [ ] Font family.
-- [ ] Font size.
-- [ ] Font weight.
-- [ ] Font style.
-- [ ] Letter spacing.
-- [ ] Word spacing.
+- [ ] `alignment-baseline`.
+- [ ] `font-family`.
+- [ ] `font-size`.
+- [ ] `font-weight`.
+- [ ] `font-style`.
+- [ ] `letter-spacing`.
+- [ ] `word-spacing`.
 - [ ] Text decoration.
 - [ ] `white-space`.
 - [ ] `inline-size`.
@@ -246,7 +239,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Embedded Content
 
 - [ ] `<image>` raster references.
-- [ ] `<image>` data URIs.
 - [ ] `<image>` sizing.
 - [ ] `<image>` aspect ratio behavior.
 - [ ] `<foreignObject>`.
@@ -291,9 +283,9 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Scripting and Interactivity
 
 - [ ] `<script>`.
-- [ ] Event attributes.
-- [ ] Pointer-events property.
-- [ ] Cursor property.
+- [ ] Event handler attributes.
+- [ ] `pointer-events`.
+- [ ] `cursor`.
 - [ ] `tabindex`.
 - [ ] Accessibility ARIA attributes.
 - [ ] `role`.
