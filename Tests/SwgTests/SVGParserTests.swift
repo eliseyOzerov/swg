@@ -213,9 +213,9 @@ import Testing
 	#expect(document.viewBox == Rect(x: 0, y: 0, width: 150, height: 250))
 }
 
-@Test func svgParserDoesNotTreatUnitsAsUnitlessRootDimensions() throws {
+@Test func svgParserDoesNotTreatRelativeOrPercentageUnitsAsRootDimensions() throws {
 	let svg = """
-	<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24pt">
+	<svg xmlns="http://www.w3.org/2000/svg" width="24em" height="24%">
 		<rect id="box" width="10" height="10"/>
 	</svg>
 	"""
@@ -223,6 +223,18 @@ import Testing
 	let document = try #require(SVGParser().parse(svg))
 
 	#expect(document.viewBox == Rect(x: 0, y: 0, width: 100, height: 100))
+}
+
+@Test func svgParserUsesAbsoluteRootDimensionsAsUserUnits() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="2in" height="72pt">
+		<rect id="box" width="10" height="10"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.viewBox == Rect(x: 0, y: 0, width: 192, height: 96))
 }
 
 @Test func svgParserDecodesXMLPredefinedEntitiesAndCharacterReferences() throws {

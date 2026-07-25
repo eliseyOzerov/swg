@@ -693,7 +693,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseDimension(_ value: String) -> Double? {
-		SVGLengthParser.parseUnitless(value)
+		SVGLengthParser.parse(value)
 	}
 
 	private func resolveID(_ explicit: String?, elementName: String) -> String {

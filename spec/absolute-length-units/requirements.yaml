@@ -1,0 +1,282 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: absolute-length-units
+  title: SVG absolute length units
+  domain: SVG
+  profile: null
+  summary: Parse SVG absolute length unit identifiers px, pt, pc, mm, cm, and in, converting them into user-unit values.
+  non_goals:
+    - Font-relative length units such as em, ex, ch, and rem.
+    - Viewport-relative length units.
+    - Percentage length resolution.
+    - CSS stylesheet length grammar.
+    - calc() and other non-scalar CSS length values.
+    - Attribute-specific range restrictions.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-types-length
+      title: SVG 1.1 Basic Data Types - length
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeLength
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-coords-units
+      title: SVG 1.1 Coordinate Systems, Transformations and Units - Units
+      url: https://www.w3.org/TR/SVG11/coords.html#Units
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-values-absolute-lengths
+      title: CSS Values and Units Level 3 - Absolute Lengths
+      url: https://www.w3.org/TR/css-values-3/#absolute-lengths
+      version: Candidate Recommendation Draft, 22 March 2024
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG defines the supported absolute unit identifiers for length values and says px maps to one user unit.
+    - CSS Values Level 3 fixes the absolute unit ratios relative to px.
+
+scope:
+  includes:
+    - Single SVG length values using px, pt, pc, mm, cm, or in suffixes.
+    - Unitless length values already supported by the previous work item.
+    - Lowercase SVG XML attribute unit identifiers.
+    - Conversion to Double user-unit values using px as the canonical unit.
+    - Root svg width and height fallback viewBox behavior for absolute units.
+  excludes:
+    - Uppercase CSS property unit spelling.
+    - em, ex, ch, rem, vw, vh, vmin, vmax, and percentage lengths.
+    - Environment-specific physical anchoring beyond CSS's fixed px ratios.
+    - Rendering-time device pixel mapping.
+  assumptions:
+    - The package represents one SVG px as one user unit for parsed length values.
+    - The package follows CSS Values Level 3's fixed absolute-unit ratios for deterministic conversion.
+
+terminology:
+  - id: absolute-length-unit
+    term: absolute length unit
+    definition: A length unit whose value has a fixed ratio to the other absolute length units.
+    source_refs:
+      - css-values-absolute-lengths
+  - id: px
+    term: px
+    definition: The SVG pixel unit, equal to one SVG user unit for length conversion in this package.
+    source_refs:
+      - svg11-coords-units
+      - css-values-absolute-lengths
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: SVG length parsing must accept the lowercase absolute unit identifiers px, pt, pc, mm, cm, and in immediately after a valid SVG number.
+    applies_to:
+      - Single SVG length values.
+    source_refs:
+      - svg11-types-length
+      - svg11-coords-units
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A px length value must convert to the same numeric value in user units.
+    applies_to:
+      - px lengths.
+    source_refs:
+      - svg11-coords-units
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: conversion
+    statement: An in length value must convert using 1in = 96px.
+    applies_to:
+      - in lengths.
+    source_refs:
+      - css-values-absolute-lengths
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: conversion
+    statement: A pt length value must convert using 1pt = 1/72in.
+    applies_to:
+      - pt lengths.
+    source_refs:
+      - css-values-absolute-lengths
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: conversion
+    statement: A pc length value must convert using 1pc = 1/6in.
+    applies_to:
+      - pc lengths.
+    source_refs:
+      - css-values-absolute-lengths
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: conversion
+    statement: A cm length value must convert using 1cm = 96px / 2.54.
+    applies_to:
+      - cm lengths.
+    source_refs:
+      - css-values-absolute-lengths
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: conversion
+    statement: A mm length value must convert using 1mm = 1/10cm.
+    applies_to:
+      - mm lengths.
+    source_refs:
+      - css-values-absolute-lengths
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST_NOT
+    kind: scope
+    statement: This work item must not accept font-relative units, viewport-relative units, percentages, or uppercase CSS unit spelling as completed absolute-unit coverage.
+    applies_to:
+      - Single SVG XML attribute length values.
+    source_refs:
+      - svg11-types-length
+      - css-values-absolute-lengths
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Absolute length conversion
+    kind: algorithm
+    summary: Convert parsed absolute length factors into px/user units.
+    steps:
+      - Parse the numeric factor using the SVG number grammar.
+      - If no unit suffix is present, return the numeric factor as user units.
+      - If the suffix is px, return the numeric factor.
+      - If the suffix is in, multiply by 96.
+      - If the suffix is pt, multiply by 96 / 72.
+      - If the suffix is pc, multiply by 16.
+      - If the suffix is cm, multiply by 96 / 2.54.
+      - If the suffix is mm, multiply by 96 / 25.4.
+      - Otherwise, return nil.
+    preconditions: []
+    postconditions:
+      - Returned values are in user units.
+    requirement_refs:
+      - R002
+      - R003
+      - R004
+      - R005
+      - R006
+      - R007
+    source_refs:
+      - svg11-coords-units
+      - css-values-absolute-lengths
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A length value contains a font-relative unit, viewport-relative unit, percentage suffix, uppercase unit suffix, malformed number, or internal whitespace.
+    source_behavior: valid for some later length forms or invalid depending on the suffix and context
+    required_behavior: Return nil for this work item.
+    decision_required: false
+    source_refs:
+      - svg11-types-length
+      - css-values-absolute-lengths
+
+recommendations:
+  - id: N001
+    normative_strength: RECOMMENDED
+    statement: Absolute units are mainly useful when the output environment is known.
+    source_refs:
+      - css-values-absolute-lengths
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: CSS absolute-unit anchor
+    statement: Use CSS Values Level 3's 96px-per-inch ratios for deterministic SVG parsing.
+    allowed_by:
+      - SVG references CSS unit meanings, and SVG 2 length conversion works through absolute length conversion.
+    source_refs:
+      - svg11-types-length
+      - css-values-absolute-lengths
+  - id: IC002
+    topic: Boundary whitespace
+    statement: Trim leading and trailing XML whitespace before parsing a single absolute length value.
+    allowed_by:
+      - The package already applies this behavior to related SVG numeric data types.
+    source_refs:
+      - svg11-types-length
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG number grammar
+    reason: The numeric factor of a length uses SVG number parsing.
+    source_refs:
+      - svg11-types-length
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+      - svg11-coords-units
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-coords-units
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-values-absolute-lengths
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-values-absolute-lengths
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-values-absolute-lengths
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - css-values-absolute-lengths
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - css-values-absolute-lengths
+    map_item_refs: []
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+      - css-values-absolute-lengths
+    map_item_refs: []

@@ -33,3 +33,21 @@ import Testing
 	#expect(SVGLengthParser.parseUnitless("10%") == nil)
 	#expect(SVGLengthParser.parseUnitless("1 2") == nil)
 }
+
+@Test func svgLengthParserConvertsAbsoluteLengthUnitsToUserUnits() {
+	#expect(SVGLengthParser.parse("5px") == 5)
+	#expect(SVGLengthParser.parse("1in") == 96)
+	#expect(SVGLengthParser.parse("72pt") == 96)
+	#expect(SVGLengthParser.parse("6pc") == 96)
+	#expect(SVGLengthParser.parse("2.54cm") == 96)
+	#expect(SVGLengthParser.parse("25.4mm") == 96)
+}
+
+@Test func svgLengthParserRejectsRelativePercentAndUppercaseUnitsForAbsoluteParsing() {
+	#expect(SVGLengthParser.parse("10em") == nil)
+	#expect(SVGLengthParser.parse("10ex") == nil)
+	#expect(SVGLengthParser.parse("10rem") == nil)
+	#expect(SVGLengthParser.parse("10vw") == nil)
+	#expect(SVGLengthParser.parse("10%") == nil)
+	#expect(SVGLengthParser.parse("10PX") == nil)
+}
