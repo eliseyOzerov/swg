@@ -1,0 +1,273 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: path-implicit-repeated-moveto
+  title: Implicit lineto commands after moveto coordinate pairs
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 path data behavior for additional coordinate pairs in an
+    M/m moveto command: the first pair is a moveto and subsequent pairs are
+    implicit lineto commands.
+  non_goals:
+    - Explicit L/l command parsing.
+    - Implicit repeated argument parsing for non-M commands.
+    - Path data tokenizer edge cases such as compact signs or exponents.
+    - Path data error recovery for incomplete moveto coordinate pairs.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: path-data-implicit-repeated-moveto
+      title: Path Data - implicit repeated commands after M
+      artifact_path: spec/path-implicit-repeated-moveto/requirements.yaml
+  canonical_sources:
+    - id: svg2-path-data-moveto
+      title: SVG 2 Paths - Moveto commands
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataMovetoCommands
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-path-data-grammar
+      title: SVG 2 Paths - Grammar for path data
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataBNF
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Parsing M/m as a coordinate-pair sequence, not only a single coordinate pair.
+    - Treating the first M/m coordinate pair as a moveto.
+    - Treating each later coordinate pair in the same M/m sequence as an implicit lineto.
+    - Preserving absolute lineto behavior for later pairs in an uppercase M sequence.
+    - Preserving relative lineto behavior for later pairs in a lowercase m sequence.
+  excludes:
+    - Repeated coordinate sequences for L/l, H/h, V/v, C/c, S/s, Q/q, T/t, or A/a.
+    - Tokenization of adjacent signed values without explicit separators.
+    - Error recovery when a coordinate pair is malformed or incomplete.
+  assumptions:
+    - >
+      The package stores implicit lineto segments as explicit PathCommand.line
+      values with absolute endpoints.
+    - >
+      Because this parser resolves commands to absolute PathCommand values, the
+      test observes the post-resolution points rather than preserving whether
+      input commands were uppercase or lowercase.
+
+terminology:
+  - id: term-moveto
+    term: moveto
+    definition: >
+      A path command that establishes a new current point and starts a new
+      subpath at its first coordinate pair.
+    source_refs:
+      - svg2-path-data-moveto
+      - svg2-path-data-grammar
+  - id: term-implicit-lineto
+    term: implicit lineto
+    definition: >
+      A lineto segment created from a later coordinate pair in the same M/m
+      coordinate-pair sequence.
+    source_refs:
+      - svg2-path-data-moveto
+
+structures:
+  - id: S001
+    name: M/m coordinate-pair sequence
+    kind: structure
+    source_refs:
+      - svg2-path-data-moveto
+      - svg2-path-data-grammar
+    fields:
+      - name: firstPair
+        type: coordinate-pair
+        cardinality: required
+        position: first
+        constraints:
+          - Creates the moveto endpoint.
+          - For a relative initial m command, the first pair is treated as relative to the current point, which is the origin at the start of a path.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-path-data-moveto
+          - svg2-path-data-grammar
+      - name: subsequentPairs
+        type: coordinate-pair
+        cardinality: zero-or-more
+        position: after-first
+        constraints:
+          - Each subsequent pair creates an implicit lineto endpoint.
+          - Uppercase M sequences use absolute lineto endpoints.
+          - Lowercase m sequences use relative lineto endpoints.
+        requirement_refs:
+          - R001
+          - R003
+          - R004
+        source_refs:
+          - svg2-path-data-moveto
+          - svg2-path-data-grammar
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      M/m moveto command data is a coordinate-pair sequence, allowing one or
+      more coordinate pairs after the command letter.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      The first coordinate pair in an M/m sequence establishes the new current
+      point through a moveto operation.
+    applies_to:
+      - moveto command
+    source_refs:
+      - svg2-path-data-moveto
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      Every coordinate pair after the first coordinate pair in the same M/m
+      sequence is treated as an implicit lineto command.
+    applies_to:
+      - moveto command
+    source_refs:
+      - svg2-path-data-moveto
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: relative-coordinate
+    statement: >
+      For a lowercase m command, the first coordinate pair starts the subpath
+      relative to the current point and subsequent coordinate pairs are
+      relative implicit lineto endpoints.
+    applies_to:
+      - relative moveto command
+    source_refs:
+      - svg2-path-data-moveto
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: state
+    statement: >
+      Each implicit lineto endpoint updates the path current point to that
+      endpoint before the next coordinate pair is resolved.
+    applies_to:
+      - path current point
+    source_refs:
+      - svg2-path-data-moveto
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, repeated coordinate pairs after M/m must produce
+      PathCommand.line values with absolute endpoints after the initial
+      PathCommand.move.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    reasoning: >
+      PathCommand values are stored as resolved path operations in this package,
+      so implicit lineto pairs need to be materialized as explicit line commands.
+    source_refs:
+      - svg2-path-data-moveto
+      - svg2-path-data-grammar
+
+implementation_choices:
+  - id: IC001
+    topic: Subpath state
+    statement: >
+      This bullet observes generated move and line commands only; closepath
+      subpath-start behavior is already covered by the Z/z bullet.
+    allowed_by:
+      - R002
+      - R003
+    source_refs:
+      - svg2-path-data-moveto
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 path coordinate grammar
+    reason: >
+      M/m coordinate pairs use the shared path data coordinate-pair grammar.
+    source_refs:
+      - svg2-path-data-grammar
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-implicit-repeated-moveto
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-moveto
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-implicit-repeated-moveto
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-moveto
+    map_item_refs:
+      - path-data-implicit-repeated-moveto
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-moveto
+    map_item_refs:
+      - path-data-implicit-repeated-moveto
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-moveto
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-implicit-repeated-moveto
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-path-data-moveto
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-implicit-repeated-moveto

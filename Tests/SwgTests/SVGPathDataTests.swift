@@ -13,6 +13,22 @@ import Testing
 	])
 }
 
+@Test func svgPathParserTreatsRepeatedMovetoPairsAsLinetoCommands() {
+	let absolutePath = SVGPathDataParser.parse("M 10 10 20 20 30 10")
+	let relativeInitialPath = SVGPathDataParser.parse("m 10 10 20 0 0 20")
+
+	#expect(absolutePath.commands == [
+		.move(to: Point(10, 10)),
+		.line(to: Point(20, 20)),
+		.line(to: Point(30, 10)),
+	])
+	#expect(relativeInitialPath.commands == [
+		.move(to: Point(10, 10)),
+		.line(to: Point(30, 10)),
+		.line(to: Point(30, 30)),
+	])
+}
+
 @Test func svgPathParserHandlesSmoothCubicReflection() {
 	let path = SVGPathDataParser.parse("M 0 0 C 10 0 20 10 30 10 S 50 20 60 0")
 
