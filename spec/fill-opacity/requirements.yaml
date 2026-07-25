@@ -1,0 +1,247 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fill-opacity
+  title: Fill paint opacity property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of `fill-opacity` as the alpha applied to fill painting operations.
+  non_goals:
+    - The `opacity` group opacity property.
+    - The `stroke-opacity` property, covered by a separate Painting TODO bullet.
+    - Rendering-time compositing of filled geometry.
+    - Complete CSS math or calc() support for alpha values.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-fill-opacity-property
+      title: "SVG 2 Painting: Fill paint opacity: the fill-opacity property"
+      url: https://www.w3.org/TR/SVG/painting.html#FillOpacity
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `fill-opacity` with value `<alpha-value>`, initial value 1, inheritance yes, and computed value clamped to [0,1].
+    - SVG 2 describes both number and percentage forms for fill opacity values.
+
+scope:
+  includes:
+    - Parser output for the supported `fill-opacity` property on SVG shapes and renderable containers.
+    - Initial `fill-opacity` value of 1.
+    - Inheritance of `fill-opacity` from parent elements.
+    - Number alpha values.
+    - Percentage alpha values mapped to the 0...1 range.
+    - Clamping parsed values outside 0...1.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+  excludes:
+    - Renderer compositing and actual alpha blending.
+    - CSS calc(), variables, or math functions.
+    - "`stroke-opacity` percentage and clamping behavior."
+  assumptions:
+    - The parser stores the computed-enough alpha as a Double in `SVGPaintAttributes.fillOpacity`.
+    - Invalid values leave the current inherited or default parser-visible value unchanged.
+
+terminology:
+  - id: term-fill-opacity
+    term: fill-opacity
+    definition: The property that specifies the opacity of the painting operation used to paint an object's fill.
+    source_refs:
+      - svg2-fill-opacity-property
+  - id: term-alpha-value
+    term: alpha-value
+    definition: A number or percentage alpha value where 0 is fully transparent and 1 is fully opaque.
+    source_refs:
+      - svg2-fill-opacity-property
+
+structures:
+  - id: S001
+    name: Fill opacity parser state
+    kind: structure
+    source_refs:
+      - svg2-fill-opacity-property
+    fields:
+      - name: fillOpacity
+        type: Double
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is 1.
+          - Property is inherited.
+          - Computed value is clamped to [0,1].
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-fill-opacity-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: An element with no cascaded or inherited `fill-opacity` declaration must use 1 as the initial fill opacity.
+    applies_to:
+      - fill-opacity
+    source_refs:
+      - svg2-fill-opacity-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The `fill-opacity` property must inherit from the parent element when no winning declaration sets it on the child.
+    applies_to:
+      - fill-opacity
+    source_refs:
+      - svg2-fill-opacity-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Supported `fill-opacity` values must accept both number values and percentage values.
+    applies_to:
+      - fill-opacity
+    source_refs:
+      - svg2-fill-opacity-property
+    testability: testable
+    notes:
+      - Percentages express the same 0 to 1 alpha range.
+  - id: R004
+    normative_strength: MUST
+    kind: range
+    statement: Parsed `fill-opacity` values outside the 0 to 1 range must be clamped into that range.
+    applies_to:
+      - fill-opacity
+    source_refs:
+      - svg2-fill-opacity-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: ordering
+    statement: Supported `fill-opacity` declarations must participate in the parser's supported cascade subset for presentation attributes, class style rules, and inline style declarations.
+    applies_to:
+      - fill-opacity presentation attributes
+      - fill-opacity declarations in style rules
+      - fill-opacity declarations in inline style attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-fill-opacity-property
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Fill opacity alpha parsing
+    kind: algorithm
+    summary: Convert supported fill-opacity number or percentage text into a clamped alpha value.
+    steps:
+      - If the value is a percentage, parse the numeric component and divide by 100.
+      - Otherwise parse the value as a number.
+      - Clamp the numeric result to the inclusive range 0...1.
+      - If parsing fails, do not replace the current parser-visible value.
+    preconditions:
+      - The declaration names `fill-opacity`.
+    postconditions:
+      - The parser-visible fill opacity is a Double in the 0...1 range.
+    requirement_refs:
+      - R003
+      - R004
+    source_refs:
+      - svg2-fill-opacity-property
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `fill-opacity` value uses unsupported CSS syntax such as calc().
+    source_behavior: MUST
+    required_behavior: Leave the existing fill opacity value unchanged until the syntax is supported by a later work item.
+    decision_required: false
+    source_refs:
+      - svg2-fill-opacity-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must prove initial value, inheritance, percentage conversion, clamping, and cascade override behavior for `fill-opacity`.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    reasoning: These cases distinguish complete `fill-opacity` support from the parser's earlier number-only opacity handling.
+    source_refs:
+      - svg2-fill-opacity-property
+      - svg2-styling-presentation-attributes
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-visible representation
+    statement: The package may expose clamped `fill-opacity` as a Double on `SVGPaintAttributes` without performing renderer compositing.
+    allowed_by:
+      - Current parser architecture
+      - Renderer integration boundary
+    source_refs:
+      - svg2-fill-opacity-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG presentation attributes
+    reason: The `fill-opacity` presentation attribute participates in CSS cascade behavior.
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-fill-opacity-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-fill-opacity-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-fill-opacity-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-fill-opacity-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-fill-opacity-property
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-fill-opacity-property
+      - svg2-styling-presentation-attributes
+    map_item_refs: []

@@ -1231,8 +1231,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let value = attributes["fill-opacity"] {
 			if isInheritKeyword(value) {
 				result.fillOpacity = inherited.fillOpacity
-			} else if let number = parseNumber(value) {
-				result.fillOpacity = number
+			} else if let alpha = parseAlphaValue(value) {
+				result.fillOpacity = alpha
 			}
 		}
 		if let value = attributes["fill-rule"] {
@@ -1275,6 +1275,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let trimmed = value.trimmingCharacters(in: .whitespaces)
 		if trimmed == "none" { return [] }
 		return SVGListParser.parse(trimmed, itemParser: parseNumber) ?? []
+	}
+
+	private func parseAlphaValue(_ value: String) -> Double? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		let parsed: Double?
+		if trimmed.hasSuffix("%") {
+			parsed = parseNumber(String(trimmed.dropLast())).map { $0 / 100 }
+		} else {
+			parsed = parseNumber(trimmed)
+		}
+		guard let parsed else { return nil }
+		return min(max(parsed, 0), 1)
 	}
 
 	private func parseVectorEffect(_ value: String) -> SVGVectorEffect? {

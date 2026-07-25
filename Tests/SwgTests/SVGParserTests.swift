@@ -342,6 +342,52 @@ import Testing
 	#expect(paths["inline"]?.attributes.fill == .color(.blue))
 }
 
+@Test func svgParserAppliesFillOpacityInitialInheritancePercentagesAndClamping() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.soft { fill-opacity: 50%; }
+			.high { fill-opacity: 2; }
+			.low { fill-opacity: -25%; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" fill-opacity="0.25">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="percentage" class="soft" d="M0 0 L10 10"/>
+			<path id="high" class="high" d="M0 0 L10 10"/>
+			<path id="low" class="low" d="M0 0 L10 10"/>
+			<path id="inline" class="soft" d="M0 0 L10 10" style="fill-opacity: 75%"/>
+			<path id="invalid" d="M0 0 L10 10" fill-opacity="bad"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.fillOpacity == 1)
+	#expect(paths["inherited"]?.attributes.fillOpacity == 0.25)
+	#expect(paths["percentage"]?.attributes.fillOpacity == 0.5)
+	#expect(paths["high"]?.attributes.fillOpacity == 1)
+	#expect(paths["low"]?.attributes.fillOpacity == 0)
+	#expect(paths["inline"]?.attributes.fillOpacity == 0.75)
+	#expect(paths["invalid"]?.attributes.fillOpacity == 0.25)
+}
+
 @Test func svgParserInheritsOnlyInheritedPresentationProperties() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
