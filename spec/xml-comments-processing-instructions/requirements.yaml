@@ -1,0 +1,145 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: xml-comments-processing-instructions
+  title: XML comments and processing instructions
+  domain: XML 1.0 / SVG 2
+  profile: null
+  summary: SVG XML parsing must treat XML comments and processing instructions as markup rather than SVG element text or renderable SVG elements.
+  non_goals:
+    - Preserve comments in the public SVG document model.
+    - Preserve processing instructions in the public SVG document model.
+    - Implement application-specific processing instruction behavior.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: xml10-character-data
+      title: XML 1.0 Character Data and Markup
+      url: https://www.w3.org/TR/xml/#sec-common-syn
+      version: Fifth Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: xml10-comments
+      title: XML 1.0 Comments
+      url: https://www.w3.org/TR/xml/#sec-comments
+      version: Fifth Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: xml10-processing-instructions
+      title: XML 1.0 Processing Instructions
+      url: https://www.w3.org/TR/xml/#sec-pi
+      version: Fifth Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Comments before, inside, and after SVG content.
+    - Processing instructions before, inside, and after SVG content.
+    - Character text assembled around comments and processing instructions.
+  excludes:
+    - Comment preservation.
+    - Processing instruction preservation.
+    - Processing instruction target dispatch.
+  assumptions:
+    - Foundation XMLParser remains responsible for XML well-formedness errors.
+
+terminology:
+  - id: term-markup
+    term: Markup
+    definition: XML syntax constructs including comments and processing instructions, distinct from character data.
+    source_refs:
+      - xml10-character-data
+  - id: term-comment
+    term: Comment
+    definition: XML markup that is not part of document character data.
+    source_refs:
+      - xml10-comments
+  - id: term-processing-instruction
+    term: Processing instruction
+    definition: XML markup that carries instructions for applications and is not part of document character data.
+    source_refs:
+      - xml10-processing-instructions
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: Comment text must not be treated as SVG character data.
+    applies_to:
+      - text parsing
+    source_refs:
+      - xml10-comments
+      - xml10-character-data
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: Processing instruction text must not be treated as SVG character data.
+    applies_to:
+      - text parsing
+    source_refs:
+      - xml10-processing-instructions
+      - xml10-character-data
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: SVG markup contained only as literal text inside comments or processing instructions must not create SVG elements.
+    applies_to:
+      - SVG element parsing
+    source_refs:
+      - xml10-comments
+      - xml10-processing-instructions
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Preservation
+    statement: The current package may ignore comments and processing instructions until public preservation of non-rendered XML nodes is designed.
+    allowed_by:
+      - Current package scope
+    source_refs:
+      - xml10-comments
+      - xml10-processing-instructions
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - xml10-comments
+      - xml10-character-data
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - xml10-processing-instructions
+      - xml10-character-data
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - xml10-comments
+      - xml10-processing-instructions
+    map_item_refs: []

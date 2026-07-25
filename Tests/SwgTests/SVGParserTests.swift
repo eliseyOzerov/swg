@@ -121,3 +121,26 @@ import Testing
 
 	#expect(SVGParser().parse(svg) == nil)
 }
+
+@Test func svgParserIgnoresXMLCommentsAndProcessingInstructions() throws {
+	let svg = """
+	<?swg before-root?>
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<!-- <path id="commented" d="M0 0 L20 20"/> -->
+		<?swg inside-root?>
+		<text id="label" x="1" y="2">A<!-- hidden -->B<?swg inside-text?></text>
+		<path id="visible" d="M0 0 L10 10"/>
+	</svg>
+	<?swg after-root?>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["label", "visible"])
+
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected first element to be text")
+		return
+	}
+	#expect(text.spans.first?.text == "AB")
+}
