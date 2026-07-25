@@ -553,6 +553,16 @@ public extension SVGEllipseData {
 	}
 }
 
+public extension SVGLineData {
+	/// The equivalent path for this line.
+	var path: Path {
+		Path(commands: [
+			.move(to: Point(x1, y1)),
+			.line(to: Point(x2, y2)),
+		])
+	}
+}
+
 private struct PathCommandBuilder {
 	var commands: [PathCommand] = []
 

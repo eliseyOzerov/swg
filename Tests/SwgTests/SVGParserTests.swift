@@ -872,6 +872,48 @@ import Testing
 	#expect(negativeRX.path.svgPathData(precision: 0) == "M 14 10 A 4 4 0 0 1 10 14 A 4 4 0 0 1 6 10 A 4 4 0 0 1 10 6 A 4 4 0 0 1 14 10 Z")
 }
 
+@Test func svgParserPreservesLineElementsAndEquivalentPaths() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 40 40">
+		<line id="slash" x1="-2" y1="3" x2="12" y2="18" stroke="#336699" data-note="kept"/>
+		<line id="defaulted"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let lines = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGLineData)? in
+		if case .line(let line) = element {
+			return (line.id, line)
+		}
+		return nil
+	})
+
+	let slash = try #require(lines["slash"])
+	#expect(slash.x1 == -2)
+	#expect(slash.y1 == 3)
+	#expect(slash.x2 == 12)
+	#expect(slash.y2 == 18)
+	#expect(slash.attributes.stroke == .color(Color(0.2, 0.4, 0.6)))
+	#expect(slash.unknownAttributes == ["data-note": "kept"])
+	let expectedSlashCommands: [PathCommand] = [
+		.move(to: Point(-2, 3)),
+		.line(to: Point(12, 18)),
+	]
+	#expect(slash.path.commands == expectedSlashCommands)
+	#expect(slash.path.svgPathData(precision: 0) == "M -2 3 L 12 18")
+
+	let defaulted = try #require(lines["defaulted"])
+	#expect(defaulted.x1 == 0)
+	#expect(defaulted.y1 == 0)
+	#expect(defaulted.x2 == 0)
+	#expect(defaulted.y2 == 0)
+	let expectedDefaultedCommands: [PathCommand] = [
+		.move(to: Point.zero),
+		.line(to: Point.zero),
+	]
+	#expect(defaulted.path.commands == expectedDefaultedCommands)
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

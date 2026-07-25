@@ -51,7 +51,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<rect>` rounded corners with `ry`.
 - [x] `<circle>` element.
 - [x] `<ellipse>` element.
-- [ ] `<line>` element.
+- [x] `<line>` element.
 - [ ] `<polyline>` element.
 - [ ] `<polygon>` element.
 - [ ] Geometry properties: `x`, `y`, `cx`, `cy`, `r`, `rx`, `ry`, `width`, `height`.

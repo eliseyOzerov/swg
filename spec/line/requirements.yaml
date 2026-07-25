@@ -1,0 +1,301 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: line
+  title: line element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the line element, including
+    endpoint geometry, default coordinates, equivalent path generation, and
+    one-dimensional non-fill behavior.
+  non_goals:
+    - CSS geometry property cascade for line endpoints.
+    - Percentage endpoint resolution.
+    - Stroke rendering behavior.
+    - DOM interface conformance.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: basic-shapes-line
+      title: Basic Shapes - line
+      artifact_path: spec/line/requirements.yaml
+  canonical_sources:
+    - id: svg2-shapes-line
+      title: SVG 2 Basic Shapes - The line element
+      url: https://www.w3.org/TR/SVG2/shapes.html#LineElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Recognizing line as an SVG graphics, renderable, shape element.
+    - Parsing x1 and y1 as the start point coordinates.
+    - Parsing x2 and y2 as the end point coordinates.
+    - Defaulting omitted endpoint coordinates to zero.
+    - Producing an equivalent path with one absolute moveto and one absolute lineto.
+    - Recording that line elements have no interior and are never filled.
+  excludes:
+    - CSS geometry property cascade for x1, y1, x2, and y2.
+    - Percentage endpoint resolution.
+    - Stroke rendering behavior.
+    - DOM interface conformance.
+  assumptions:
+    - >
+      The package can expose line geometry as a Path containing a move command
+      followed by a line command.
+
+terminology:
+  - id: term-line
+    term: line
+    definition: >
+      A basic SVG shape element that defines a segment from one point to another.
+    source_refs:
+      - svg2-shapes-line
+  - id: term-line-start
+    term: line start point
+    definition: >
+      The point identified by x1 and y1.
+    source_refs:
+      - svg2-shapes-line
+  - id: term-line-end
+    term: line end point
+    definition: >
+      The point identified by x2 and y2.
+    source_refs:
+      - svg2-shapes-line
+
+structures:
+  - id: S001
+    name: line geometry
+    kind: structure
+    source_refs:
+      - svg2-shapes-line
+    fields:
+      - name: x1
+        type: length-percentage
+        cardinality: one
+        position: attribute
+        constraints:
+          - Defines the x-coordinate of the line start point.
+          - Initial value is zero.
+        requirement_refs:
+          - R002
+          - R004
+        source_refs:
+          - svg2-shapes-line
+      - name: y1
+        type: length-percentage
+        cardinality: one
+        position: attribute
+        constraints:
+          - Defines the y-coordinate of the line start point.
+          - Initial value is zero.
+        requirement_refs:
+          - R002
+          - R004
+        source_refs:
+          - svg2-shapes-line
+      - name: x2
+        type: length-percentage
+        cardinality: one
+        position: attribute
+        constraints:
+          - Defines the x-coordinate of the line end point.
+          - Initial value is zero.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg2-shapes-line
+      - name: y2
+        type: length-percentage
+        cardinality: one
+        position: attribute
+        constraints:
+          - Defines the y-coordinate of the line end point.
+          - Initial value is zero.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg2-shapes-line
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A line element is an SVG graphics, renderable, shape element.
+    applies_to:
+      - line element
+    source_refs:
+      - svg2-shapes-line
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The x1 and y1 coordinates define the start of the line.
+    applies_to:
+      - line geometry
+    source_refs:
+      - svg2-shapes-line
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The x2 and y2 coordinates define the end of the line.
+    applies_to:
+      - line geometry
+    source_refs:
+      - svg2-shapes-line
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: default
+    statement: >
+      Omitted line endpoint coordinate attributes have an initial value of zero.
+    applies_to:
+      - line geometry
+    source_refs:
+      - svg2-shapes-line
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The equivalent path for a line performs an absolute moveto to (x1, y1)
+      followed by an absolute lineto to (x2, y2).
+    applies_to:
+      - line equivalent path
+    source_refs:
+      - svg2-shapes-line
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: fill
+    statement: >
+      A line is geometrically one-dimensional, has no interior, and is never
+      filled.
+    applies_to:
+      - line element
+    source_refs:
+      - svg2-shapes-line
+    testability: reviewable
+    notes:
+      - Parser-level shape preservation can record paint attributes, while rendering should not fill line interiors.
+
+algorithms:
+  - id: ALG001
+    name: line equivalent path
+    kind: algorithm
+    summary: >
+      Build an equivalent path by moving to the start point and drawing one
+      straight line to the end point.
+    steps:
+      - Move to (x1, y1).
+      - Draw a line to (x2, y2).
+    preconditions: []
+    postconditions:
+      - The path covers the same segment as the line.
+    requirement_refs:
+      - R005
+    source_refs:
+      - svg2-shapes-line
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, a parsed line must expose a Path with exactly one
+      move command to (x1, y1) and one line command to (x2, y2).
+    derived_from:
+      - R005
+      - ALG001
+    reasoning: >
+      The package exposes equivalent geometry through Path commands, and the
+      SVG equivalent path algorithm maps directly to those commands.
+    source_refs:
+      - svg2-shapes-line
+
+implementation_choices:
+  - id: IC001
+    topic: Fill behavior
+    statement: >
+      The parser may preserve authored fill-related attributes on line data for
+      source inspection, while downstream rendering must respect that line
+      geometry has no fillable interior.
+    allowed_by:
+      - R006
+    source_refs:
+      - svg2-shapes-line
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Units
+    reason: >
+      Percentage and length endpoint conversion depends on SVG length and
+      percentage unit rules.
+    source_refs:
+      - svg2-shapes-line
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-line
+    map_item_refs:
+      - basic-shapes-line
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-line
+    map_item_refs:
+      - basic-shapes-line
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-line
+    map_item_refs:
+      - basic-shapes-line
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-line
+    map_item_refs:
+      - basic-shapes-line
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-line
+    map_item_refs:
+      - basic-shapes-line
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-line
+    map_item_refs:
+      - basic-shapes-line
