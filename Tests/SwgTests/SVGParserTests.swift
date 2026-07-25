@@ -38,6 +38,32 @@ import Testing
 	#expect(path.attributes.strokeWidth == 2)
 }
 
+@Test func svgParserUsesAngleUnitsForRotateTransforms() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<g id="degrees" transform="rotate(90deg)"/>
+		<g id="gradians" transform="rotate(100grad)"/>
+		<g id="radians" transform="rotate(1.5707963267948966rad)"/>
+		<g id="turns" transform="rotate(0.25turn)"/>
+		<g id="unitless" transform="rotate(90)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let groups = document.elements.compactMap { element -> SVGGroupData? in
+		if case .group(let group) = element {
+			group
+		} else {
+			nil
+		}
+	}
+
+	#expect(groups.map(\.id) == ["degrees", "gradians", "radians", "turns", "unitless"])
+	for group in groups {
+		expectTransformApproximately(group.attributes.transform, Transform.identity.rotated(by: .pi / 2))
+	}
+}
+
 @Test func svgParserHandlesDefaultNamespaceAndXLinkHref() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10">
@@ -451,4 +477,13 @@ import Testing
 	}
 	#expect(text.spans.map(\.text) == [" A", "  B C  ", "D E", " F "])
 	#expect(text.spans.flatMap(\.unknownAttributes.keys).contains("xml:space") == false)
+}
+
+private func expectTransformApproximately(_ actual: Transform, _ expected: Transform, tolerance: Double = 0.000001, sourceLocation: SourceLocation = #_sourceLocation) {
+	#expect(abs(actual.a - expected.a) < tolerance, sourceLocation: sourceLocation)
+	#expect(abs(actual.b - expected.b) < tolerance, sourceLocation: sourceLocation)
+	#expect(abs(actual.c - expected.c) < tolerance, sourceLocation: sourceLocation)
+	#expect(abs(actual.d - expected.d) < tolerance, sourceLocation: sourceLocation)
+	#expect(abs(actual.tx - expected.tx) < tolerance, sourceLocation: sourceLocation)
+	#expect(abs(actual.ty - expected.ty) < tolerance, sourceLocation: sourceLocation)
 }

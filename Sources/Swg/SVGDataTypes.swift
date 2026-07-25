@@ -23,6 +23,26 @@ enum SVGIntegerParser {
 	}
 }
 
+/// Parses reusable SVG primitive data types such as scalar angle values.
+enum SVGAngleParser {
+	private static let units: [(suffix: String, multiplier: Double)] = [
+		("turn", 2 * .pi),
+		("grad", .pi / 200),
+		("deg", .pi / 180),
+		("rad", 1)
+	]
+
+	static func parse(_ value: String) -> Double? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		for unit in units where trimmed.hasSuffix(unit.suffix) {
+			let numberText = String(trimmed.dropLast(unit.suffix.count))
+			guard let number = SVGNumberParser.parse(numberText) else { return nil }
+			return number * unit.multiplier
+		}
+		return SVGNumberParser.parse(trimmed).map { $0 * .pi / 180 }
+	}
+}
+
 /// Context used to resolve SVG relative length units into user units.
 struct SVGLengthContext: Equatable, Sendable {
 	var fontSize: Double

@@ -778,16 +778,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let nsValue = value as NSString
 		for match in regex.matches(in: value, range: NSRange(location: 0, length: nsValue.length)) {
 			let function = nsValue.substring(with: match.range(at: 1))
-			let args = nsValue.substring(with: match.range(at: 2))
-				.split(whereSeparator: { $0 == "," || $0 == " " })
-				.compactMap { parseNumber(String($0)) }
+			let argTexts = nsValue.substring(with: match.range(at: 2))
+				.split(whereSeparator: { $0 == "," || $0.isWhitespace })
+				.map(String.init)
+			let args = argTexts.compactMap { parseNumber($0) }
 			switch function {
 			case "translate" where args.count >= 1:
 				transform = transform.translatedBy(x: args[0], y: args.count >= 2 ? args[1] : 0)
 			case "scale" where args.count >= 1:
 				transform = transform.scaledBy(x: args[0], y: args.count >= 2 ? args[1] : args[0])
-			case "rotate" where args.count >= 1:
-				transform = transform.rotated(by: args[0] * .pi / 180)
+			case "rotate" where !argTexts.isEmpty:
+				guard let angle = SVGAngleParser.parse(argTexts[0]) else { break }
+				transform = transform.rotated(by: angle)
 			case "matrix" where args.count == 6:
 				transform = transform.concatenating(Transform(a: args[0], b: args[1], c: args[2], d: args[3], tx: args[4], ty: args[5]))
 			default:

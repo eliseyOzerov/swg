@@ -89,3 +89,26 @@ import Testing
 	#expect(SVGLengthParser.parse("%") == nil)
 	#expect(SVGLengthParser.parse("10%%") == nil)
 }
+
+@Test func svgAngleParserConvertsAngleUnitsToRadians() throws {
+	let degrees = try #require(SVGAngleParser.parse("180deg"))
+	let gradians = try #require(SVGAngleParser.parse("200grad"))
+	let radians = try #require(SVGAngleParser.parse("3.141592653589793rad"))
+	let turns = try #require(SVGAngleParser.parse("0.5turn"))
+	let unitless = try #require(SVGAngleParser.parse("90"))
+
+	#expect(abs(degrees - .pi) < 0.000001)
+	#expect(abs(gradians - .pi) < 0.000001)
+	#expect(abs(radians - .pi) < 0.000001)
+	#expect(abs(turns - .pi) < 0.000001)
+	#expect(abs(unitless - (.pi / 2)) < 0.000001)
+}
+
+@Test func svgAngleParserRejectsMalformedAndUppercaseAngles() {
+	#expect(SVGAngleParser.parse("") == nil)
+	#expect(SVGAngleParser.parse("deg") == nil)
+	#expect(SVGAngleParser.parse("90DEG") == nil)
+	#expect(SVGAngleParser.parse("90Grad") == nil)
+	#expect(SVGAngleParser.parse("1turns") == nil)
+	#expect(SVGAngleParser.parse("1 2deg") == nil)
+}

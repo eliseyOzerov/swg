@@ -1,0 +1,343 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: angle-units
+  title: SVG angle units
+  domain: SVG
+  profile: null
+  summary: Parse scalar SVG angle values with standard angle units and preserve SVG XML attribute casing rules. Convert accepted values into a canonical angular value suitable for transform math.
+  non_goals:
+    - Full CSS stylesheet angle parsing, including case-insensitive CSS units.
+    - Complete transform-list conformance beyond using angle values for rotate transform arguments.
+    - Skew transform implementation.
+    - Animation timing, frequency, angle lists, or calc() angle expressions.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-angle
+      title: "SVG 1.1 Basic Data Types: <angle>"
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeAngle
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-values-3-angle
+      title: "CSS Values and Units Level 3: Angle Units"
+      url: https://www.w3.org/TR/css-values-3/#angles
+      version: Candidate Recommendation Draft, 22 March 2024
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-transform
+      title: "SVG 2: The transform property"
+      url: https://www.w3.org/TR/SVG/coords.html#TransformProperty
+      version: Latest published version
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 1.1 defines the SVG XML presentation attribute angle grammar with deg, grad, and rad. CSS Values Level 3 defines the modern CSS angle unit set including turn.
+    - The implementation scope accepts turn for SVG transform interoperability while preserving lowercase XML attribute syntax.
+
+scope:
+  includes:
+    - Scalar angle parsing.
+    - Unitless values interpreted as degrees.
+    - Lowercase unit identifiers deg, grad, rad, and turn.
+    - Conversion of accepted angle units into radians for transform math.
+    - Rotate transform angle parsing for the first rotate argument.
+  excludes:
+    - Case-insensitive CSS property parsing.
+    - Rotate center-point arguments.
+    - Skew transform functions.
+    - CSS typed object model, SVG DOM angle interfaces, serialization, and animation.
+  assumptions:
+    - Package internals use radians for affine transform rotation.
+    - The parser treats transform presentation attributes as SVG XML attribute syntax, so explicit unit identifiers are lowercase-sensitive.
+
+terminology:
+  - id: angle
+    term: angle
+    definition: A numeric angular value, optionally followed by an angle unit identifier.
+    source_refs:
+      - svg11-angle
+      - css-values-3-angle
+  - id: turn
+    term: turn
+    definition: One complete revolution.
+    source_refs:
+      - css-values-3-angle
+
+structures:
+  - id: S001
+    name: SVG XML angle value
+    kind: grammar
+    source_refs:
+      - svg11-angle
+      - css-values-3-angle
+    fields:
+      - name: number
+        type: SVG number
+        cardinality: required
+        position: 1
+        constraints:
+          - Must be present before any unit identifier.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg11-angle
+      - name: unit
+        type: enum
+        cardinality: optional
+        position: 2
+        constraints:
+          - Accepted SVG XML units are lowercase angle identifiers.
+          - Supported units for this work item are deg, grad, rad, and turn.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - svg11-angle
+          - css-values-3-angle
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: An angle value must contain a valid number component.
+    applies_to:
+      - SVG XML angle value
+    source_refs:
+      - svg11-angle
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: When no angle unit is present in SVG XML attribute syntax, the value must be interpreted as degrees.
+    applies_to:
+      - SVG XML angle value
+    source_refs:
+      - svg11-angle
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Explicit SVG XML angle unit identifiers must be lowercase.
+    applies_to:
+      - SVG XML angle value
+    source_refs:
+      - svg11-angle
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Degree units must represent 360 units per full circle.
+    applies_to:
+      - deg
+    source_refs:
+      - css-values-3-angle
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Gradian units must represent 400 units per full circle.
+    applies_to:
+      - grad
+    source_refs:
+      - css-values-3-angle
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: Radian units must represent 2 pi units per full circle.
+    applies_to:
+      - rad
+    source_refs:
+      - css-values-3-angle
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: Turn units must represent 1 unit per full circle.
+    applies_to:
+      - turn
+    source_refs:
+      - css-values-3-angle
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST
+    kind: behavior
+    statement: SVG transform presentation attributes must support rotate transforms as defined by the SVG transform property.
+    applies_to:
+      - rotate transform
+    source_refs:
+      - svg2-transform
+    testability: testable
+    notes:
+      - This work item only requires angle-unit handling for the first rotate argument.
+
+algorithms:
+  - id: ALG001
+    name: Angle conversion
+    kind: algorithm
+    summary: Convert a parsed angle into a canonical full-circle-equivalent angular value.
+    steps:
+      - Parse the leading number according to SVG number syntax.
+      - If the unit is omitted, use degrees.
+      - Convert degrees using value * pi / 180.
+      - Convert gradians using value * pi / 200.
+      - Convert radians without scaling.
+      - Convert turns using value * 2 * pi.
+    preconditions:
+      - The input is a scalar SVG XML angle value.
+    postconditions:
+      - Accepted angle values have a single canonical angular result.
+    requirement_refs:
+      - R001
+      - R002
+      - R004
+      - R005
+      - R006
+      - R007
+    source_refs:
+      - svg11-angle
+      - css-values-3-angle
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Missing numeric component.
+    source_behavior: invalid angle grammar
+    required_behavior: Reject the value for scalar angle parsing.
+    decision_required: false
+    source_refs:
+      - svg11-angle
+  - id: I002
+    condition: Uppercase or mixed-case unit in SVG XML attribute syntax.
+    source_behavior: invalid angle grammar
+    required_behavior: Reject the value for scalar angle parsing.
+    decision_required: false
+    source_refs:
+      - svg11-angle
+  - id: I003
+    condition: Unit identifiers outside deg, grad, rad, or turn.
+    source_behavior: invalid or outside this work item
+    required_behavior: Reject the value for scalar angle parsing.
+    decision_required: false
+    source_refs:
+      - svg11-angle
+      - css-values-3-angle
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: Since package transforms rotate using radians, accepted SVG angle values must be converted to radians before being applied to rotate transforms.
+    derived_from:
+      - R002
+      - R004
+      - R005
+      - R006
+      - R007
+      - R008
+    reasoning: The source defines unit equivalence by full-circle counts, and the local transform representation takes radians.
+    source_refs:
+      - svg11-angle
+      - css-values-3-angle
+      - svg2-transform
+
+implementation_choices:
+  - id: IC001
+    topic: CSS style angle parsing
+    statement: CSS property syntax allows case-insensitive angle units in SVG 1.1 for deg, grad, and rad; that grammar is excluded from this XML attribute parser work item.
+    allowed_by:
+      - svg11-angle
+    source_refs:
+      - svg11-angle
+
+ambiguities:
+  - id: A001
+    question: SVG 1.1 XML attribute angle grammar does not include turn, while CSS Values Level 3 includes turn as an angle unit.
+    impact: Implementations need to decide whether presentation-attribute transform parsing accepts turn.
+    options:
+      - Accept turn for modern CSS/SVG transform interoperability.
+      - Restrict SVG XML attributes to SVG 1.1 deg, grad, and rad only.
+    source_refs:
+      - svg11-angle
+      - css-values-3-angle
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG number syntax
+    reason: Angle parsing depends on successful parsing of the numeric component.
+    source_refs:
+      - svg11-angle
+  - id: DEP002
+    kind: source-section
+    title: SVG transform property
+    reason: Rotate transform support is the package-visible consumer of angle values in this work item.
+    source_refs:
+      - svg2-transform
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-angle
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-angle
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg11-angle
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-values-3-angle
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-values-3-angle
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - css-values-3-angle
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - css-values-3-angle
+    map_item_refs: []
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - svg2-transform
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg11-angle
+      - css-values-3-angle
+      - svg2-transform
+    map_item_refs: []

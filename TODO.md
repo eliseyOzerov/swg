@@ -19,7 +19,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] Font-relative length units: `em`, `ex`, `ch`, `rem`.
 - [x] Viewport-relative length units: `vw`, `vh`, `vmin`, `vmax`.
 - [x] Percentage lengths.
-- [ ] Angle units: `deg`, `grad`, `rad`, `turn`.
+- [x] Angle units: `deg`, `grad`, `rad`, `turn`.
 - [ ] Time units for animations.
 - [ ] Frequency units.
 - [ ] List parsing with comma and whitespace separators.
