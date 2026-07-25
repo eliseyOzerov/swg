@@ -1,0 +1,121 @@
+import Foundation
+
+/// Common SVG presentation attributes for fill, stroke, opacity, and transform.
+public struct SVGPaintAttributes: Equatable, Sendable {
+	public var fill: SVGPaint
+	public var fillOpacity: Double
+	public var fillRule: FillRule
+	public var stroke: SVGPaint
+	public var strokeWidth: Double
+	public var strokeLineCap: LineCap
+	public var strokeLineJoin: LineJoin
+	public var strokeMiterLimit: Double
+	public var strokeDashArray: [Double]
+	public var strokeDashOffset: Double
+	public var strokeOpacity: Double
+	public var opacity: Double
+	public var transform: Transform
+	public var visibility: SVGVisibility
+	public var display: SVGDisplay
+	public var clipPathID: String?
+	public var filterID: String?
+	public var maskID: String?
+
+	public init(
+		fill: SVGPaint = .color(.black),
+		fillOpacity: Double = 1,
+		fillRule: FillRule = .winding,
+		stroke: SVGPaint = .none,
+		strokeWidth: Double = 1,
+		strokeLineCap: LineCap = .butt,
+		strokeLineJoin: LineJoin = .miter,
+		strokeMiterLimit: Double = 4,
+		strokeDashArray: [Double] = [],
+		strokeDashOffset: Double = 0,
+		strokeOpacity: Double = 1,
+		opacity: Double = 1,
+		transform: Transform = .identity,
+		visibility: SVGVisibility = .visible,
+		display: SVGDisplay = .inline,
+		clipPathID: String? = nil,
+		filterID: String? = nil,
+		maskID: String? = nil
+	) {
+		self.fill = fill
+		self.fillOpacity = fillOpacity
+		self.fillRule = fillRule
+		self.stroke = stroke
+		self.strokeWidth = strokeWidth
+		self.strokeLineCap = strokeLineCap
+		self.strokeLineJoin = strokeLineJoin
+		self.strokeMiterLimit = strokeMiterLimit
+		self.strokeDashArray = strokeDashArray
+		self.strokeDashOffset = strokeDashOffset
+		self.strokeOpacity = strokeOpacity
+		self.opacity = opacity
+		self.transform = transform
+		self.visibility = visibility
+		self.display = display
+		self.clipPathID = clipPathID
+		self.filterID = filterID
+		self.maskID = maskID
+	}
+
+	public static let defaults = SVGPaintAttributes()
+}
+
+/// SVG paint value for solid colors, inherited current color, none, or URL references.
+public enum SVGPaint: Equatable, Sendable {
+	case none
+	case color(Color)
+	case currentColor
+	case url(String)
+}
+
+/// SVG visibility property value.
+public enum SVGVisibility: Sendable, Equatable, Hashable {
+	case visible
+	case hidden
+	case collapse
+}
+
+/// SVG display property value.
+public enum SVGDisplay: Sendable, Equatable, Hashable {
+	case inline
+	case none
+}
+
+/// Per-element style override that renderers can apply after parsing.
+public struct SVGOverride: Equatable, Sendable {
+	public var fill: Color?
+	public var stroke: Color?
+	public var strokeWidth: Double?
+	public var opacity: Double?
+	public var fillOpacity: Double?
+	public var strokeOpacity: Double?
+	public var dashArray: [Double]?
+	public var visibility: SVGVisibility?
+	public var isHidden: Bool
+
+	public init(
+		fill: Color? = nil,
+		stroke: Color? = nil,
+		strokeWidth: Double? = nil,
+		opacity: Double? = nil,
+		fillOpacity: Double? = nil,
+		strokeOpacity: Double? = nil,
+		dashArray: [Double]? = nil,
+		visibility: SVGVisibility? = nil,
+		isHidden: Bool = false
+	) {
+		self.fill = fill
+		self.stroke = stroke
+		self.strokeWidth = strokeWidth
+		self.opacity = opacity
+		self.fillOpacity = fillOpacity
+		self.strokeOpacity = strokeOpacity
+		self.dashArray = dashArray
+		self.visibility = visibility
+		self.isHidden = isHidden
+	}
+}
