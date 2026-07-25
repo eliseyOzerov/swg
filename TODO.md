@@ -155,10 +155,8 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `spreadMethod="pad"`.
 - [ ] `spreadMethod="reflect"`.
 - [ ] `spreadMethod="repeat"`.
-- [ ] Gradient template inheritance via `href`.
 - [ ] `<pattern>`.
 - [ ] Pattern content coordinate systems.
-- [ ] Pattern template inheritance via `href`.
 - [ ] Paint server fallback colors.
 
 ## Clipping, Masking, and Compositing
@@ -173,8 +171,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] Mask coordinate systems.
 - [ ] Mask luminance and alpha behavior.
 - [ ] `opacity`.
-- [ ] Group opacity.
-- [ ] Overflow clipping.
 
 ## Filters
 
@@ -222,28 +218,17 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `font-style`.
 - [ ] `letter-spacing`.
 - [ ] `word-spacing`.
-- [ ] Text decoration.
 - [ ] `white-space`.
 - [ ] `inline-size`.
-- [ ] Auto-wrapped text.
 
 ## Embedded Content
 
-- [ ] `<image>` raster references.
-- [ ] `<image>` sizing.
-- [ ] `<image>` aspect ratio behavior.
 - [ ] `<foreignObject>`.
 
 ## Reuse and Linking
 
 - [ ] `href`.
 - [ ] `xlink:href`.
-- [ ] `<use>` with element references.
-- [ ] `<use>` with symbol references.
-- [ ] Shadow tree style inheritance behavior.
-- [ ] Cyclic reference detection.
-- [ ] External document references.
-- [ ] `<a>` linking.
 
 ## Markers
 
@@ -273,5 +258,4 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] Event handler attributes.
 - [ ] `pointer-events`.
 - [ ] `tabindex`.
-- [ ] Accessibility ARIA attributes.
 - [ ] `role`.
