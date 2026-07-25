@@ -1,0 +1,243 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: path-q-quadratic-bezier
+  title: Q/q quadratic Bezier path commands
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 path data behavior for explicit Q and q quadratic Bezier
+    curveto commands, including control/end coordinate pairs and relative
+    coordinate resolution.
+  non_goals:
+    - Smooth quadratic T/t commands.
+    - Implicit repeated command parsing after Q/q.
+    - Path data tokenizer edge cases such as compact signs or exponents.
+    - Rendering, flattening, or length calculation for quadratic curves.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: path-data-q-quadratic-bezier
+      title: Path Data - Q/q quadratic Bezier
+      artifact_path: spec/path-q-quadratic-bezier/requirements.yaml
+  canonical_sources:
+    - id: svg2-path-data
+      title: SVG 2 Paths - Path data
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataQuadraticBezierCommands
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-path-data-grammar
+      title: SVG 2 Paths - Grammar for path data
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataBNF
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Recognizing uppercase Q as an absolute quadratic Bezier curveto command.
+    - Recognizing lowercase q as a relative quadratic Bezier curveto command.
+    - Parsing each explicit Q/q command from two coordinate pairs.
+    - Storing the first coordinate pair as the quadratic control point and the second coordinate pair as the endpoint.
+    - Updating the current point to the command endpoint.
+  excludes:
+    - Smooth quadratic T/t reflection behavior.
+    - Implicit repeated coordinate-pair-double sequences.
+    - Error recovery for malformed path data.
+    - Conversion of quadratic curves into cubic curves for rendering.
+  assumptions:
+    - >
+      The package represents quadratic Bezier segments as PathCommand.quad with
+      an endpoint and one control point.
+    - >
+      Tests for repeated Q/q parameter groups are deferred to the separate
+      implicit repeated non-M command TODO bullet.
+
+terminology:
+  - id: term-quadratic-bezier-curveto
+    term: quadratic Bezier curveto
+    definition: >
+      A path drawing command that adds a quadratic Bezier segment from the
+      current point to an endpoint using one control point.
+    source_refs:
+      - svg2-path-data
+  - id: term-coordinate-pair-double
+    term: coordinate_pair_double
+    definition: >
+      The grammar production containing two coordinate pairs; for Q/q the first
+      pair is the control point and the second pair is the endpoint.
+    source_refs:
+      - svg2-path-data-grammar
+
+structures:
+  - id: S001
+    name: Q/q command arguments
+    kind: structure
+    source_refs:
+      - svg2-path-data
+      - svg2-path-data-grammar
+    fields:
+      - name: control
+        type: coordinate-pair
+        cardinality: required
+        position: first
+        constraints:
+          - Absolute for Q.
+          - Relative to the current point for q.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-path-data
+          - svg2-path-data-grammar
+      - name: end
+        type: coordinate-pair
+        cardinality: required
+        position: second
+        constraints:
+          - Absolute for Q.
+          - Relative to the current point for q.
+          - Becomes the new current point after the command.
+        requirement_refs:
+          - R001
+          - R002
+          - R004
+        source_refs:
+          - svg2-path-data
+          - svg2-path-data-grammar
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      A quadratic Bezier curveto command is introduced by Q or q and consumes a
+      coordinate_pair_double for each explicit command instance.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The first coordinate pair of Q/q defines the quadratic Bezier control
+      point and the second coordinate pair defines the segment endpoint.
+    applies_to:
+      - quadratic Bezier segment
+    source_refs:
+      - svg2-path-data
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: relative-coordinate
+    statement: >
+      For q, both the control point and endpoint coordinates are relative to the
+      current point at the start of the command.
+    applies_to:
+      - relative quadratic Bezier segment
+    source_refs:
+      - svg2-path-data
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: state
+    statement: >
+      After a Q/q segment, the path current point is the segment endpoint.
+    applies_to:
+      - path current point
+    source_refs:
+      - svg2-path-data
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, an explicit Q/q segment must produce a PathCommand.quad
+      whose control and endpoint are stored as absolute points.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+    reasoning: >
+      PathCommand values are inspectable absolute path commands in this package,
+      so relative q inputs need to be resolved before storage.
+    source_refs:
+      - svg2-path-data
+      - svg2-path-data-grammar
+
+implementation_choices:
+  - id: IC001
+    topic: Repeated Q/q arguments
+    statement: >
+      This bullet intentionally tests explicit Q/q command instances only;
+      repeated argument groups are deferred to the separate repeated-command
+      TODO bullet.
+    allowed_by:
+      - R001
+    source_refs:
+      - svg2-path-data-grammar
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 path coordinate grammar
+    reason: >
+      Q/q command arguments are expressed as coordinate pairs using the shared
+      path data coordinate grammar.
+    source_refs:
+      - svg2-path-data-grammar
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-q-quadratic-bezier
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-path-data
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-q-quadratic-bezier
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-path-data
+    map_item_refs:
+      - path-data-q-quadratic-bezier
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-path-data
+    map_item_refs:
+      - path-data-q-quadratic-bezier

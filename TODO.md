@@ -64,7 +64,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `V` / `v` vertical lineto.
 - [x] `C` / `c` cubic Bezier.
 - [x] `S` / `s` smooth cubic Bezier.
-- [ ] `Q` / `q` quadratic Bezier.
+- [x] `Q` / `q` quadratic Bezier.
 - [ ] `T` / `t` smooth quadratic Bezier.
 - [x] `A` / `a` elliptical arc.
 - [x] `Z` / `z` closepath.
