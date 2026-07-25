@@ -528,6 +528,51 @@ import Testing
 	#expect(paths["invalid"]?.attributes.strokeLineCap == .square)
 }
 
+@Test func svgParserAppliesSquareStrokeLineCapInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.blocky { stroke-linecap: square; }
+			.other { stroke-linecap: round; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="square-parent" stroke-linecap="square">
+			<path id="inherited" d="M0 0 L10 10"/>
+		</g>
+		<g id="round-parent" stroke-linecap="round">
+			<path id="attribute" d="M0 0 L10 10" stroke-linecap="square"/>
+			<path id="class-rule" class="blocky" d="M0 0 L10 10"/>
+			<path id="inline" class="other" d="M0 0 L10 10" style="stroke-linecap: square"/>
+			<path id="invalid" d="M0 0 L10 10" stroke-linecap="bogus"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.strokeLineCap == .butt)
+	#expect(paths["inherited"]?.attributes.strokeLineCap == .square)
+	#expect(paths["attribute"]?.attributes.strokeLineCap == .square)
+	#expect(paths["class-rule"]?.attributes.strokeLineCap == .square)
+	#expect(paths["inline"]?.attributes.strokeLineCap == .square)
+	#expect(paths["invalid"]?.attributes.strokeLineCap == .round)
+}
+
 @Test func svgParserAppliesFillOpacityInitialInheritancePercentagesAndClamping() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
