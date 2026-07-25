@@ -530,6 +530,41 @@ public struct SVGPreserveAspectRatio: Equatable, Sendable {
 		self.align = align
 		self.meetOrSlice = align == .none ? nil : meetOrSlice ?? .meet
 	}
+
+	/// Computes the SVG `viewBox` transform that maps user coordinates into a viewport rectangle.
+	public func viewBoxTransform(from viewBox: Rect, to viewport: Rect) -> Transform? {
+		guard viewBox.width > 0, viewBox.height > 0, viewport.width >= 0, viewport.height >= 0 else { return nil }
+
+		var scaleX = viewport.width / viewBox.width
+		var scaleY = viewport.height / viewBox.height
+		if align != .none {
+			switch meetOrSlice ?? .meet {
+			case .meet:
+				let scale = min(scaleX, scaleY)
+				scaleX = scale
+				scaleY = scale
+			case .slice:
+				let scale = max(scaleX, scaleY)
+				scaleX = scale
+				scaleY = scale
+			}
+		}
+
+		var translateX = viewport.x - viewBox.x * scaleX
+		var translateY = viewport.y - viewBox.y * scaleY
+		if align.usesMidX {
+			translateX += (viewport.width - viewBox.width * scaleX) / 2
+		} else if align.usesMaxX {
+			translateX += viewport.width - viewBox.width * scaleX
+		}
+		if align.usesMidY {
+			translateY += (viewport.height - viewBox.height * scaleY) / 2
+		} else if align.usesMaxY {
+			translateY += viewport.height - viewBox.height * scaleY
+		}
+
+		return Transform(a: scaleX, b: 0, c: 0, d: scaleY, tx: translateX, ty: translateY)
+	}
 }
 
 /// Alignment keywords supported by SVG `preserveAspectRatio`.
@@ -550,6 +585,44 @@ public enum SVGPreserveAspectRatioAlign: Equatable, Hashable, Sendable {
 public enum SVGMeetOrSlice: Equatable, Hashable, Sendable {
 	case meet
 	case slice
+}
+
+private extension SVGPreserveAspectRatioAlign {
+	var usesMidX: Bool {
+		switch self {
+		case .xMidYMin, .xMidYMid, .xMidYMax:
+			true
+		default:
+			false
+		}
+	}
+
+	var usesMaxX: Bool {
+		switch self {
+		case .xMaxYMin, .xMaxYMid, .xMaxYMax:
+			true
+		default:
+			false
+		}
+	}
+
+	var usesMidY: Bool {
+		switch self {
+		case .xMinYMid, .xMidYMid, .xMaxYMid:
+			true
+		default:
+			false
+		}
+	}
+
+	var usesMaxY: Bool {
+		switch self {
+		case .xMinYMax, .xMidYMax, .xMaxYMax:
+			true
+		default:
+			false
+		}
+	}
 }
 
 /// Magnification and panning policy values for SVG `zoomAndPan`.

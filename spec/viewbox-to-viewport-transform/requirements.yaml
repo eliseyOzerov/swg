@@ -1,0 +1,142 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: viewbox-to-viewport-transform
+  title: SVG viewBox to viewport transform
+  domain: SVG 2
+  profile: null
+  summary: A viewBox defines a rectangle in user space that is mapped to the bounds of the viewport using a translate and scale transform.
+  non_goals:
+    - preserveAspectRatio none behavior for mismatched aspect ratios.
+    - preserveAspectRatio meet and slice alignment variants.
+    - Rendering or clipping pixels.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-coords-equivalent-transform
+      title: SVG 2, 8.2 Computing the equivalent transform of an SVG viewport
+      url: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-coords-viewbox
+      title: SVG 2, 8.6 The viewBox attribute
+      url: https://www.w3.org/TR/SVG2/coords.html#ViewBoxAttribute
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes: []
+
+scope:
+  includes:
+    - Computing the transform for a valid viewBox and viewport rectangle.
+    - Mapping viewBox minimum and maximum corners into viewport bounds when aspect ratios match.
+  excludes:
+    - Aspect-ratio mismatch policy details, which are covered by preserveAspectRatio-specific TODO items.
+    - Invalid viewBox rendering behavior beyond returning no transform.
+  assumptions:
+    - The package represents the SVG transform as a six-value affine `Transform`.
+
+terminology:
+  - id: T001
+    term: viewBox transform
+    definition: The translation and scale applied to content contained by an SVG viewport element to map the viewBox rectangle into the viewport rectangle.
+    source_refs:
+      - svg2-coords-equivalent-transform
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: A viewBox rectangle must be mapped to the bounds of the SVG viewport established by the element.
+    applies_to:
+      - SVGPreserveAspectRatio
+      - Transform
+    source_refs:
+      - svg2-coords-viewbox
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: algorithm
+    statement: The equivalent viewport transform must initialize scale-x as viewport width divided by viewBox width and scale-y as viewport height divided by viewBox height.
+    applies_to:
+      - SVGPreserveAspectRatio.viewBoxTransform
+    source_refs:
+      - svg2-coords-equivalent-transform
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: algorithm
+    statement: The equivalent viewport transform must initialize translate-x to viewport x minus viewBox min-x multiplied by scale-x and translate-y to viewport y minus viewBox min-y multiplied by scale-y.
+    applies_to:
+      - SVGPreserveAspectRatio.viewBoxTransform
+    source_refs:
+      - svg2-coords-equivalent-transform
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The transform applied to contained content must be equivalent to `translate(translate-x, translate-y) scale(scale-x, scale-y)`.
+    applies_to:
+      - SVGPreserveAspectRatio.viewBoxTransform
+      - Transform
+    source_refs:
+      - svg2-coords-equivalent-transform
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: viewBox width or height is negative
+    source_behavior: error that invalidates the viewBox attribute
+    required_behavior: Return no transform.
+    decision_required: false
+    source_refs:
+      - svg2-coords-viewbox
+  - id: I002
+    condition: viewBox width or height is zero
+    source_behavior: disables rendering of the element
+    required_behavior: Return no transform.
+    decision_required: false
+    source_refs:
+      - svg2-coords-viewbox
+recommendations: []
+derived_requirements: []
+implementation_choices: []
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-coords-viewbox
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-coords-equivalent-transform
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-coords-equivalent-transform
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-coords-equivalent-transform
+    map_item_refs: []

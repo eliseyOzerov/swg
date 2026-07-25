@@ -90,6 +90,17 @@ import Testing
 	#expect(nested.viewBox == Rect(x: 0, y: 0, width: 5, height: 5))
 }
 
+@Test func svgPreserveAspectRatioComputesViewBoxToViewportTransform() throws {
+	let transform = try #require(SVGPreserveAspectRatio.default.viewBoxTransform(
+		from: Rect(x: 10, y: 20, width: 100, height: 50),
+		to: Rect(x: 5, y: 7, width: 200, height: 100)
+	))
+
+	#expect(transform == Transform(a: 2, b: 0, c: 0, d: 2, tx: -15, ty: -33))
+	#expect(Point(10, 20).applying(transform) == Point(5, 7))
+	#expect(Point(110, 70).applying(transform) == Point(205, 107))
+}
+
 @Test func svgParserParsesPaintValuesAndFallbacks() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
