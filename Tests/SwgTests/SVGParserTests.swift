@@ -181,6 +181,43 @@ import Testing
 	#expect(invalid.preserveAspectRatio == .default)
 }
 
+@Test func svgParserStoresDefsContentOutsideRenderableElements() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<defs>
+			<g id="glyph" fill="#336699">
+				<path id="glyph-path" d="M0 0 L1 1"/>
+			</g>
+			<path id="loose" d="M2 2 L3 3"/>
+		</defs>
+		<path id="visible" d="M4 4 L5 5"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["visible"])
+	#expect(document.defs.reusableElements.keys.sorted() == ["glyph", "loose"])
+
+	guard case .group(let glyph) = try #require(document.defs.reusableElements["glyph"]?.first) else {
+		Issue.record("Expected defs glyph to be preserved as a group")
+		return
+	}
+	#expect(glyph.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .path(let glyphPath) = glyph.children.first else {
+		Issue.record("Expected defs group child to be a path")
+		return
+	}
+	#expect(glyphPath.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .path(let loose) = try #require(document.defs.reusableElements["loose"]?.first) else {
+		Issue.record("Expected loose defs child to be preserved as a path")
+		return
+	}
+	#expect(loose.id == "loose")
+}
+
 @Test func svgParserUsesFunctionalURLParserForLocalResourceReferences() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

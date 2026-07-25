@@ -33,7 +33,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<svg>` `viewBox`.
 - [x] `<svg>` `preserveAspectRatio`.
 - [x] `<g>`.
-- [ ] `<defs>`.
+- [x] `<defs>`.
 - [ ] `<symbol>`.
 - [ ] `<use>`.
 - [ ] `<switch>`.

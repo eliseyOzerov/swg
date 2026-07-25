@@ -1,0 +1,203 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: defs
+  title: defs element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the defs element as a container
+    of reusable, non-directly-rendered content.
+  non_goals:
+    - Resolving references such as use, fill url(), clip-path, masks, or filters.
+    - Full CSS user-agent stylesheet behavior.
+    - Serialization of defs back to XML.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-defs
+      title: Document and Container Elements - defs
+      artifact_path: spec/defs/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-defs
+      title: SVG 2 Document Structure - The defs element
+      url: https://www.w3.org/TR/SVG2/struct.html#DefsElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - Recognizing defs as a container element.
+    - Preserving descendants of defs for later reference.
+    - Ensuring descendants of defs are not treated as directly rendered root content.
+    - Preserving ordinary SVG child structure and inherited presentation attributes inside defs.
+  excludes:
+    - Rendering referenced definitions through use or paint servers.
+    - Enforcing authoring recommendations about defs placement.
+    - Complete content-model validation.
+  assumptions:
+    - >
+      The parser may store defined content in a definitions registry rather than
+      preserving a literal defs element in the render tree.
+
+terminology:
+  - id: term-defs
+    term: defs
+    definition: >
+      An SVG structural container for elements intended to be referenced later
+      rather than rendered directly.
+    source_refs:
+      - svg2-struct-defs
+  - id: term-referenced-element
+    term: referenced element
+    definition: >
+      Content in defs that remains present in the source tree and may be
+      addressed by URL references or other reference mechanisms.
+    source_refs:
+      - svg2-struct-defs
+
+structures:
+  - id: S001
+    name: defs container
+    kind: structure
+    source_refs:
+      - svg2-struct-defs
+    fields:
+      - name: children
+        type: svg-element-list
+        cardinality: zero-or-more
+        position: child-content
+        constraints:
+          - The defs content model is the same as the g element content model.
+          - Descendants of defs are not rendered directly.
+          - Descendants of defs remain present and referenceable.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-struct-defs
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A defs element must be treated as an SVG container element whose content
+      model is the same as g.
+    applies_to:
+      - defs element
+    source_refs:
+      - svg2-struct-defs
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: >
+      Descendants of defs must not be rendered directly as ordinary SVG output.
+    applies_to:
+      - defs descendants
+    source_refs:
+      - svg2-struct-defs
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      Descendants of defs remain present in the source tree and can be referenced
+      by other elements.
+    applies_to:
+      - defs descendants
+      - referenced elements
+    source_refs:
+      - svg2-struct-defs
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations:
+  - id: N001
+    normative_strength: RECOMMENDED
+    statement: >
+      Referenced elements should be defined inside defs whenever possible for
+      understandability and accessibility.
+    source_refs:
+      - svg2-struct-defs
+  - id: N002
+    normative_strength: RECOMMENDED
+    statement: >
+      Referenced elements should be defined before the elements that use them
+      in document order where possible.
+    source_refs:
+      - svg2-struct-defs
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      A parser that emits a renderable element list and a definitions registry
+      must place defs descendants in the registry, not in the renderable root
+      element list.
+    derived_from:
+      - R002
+      - R003
+    reasoning: >
+      Keeping defs content in render output would violate the never-rendered
+      behavior, while dropping it would make later references impossible.
+    source_refs:
+      - svg2-struct-defs
+
+implementation_choices:
+  - id: IC001
+    topic: Registry keying
+    statement: >
+      The specification requires defs descendants to be referenceable but does
+      not mandate a specific in-memory registry shape or keying strategy.
+    allowed_by:
+      - R003
+    source_refs:
+      - svg2-struct-defs
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 URL references
+    reason: >
+      Reuse of defs descendants depends on reference mechanisms that are covered
+      by separate TODO bullets.
+    source_refs:
+      - svg2-struct-defs
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-defs
+    map_item_refs:
+      - document-container-elements-defs
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-struct-defs
+    map_item_refs:
+      - document-container-elements-defs
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-struct-defs
+    map_item_refs:
+      - document-container-elements-defs
