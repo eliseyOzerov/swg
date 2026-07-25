@@ -144,3 +144,31 @@ import Testing
 	}
 	#expect(text.spans.first?.text == "AB")
 }
+
+@Test func svgParserPreservesUnknownSVGElementsAsContainers() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<mysteryElement id="wrapper" fill="#336699">
+			<path id="child" d="M0 0 L10 10"/>
+		</mysteryElement>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["wrapper", "child"])
+
+	guard case .unknown(let unknown) = document.elements.first else {
+		Issue.record("Expected root element to be unknown")
+		return
+	}
+	#expect(unknown.name == "mysteryElement")
+	#expect(unknown.namespaceURI == "http://www.w3.org/2000/svg")
+	#expect(unknown.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .path(let child) = unknown.children.first else {
+		Issue.record("Expected unknown element child to be a path")
+		return
+	}
+	#expect(child.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+}

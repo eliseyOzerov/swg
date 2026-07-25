@@ -1,0 +1,128 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: unknown-elements
+  title: Unknown SVG element preservation
+  domain: SVG 2
+  profile: null
+  summary: Preserve unknown SVG-namespaced elements as container elements so their identity, inherited presentation attributes, and child SVG element tree survive parsing.
+  non_goals:
+    - Preserve unknown attributes on known or unknown elements.
+    - Preserve foreign-namespaced elements.
+    - Implement text-context unknown element behavior as tspan.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-unknown-elements
+      title: SVG 2 Document Structure, Unknown elements
+      url: https://www.w3.org/TR/SVG/struct.html#UnknownElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-foreign-namespaces
+      title: SVG 2 Document Structure, Foreign namespaces and private data
+      url: https://www.w3.org/TR/SVG/struct.html#ForeignNamespaces
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Unknown elements in the SVG namespace.
+    - Unknown element name preservation.
+    - Unknown element child preservation.
+    - Presentation/style inheritance through unknown element containers.
+  excludes:
+    - Unknown attribute preservation.
+    - Foreign namespace DOM preservation.
+    - Rendering actual CGPath output for unknown containers.
+    - Unknown elements inside SVG text layout.
+  assumptions:
+    - The parser model can represent unknown SVG elements distinctly from known groups while still sharing container semantics.
+
+terminology:
+  - id: term-unknown-svg-element
+    term: Unknown SVG element
+    definition: An element in the SVG namespace that is not defined by SVG or an SVG module.
+    source_refs:
+      - svg2-unknown-elements
+  - id: term-foreign-element
+    term: Foreign-namespaced element
+    definition: An element whose namespace is not the SVG namespace.
+    source_refs:
+      - svg2-foreign-namespaces
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: Unknown SVG-namespaced elements must be preserved as distinct unknown elements rather than dropped.
+    applies_to:
+      - SVG parser document model
+    source_refs:
+      - svg2-unknown-elements
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Unknown SVG-namespaced elements must act as renderable container elements for child SVG element parsing.
+    applies_to:
+      - SVG parser document model
+    source_refs:
+      - svg2-unknown-elements
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Presentation attributes and style inherited through an unknown SVG-namespaced element must apply to descendant elements according to normal inheritance.
+    applies_to:
+      - SVG parser style inheritance
+    source_refs:
+      - svg2-unknown-elements
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Foreign elements
+    statement: Foreign-namespaced element preservation remains a separate work item because SVG 2 gives them non-rendering DOM-preservation behavior, unlike unknown SVG elements.
+    allowed_by:
+      - TODO.md separate unknown/foreign coverage
+    source_refs:
+      - svg2-foreign-namespaces
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-unknown-elements
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-unknown-elements
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-unknown-elements
+    map_item_refs: []

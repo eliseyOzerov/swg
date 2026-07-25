@@ -43,7 +43,7 @@ public struct SVGDefs: Equatable, Sendable {
 	}
 }
 
-/// A single SVG shape, group, text, image, or use element.
+/// A single SVG shape, group, unknown container, text, image, or use element.
 public indirect enum SVGElement: Equatable, Sendable {
 	case path(SVGPathData)
 	case rect(SVGRectData)
@@ -53,6 +53,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 	case polygon(SVGPolygonData)
 	case polyline(SVGPolygonData)
 	case group(SVGGroupData)
+	case unknown(SVGUnknownElementData)
 	case use(SVGUseData)
 	case image(SVGImageData)
 	case text(SVGTextData)
@@ -67,6 +68,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 		case .polygon(let data): [data.id]
 		case .polyline(let data): [data.id]
 		case .group(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
+		case .unknown(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .use(let data): [data.id]
 		case .image(let data): [data.id]
 		case .text(let data): [data.id]
@@ -186,6 +188,23 @@ public struct SVGGroupData: Equatable, Sendable {
 
 	public init(id: String, attributes: SVGPaintAttributes, children: [SVGElement]) {
 		self.id = id
+		self.attributes = attributes
+		self.children = children
+	}
+}
+
+/// Data for an unknown SVG element preserved as a renderable container.
+public struct SVGUnknownElementData: Equatable, Sendable {
+	public let id: String
+	public let name: String
+	public let namespaceURI: String?
+	public let attributes: SVGPaintAttributes
+	public let children: [SVGElement]
+
+	public init(id: String, name: String, namespaceURI: String?, attributes: SVGPaintAttributes, children: [SVGElement]) {
+		self.id = id
+		self.name = name
+		self.namespaceURI = namespaceURI
 		self.attributes = attributes
 		self.children = children
 	}

@@ -9,7 +9,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] XML namespaces, including default SVG namespace and `xlink`.
 - [x] XML entity handling.
 - [x] XML comments and processing instructions.
-- [ ] Unknown element preservation.
+- [x] Unknown element preservation.
 - [ ] Unknown attribute preservation.
 - [ ] Whitespace normalization rules.
 - [ ] `xml:space`.

@@ -6,17 +6,27 @@ import FoundationXML
 /// Parses SVG XML data into an `SVGDocument`.
 public final class SVGParser: NSObject, XMLParserDelegate {
 	fileprivate static let svgNamespaceURI = "http://www.w3.org/2000/svg"
+	private static let knownSVGElementNames: Set<String> = [
+		"a", "animate", "animateMotion", "animateTransform", "circle", "clipPath", "defs", "desc", "discard", "ellipse",
+		"feBlend", "feColorMatrix", "feComponentTransfer", "feComposite", "feConvolveMatrix", "feDiffuseLighting",
+		"feDisplacementMap", "feDistantLight", "feDropShadow", "feFlood", "feFuncA", "feFuncB", "feFuncG", "feFuncR",
+		"feGaussianBlur", "feImage", "feMerge", "feMergeNode", "feMorphology", "feOffset", "fePointLight",
+		"feSpecularLighting", "feSpotLight", "feTile", "feTurbulence", "filter", "foreignObject", "g", "image",
+		"line", "linearGradient", "marker", "mask", "metadata", "mpath", "path", "pattern", "polygon", "polyline",
+		"radialGradient", "rect", "script", "set", "stop", "style", "svg", "switch", "symbol", "text", "textPath",
+		"title", "tspan", "use", "view"
+	]
 
 	private var viewBox: Rect = .zero
 	private var rootWidth: Double?
 	private var rootHeight: Double?
 	private var rootPaintAttributes: SVGPaintAttributes = .defaults
-	private var elementStack: [SVGGroupBuilder] = []
+	private var elementStack: [SVGElementBuilder] = []
 	private var rootElements: [SVGElement] = []
 	private var elementCounters: [String: Int] = [:]
 	private var defs = SVGDefs()
 	private var inDefs = false
-	private var defsElementStack: [SVGGroupBuilder] = []
+	private var defsElementStack: [SVGElementBuilder] = []
 	private var currentLinearGradient: SVGLinearGradientDef?
 	private var currentRadialGradient: SVGRadialGradientDef?
 	private var currentGradientStops: [SVGGradientStop] = []
@@ -118,14 +128,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "g":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Group")
-			let builder = SVGGroupBuilder(id: id, attributes: attrs)
+			let builder = SVGElementBuilder(kind: .group, id: id, attributes: attrs)
 			if inDefs {
 				defsElementStack.append(builder)
 			} else if !inClipPath && !inMask {
 				elementStack.append(builder)
 			}
 		default:
-			parseShapeElement(elementName, attributes: attributes)
+			if !parseShapeElement(elementName, attributes: attributes), !Self.knownSVGElementNames.contains(elementName) {
+				parseUnknownElementStart(elementName, namespaceURI: parsedElement.namespaceURI, attributes: attributes)
+				parsedElementStack[parsedElementStack.count - 1].role = .unknownContainer
+			}
 		}
 	}
 
@@ -189,16 +202,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "tspan":
 			finalizeTSpan()
 		case "g":
-			if inDefs {
-				if let builder = defsElementStack.popLast() {
-					let group = SVGGroupData(id: builder.id, attributes: builder.attributes, children: builder.children)
-					defs.reusableElements[builder.id] = [.group(group)]
-				}
-			} else if let builder = elementStack.popLast() {
-				appendElement(.group(SVGGroupData(id: builder.id, attributes: builder.attributes, children: builder.children)))
-			}
+			finalizeContainerElement()
 		default:
-			break
+			if parsedElement.role == .unknownContainer {
+				finalizeContainerElement()
+			}
 		}
 
 		if inStyleElement {
@@ -239,7 +247,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		parsedElementStack = []
 	}
 
-	private func parseShapeElement(_ elementName: String, attributes: [String: String]) {
+	private func parseShapeElement(_ elementName: String, attributes: [String: String]) -> Bool {
 		switch elementName {
 		case "path":
 			if let d = attributes["d"] {
@@ -247,32 +255,50 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				let id = resolveID(attributes["id"], elementName: "Path")
 				appendElement(.path(SVGPathData(id: id, d: d, attributes: attrs)))
 			}
+			return true
 		case "rect":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Rect")
 			appendElement(.rect(SVGRectData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs)))
+			return true
 		case "circle":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Circle")
 			appendElement(.circle(SVGCircleData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), r: double(attributes["r"]), attributes: attrs)))
+			return true
 		case "ellipse":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Ellipse")
 			appendElement(.ellipse(SVGEllipseData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs)))
+			return true
 		case "line":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Line")
 			appendElement(.line(SVGLineData(id: id, x1: double(attributes["x1"]), y1: double(attributes["y1"]), x2: double(attributes["x2"]), y2: double(attributes["y2"]), attributes: attrs)))
+			return true
 		case "polygon":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Polygon")
 			appendElement(.polygon(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs)))
+			return true
 		case "polyline":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Polyline")
 			appendElement(.polyline(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs)))
+			return true
 		default:
-			break
+			return false
+		}
+	}
+
+	private func parseUnknownElementStart(_ elementName: String, namespaceURI: String?, attributes: [String: String]) {
+		let attrs = parsePaintAttributes(attributes)
+		let id = resolveID(attributes["id"], elementName: elementName)
+		let builder = SVGElementBuilder(kind: .unknown(name: elementName, namespaceURI: namespaceURI), id: id, attributes: attrs)
+		if inDefs {
+			defsElementStack.append(builder)
+		} else if !inClipPath && !inMask {
+			elementStack.append(builder)
 		}
 	}
 
@@ -455,8 +481,22 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
+	private func finalizeContainerElement() {
+		if inDefs {
+			guard let builder = defsElementStack.popLast() else { return }
+			let element = builder.buildElement()
+			if let parent = defsElementStack.last {
+				parent.children.append(element)
+			} else {
+				defs.reusableElements[element.id] = [element]
+			}
+		} else if let builder = elementStack.popLast() {
+			appendElement(builder.buildElement())
+		}
+	}
+
 	private func parsePaintAttributes(_ attributes: [String: String]) -> SVGPaintAttributes {
-		let inherited = elementStack.last?.attributes ?? rootPaintAttributes
+		let inherited = (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
 		var result = inherited
 		result.transform = .identity
 
@@ -688,11 +728,17 @@ private struct SVGExpandedName {
 private struct SVGParsedElement {
 	var localName: String
 	var namespaceURI: String?
+	var role: SVGParsedElementRole = .normal
 
 	var isSVGElement: Bool {
 		guard let namespaceURI else { return true }
 		return namespaceURI == SVGParser.svgNamespaceURI
 	}
+}
+
+private enum SVGParsedElementRole {
+	case normal
+	case unknownContainer
 }
 
 private func splitQualifiedName(_ qualifiedName: String) -> (prefix: String?, localName: String) {
@@ -713,6 +759,7 @@ private extension SVGElement {
 		case .polygon(let data): data.id
 		case .polyline(let data): data.id
 		case .group(let data): data.id
+		case .unknown(let data): data.id
 		case .use(let data): data.id
 		case .image(let data): data.id
 		case .text(let data): data.id
@@ -720,15 +767,31 @@ private extension SVGElement {
 	}
 }
 
-/// Mutable builder used during SVG parsing to accumulate group children.
-private final class SVGGroupBuilder {
+/// Mutable builder used during SVG parsing to accumulate container children.
+private final class SVGElementBuilder {
+	enum Kind {
+		case group
+		case unknown(name: String, namespaceURI: String?)
+	}
+
+	let kind: Kind
 	let id: String
 	let attributes: SVGPaintAttributes
 	var children: [SVGElement] = []
 
-	init(id: String, attributes: SVGPaintAttributes) {
+	init(kind: Kind, id: String, attributes: SVGPaintAttributes) {
+		self.kind = kind
 		self.id = id
 		self.attributes = attributes
+	}
+
+	func buildElement() -> SVGElement {
+		switch kind {
+		case .group:
+			.group(SVGGroupData(id: id, attributes: attributes, children: children))
+		case .unknown(let name, let namespaceURI):
+			.unknown(SVGUnknownElementData(id: id, name: name, namespaceURI: namespaceURI, attributes: attributes, children: children))
+		}
 	}
 }
 
