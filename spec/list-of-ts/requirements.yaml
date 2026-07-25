@@ -1,0 +1,241 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: list-of-ts
+  title: SVG list-of-T comma-wsp parsing
+  domain: SVG 1.1 / SVG 2 data types
+  profile: null
+  summary: Parse SVG XML attribute lists whose item type is neither string nor family-name using the reusable comma-wsp separator grammar.
+  non_goals:
+    - Parse <list-of-strings>.
+    - Parse <list-of-family-names> or CSS font-family syntax.
+    - Parse CSS property value lists beyond SVG XML attribute presentation syntax.
+    - Parse path-data compact numeric tokenization.
+    - Parse full <transform-list> function sequencing.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-list-of-ts
+      title: SVG 1.1 Basic Data Types, <list-of-Ts>
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeList
+      version: SVG 1.1 Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-number-optional-number
+      title: SVG 1.1 Basic Data Types, <number-optional-number>
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeNumberOptionalNumber
+      version: SVG 1.1 Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+    - SVG 2 retains SVG list interfaces but the reusable XML attribute comma-wsp grammar is stated directly in SVG 1.1 basic data types.
+
+scope:
+  includes:
+    - Generic <list-of-Ts> parsing for SVG XML attributes when T is not <string> or <family-name>.
+    - Comma-separated values with optional SVG whitespace around the comma.
+    - Whitespace-separated values.
+    - Reusing the tokenized list with a scalar item parser.
+  excludes:
+    - String and font family list syntax.
+    - CSS list grammar.
+    - Path data grammar and compact number splitting.
+    - IRI, paint, and transform function semantics.
+  assumptions:
+    - A reusable tokenizer can return item text for downstream parsers without knowing the item type T.
+    - Empty item text is invalid because each list production contains a T before each separator.
+
+terminology:
+  - id: term-list-of-ts
+    term: <list-of-Ts>
+    definition: A separated sequence of values where T is a type other than <string> or <family-name>.
+    source_refs:
+      - svg11-list-of-ts
+  - id: term-comma-wsp
+    term: comma-wsp
+    definition: The separator grammar that allows either whitespace with an optional comma, or a comma followed by optional whitespace.
+    source_refs:
+      - svg11-list-of-ts
+      - svg11-number-optional-number
+  - id: term-svg-list-whitespace
+    term: SVG list whitespace
+    definition: Consecutive space, tab, line feed, carriage return, or form-feed characters used as list whitespace.
+    source_refs:
+      - svg11-list-of-ts
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: A generic list-of-T parser must accept a single item T with no separator.
+    applies_to:
+      - SVG XML attribute list parsing
+    source_refs:
+      - svg11-list-of-ts
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A generic list-of-T parser must accept comma-separated item sequences with optional SVG whitespace before and after each comma.
+    applies_to:
+      - SVG XML attribute list parsing
+    source_refs:
+      - svg11-list-of-ts
+      - svg11-number-optional-number
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: A generic list-of-T parser must accept item sequences separated by one or more SVG whitespace characters.
+    applies_to:
+      - SVG XML attribute list parsing
+    source_refs:
+      - svg11-list-of-ts
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: SVG list whitespace must include U+0020 space, U+0009 tab, U+000A line feed, U+000D carriage return, and U+000C form-feed.
+    applies_to:
+      - SVG XML attribute list parsing
+    source_refs:
+      - svg11-list-of-ts
+    testability: testable
+    notes:
+      - The prose includes form-feed; the displayed wsp grammar omits it, so this requirement follows the prose for list whitespace.
+  - id: R005
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: A generic list-of-T parser must not accept leading comma separators, trailing comma separators, repeated comma separators, or separators with no T value between them.
+    applies_to:
+      - SVG XML attribute list parsing
+    source_refs:
+      - svg11-list-of-ts
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: When a list parser is used with a scalar parser for T, every token must parse successfully as T for the list parse to succeed.
+    applies_to:
+      - SVG XML attribute list parsing
+    source_refs:
+      - svg11-list-of-ts
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: list-of-Ts separator grammar
+    kind: grammar
+    summary: A list is either one T or a T followed by comma-wsp and another list-of-Ts.
+    steps:
+      - Parse an item T.
+      - If input remains, parse comma-wsp.
+      - Parse the next list item.
+      - Repeat until input is consumed.
+    preconditions:
+      - The item type T is neither <string> nor <family-name>.
+    postconditions:
+      - The list contains one or more T values.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R005
+    source_refs:
+      - svg11-list-of-ts
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Empty input or input containing only SVG whitespace.
+    source_behavior: UNSPECIFIED
+    required_behavior: reject as no list item T
+    decision_required: false
+    source_refs:
+      - svg11-list-of-ts
+  - id: I002
+    condition: Adjacent or dangling comma separators with no intervening item T.
+    source_behavior: INVALID
+    required_behavior: reject
+    decision_required: false
+    source_refs:
+      - svg11-list-of-ts
+
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Leading and trailing whitespace
+    statement: Leading and trailing SVG whitespace may be trimmed before applying list parsing because the grammar defines separators between T values, not document-level attribute whitespace handling.
+    allowed_by:
+      - Existing SVG parser whitespace handling
+    source_refs:
+      - svg11-list-of-ts
+ambiguities:
+  - id: A001
+    question: The prose includes U+000C form-feed as list whitespace while the displayed wsp production lists only U+0020, U+0009, U+000D, and U+000A.
+    impact: Implementations must choose whether form-feed separates list values.
+    options:
+      - Include form-feed as list whitespace because the prose explicitly names it.
+      - Follow the displayed grammar literally and omit form-feed.
+    source_refs:
+      - svg11-list-of-ts
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG scalar type T parser
+    reason: Tokenized list items must be parsed by the relevant T grammar when typed values are required.
+    source_refs:
+      - svg11-list-of-ts
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-list-of-ts
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-list-of-ts
+      - svg11-number-optional-number
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg11-list-of-ts
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg11-list-of-ts
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg11-list-of-ts
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg11-list-of-ts
+    map_item_refs: []
+  - item_id: ALG001
+    item_type: algorithm
+    source_refs:
+      - svg11-list-of-ts
+    map_item_refs: []

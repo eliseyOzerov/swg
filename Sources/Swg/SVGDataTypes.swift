@@ -138,6 +138,64 @@ enum SVGFrequencyParser {
 	}
 }
 
+/// Parses reusable SVG attribute list syntax using comma-wsp separators.
+enum SVGListParser {
+	private static let whitespace = CharacterSet(charactersIn: " \t\n\r\u{000C}")
+
+	static func parse(_ value: String) -> [String]? {
+		let trimmed = value.trimmingCharacters(in: whitespace)
+		guard !trimmed.isEmpty else { return nil }
+
+		var tokens: [String] = []
+		var index = trimmed.startIndex
+		while index < trimmed.endIndex {
+			guard !isSeparator(trimmed[index]) else { return nil }
+
+			let tokenStart = index
+			while index < trimmed.endIndex, !isSeparator(trimmed[index]) {
+				index = trimmed.index(after: index)
+			}
+			tokens.append(String(trimmed[tokenStart..<index]))
+
+			var consumedWhitespace = false
+			while index < trimmed.endIndex, isWhitespace(trimmed[index]) {
+				consumedWhitespace = true
+				index = trimmed.index(after: index)
+			}
+
+			if index < trimmed.endIndex, trimmed[index] == "," {
+				index = trimmed.index(after: index)
+				while index < trimmed.endIndex, isWhitespace(trimmed[index]) {
+					index = trimmed.index(after: index)
+				}
+				guard index < trimmed.endIndex else { return nil }
+			} else if !consumedWhitespace, index < trimmed.endIndex {
+				return nil
+			}
+		}
+
+		return tokens.isEmpty ? nil : tokens
+	}
+
+	static func parse<T>(_ value: String, itemParser: (String) -> T?) -> [T]? {
+		guard let tokens = parse(value) else { return nil }
+		var items: [T] = []
+		for token in tokens {
+			guard let item = itemParser(token) else { return nil }
+			items.append(item)
+		}
+		return items
+	}
+
+	private static func isSeparator(_ character: Character) -> Bool {
+		character == "," || isWhitespace(character)
+	}
+
+	private static func isWhitespace(_ character: Character) -> Bool {
+		character.unicodeScalars.allSatisfy { whitespace.contains($0) }
+	}
+}
+
 /// Context used to resolve SVG relative length units into user units.
 struct SVGLengthContext: Equatable, Sendable {
 	var fontSize: Double

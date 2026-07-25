@@ -22,7 +22,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<angle>` units: `deg`, `grad`, `rad`, `turn`.
 - [x] `<time>`.
 - [x] `<frequency>`.
-- [ ] `<list-of-Ts>` comma-wsp parsing.
+- [x] `<list-of-Ts>` comma-wsp parsing.
 - [ ] `<paint>`.
 - [ ] `<url>`.
 

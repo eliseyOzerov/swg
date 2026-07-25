@@ -665,8 +665,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseDashArray(_ value: String) -> [Double] {
 		let trimmed = value.trimmingCharacters(in: .whitespaces)
 		if trimmed == "none" { return [] }
-		return trimmed.split(whereSeparator: { $0 == "," || $0 == " " })
-			.compactMap { parseNumber(String($0)) }
+		return SVGListParser.parse(trimmed, itemParser: parseNumber) ?? []
 	}
 
 	private func parseURLID(_ value: String) -> String? {
@@ -680,7 +679,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseSVGRoot(_ attributes: [String: String]) {
 		rootID = attributes["id"]
 		if let vb = attributes["viewBox"] {
-			let parts = vb.split(whereSeparator: { $0 == " " || $0 == "," }).compactMap { parseNumber(String($0)) }
+			let parts = SVGListParser.parse(vb, itemParser: parseNumber) ?? []
 			if parts.count == 4 {
 				viewBox = Rect(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
 			}
@@ -728,7 +727,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func rgbColor(_ value: String) -> Color? {
 		let inner = value.drop { $0 != "(" }.dropFirst().prefix { $0 != ")" }
-		let parts = inner.split(whereSeparator: { $0 == "," || $0 == " " }).compactMap { parseNumber(String($0)) }
+		guard let parts = SVGListParser.parse(String(inner), itemParser: parseNumber) else { return nil }
 		guard parts.count >= 3 else { return nil }
 		return Color(parts[0] / 255, parts[1] / 255, parts[2] / 255)
 	}
@@ -778,9 +777,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let nsValue = value as NSString
 		for match in regex.matches(in: value, range: NSRange(location: 0, length: nsValue.length)) {
 			let function = nsValue.substring(with: match.range(at: 1))
-			let argTexts = nsValue.substring(with: match.range(at: 2))
-				.split(whereSeparator: { $0 == "," || $0.isWhitespace })
-				.map(String.init)
+			guard let argTexts = SVGListParser.parse(nsValue.substring(with: match.range(at: 2))) else { continue }
 			let args = argTexts.compactMap { parseNumber($0) }
 			switch function {
 			case "translate" where args.count >= 1:
@@ -800,7 +797,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parsePoints(_ value: String) -> [Point] {
-		let numbers = value.split(whereSeparator: { $0 == " " || $0 == "," }).compactMap { parseNumber(String($0)) }
+		let numbers = SVGListParser.parse(value, itemParser: parseNumber) ?? []
 		var points: [Point] = []
 		var index = 0
 		while index + 1 < numbers.count {

@@ -178,3 +178,27 @@ import Testing
 	#expect(SVGFrequencyParser.parse("1khzz") == nil)
 	#expect(SVGFrequencyParser.parse("1%") == nil)
 }
+
+@Test func svgListParserSplitsCommaAndWhitespaceSeparatedValues() {
+	#expect(SVGListParser.parse("10") == ["10"])
+	#expect(SVGListParser.parse("10 20 30") == ["10", "20", "30"])
+	#expect(SVGListParser.parse("10,20,30") == ["10", "20", "30"])
+	#expect(SVGListParser.parse("10, 20 \t30\n40\r50\u{000C}60") == ["10", "20", "30", "40", "50", "60"])
+	#expect(SVGListParser.parse("  10 ,\t20\n,\r30\u{000C}40  ") == ["10", "20", "30", "40"])
+}
+
+@Test func svgListParserRejectsMissingItemsAndBareSeparators() {
+	#expect(SVGListParser.parse("") == nil)
+	#expect(SVGListParser.parse("   ") == nil)
+	#expect(SVGListParser.parse(",") == nil)
+	#expect(SVGListParser.parse(",10") == nil)
+	#expect(SVGListParser.parse("10,") == nil)
+	#expect(SVGListParser.parse("10,,20") == nil)
+	#expect(SVGListParser.parse("10, ,20") == nil)
+	#expect(SVGListParser.parse("10  ,  , 20") == nil)
+}
+
+@Test func svgListParserMapsTokensThroughScalarParser() {
+	#expect(SVGListParser.parse("1, 2 -3", itemParser: SVGNumberParser.parse) == [1, 2, -3])
+	#expect(SVGListParser.parse("1, nope", itemParser: SVGNumberParser.parse) == nil)
+}
