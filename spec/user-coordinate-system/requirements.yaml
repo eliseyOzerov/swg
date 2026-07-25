@@ -1,0 +1,145 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: user-coordinate-system
+  title: SVG initial user coordinate system
+  domain: SVG 2
+  profile: null
+  summary: The outermost SVG element establishes an initial user coordinate system that matches the initial viewport coordinate system before viewBox or transform adjustments.
+  non_goals:
+    - ViewBox-to-viewport fitting.
+    - Nested viewport coordinate systems.
+    - Transform list application.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-coords-initial-coordinate-system
+      title: SVG 2, 8.4 The initial coordinate system
+      url: https://www.w3.org/TR/SVG2/coords.html#InitialCoordinateSystem
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-coords-viewport
+      title: SVG 2, 8.3 The initial viewport
+      url: https://www.w3.org/TR/SVG2/coords.html#InitialViewport
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes: []
+
+scope:
+  includes:
+    - The initial user coordinate system for an outermost SVG element without a viewBox transform.
+    - Numeric geometry coordinates expressed as initial user units.
+  excludes:
+    - CSS layout negotiation for embedded SVG documents.
+    - Text glyph orientation.
+  assumptions:
+    - The package stores parsed geometry in SVG user units before renderer-specific conversion to platform drawing APIs.
+
+terminology:
+  - id: T001
+    term: initial user coordinate system
+    definition: The coordinate system established for the outermost SVG element that initially matches the viewport coordinate system.
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+  - id: T002
+    term: user unit
+    definition: A coordinate length in the current user coordinate system; initially one unit equals one CSS px in the viewport.
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: The outermost SVG element must establish an initial user coordinate system that is identical to the initial viewport coordinate system before further coordinate transformations.
+    applies_to:
+      - SVGParser
+      - SVGDocument
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The origin of the initial user coordinate system must be at the SVG viewport origin.
+    applies_to:
+      - SVGParser
+      - SVGDocument
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: In standalone or CSS-layout SVG contexts, the initial coordinate system must have positive x values extending right and positive y values extending downward from the top-left origin.
+    applies_to:
+      - SVGParser
+      - SVGDocument
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: One unit in the initial coordinate system must correspond to one CSS px in the SVG viewport.
+    applies_to:
+      - SVGParser
+      - SVGDocument
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+      - svg2-coords-viewport
+    testability: testable
+    notes:
+      - For this package, this is represented by preserving unitless width, height, and child geometry in the same parsed coordinate space.
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Platform renderer mapping
+    statement: The source does not require this data package to store a platform-renderer transform; renderer adapters may map user units to CGPath or SwiftUI coordinates later.
+    allowed_by:
+      - svg2-coords-initial-coordinate-system
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-coords-initial-coordinate-system
+      - svg2-coords-viewport
+    map_item_refs: []

@@ -38,6 +38,36 @@ import Testing
 	#expect(path.attributes.strokeWidth == 2)
 }
 
+@Test func svgParserPreservesInitialUserCoordinateSystem() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">
+		<line id="diagonal" x1="0" y1="0" x2="300" y2="100"/>
+		<rect id="lower-left" x="0" y="97" width="3" height="3"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.viewBox == Rect(x: 0, y: 0, width: 300, height: 100))
+
+	guard case .line(let diagonal) = document.elements.first else {
+		Issue.record("Expected first child to be a line")
+		return
+	}
+	#expect(diagonal.x1 == 0)
+	#expect(diagonal.y1 == 0)
+	#expect(diagonal.x2 == 300)
+	#expect(diagonal.y2 == 100)
+
+	guard case .rect(let lowerLeft) = document.elements.dropFirst().first else {
+		Issue.record("Expected second child to be a rect")
+		return
+	}
+	#expect(lowerLeft.path.commands == [
+		.rect(Rect(x: 0, y: 97, width: 3, height: 3)),
+	])
+}
+
 @Test func svgParserParsesPaintValuesAndFallbacks() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
