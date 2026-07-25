@@ -1083,6 +1083,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		result.transform = .identity
 		result.vectorEffect = .none
 
+		applyPresentationAttributes(attributes, to: &result)
 		if let className = attributes["class"] {
 			for cls in className.split(separator: " ") {
 				if let cssProps = styleSheet[String(cls)] {
@@ -1090,7 +1091,6 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				}
 			}
 		}
-		applyPresentationAttributes(attributes, to: &result)
 		if let style = attributes["style"] {
 			applyCSS(parseInlineCSS(style), to: &result)
 		}

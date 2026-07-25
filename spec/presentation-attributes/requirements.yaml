@@ -1,0 +1,253 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: presentation-attributes
+  title: SVG presentation attributes
+  domain: SVG 2
+  profile: null
+  summary: SVG presentation attributes provide attribute syntax for selected CSS properties on SVG elements and participate in the author cascade with specificity 0.
+  non_goals:
+    - Complete CSS selector matching.
+    - Full CSS cascade origin and importance handling.
+    - Individual property value semantics for fill, stroke, opacity, text, clipping, filters, masks, markers, or painting.
+    - Geometry presentation properties, which are covered by the geometry properties bullet.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-styling
+      title: SVG 2, 6.1 Styling SVG content using CSS
+      url: https://www.w3.org/TR/SVG/styling.html#Styling
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-presentation-attributes
+      title: SVG 2, 6.6 Presentation attributes
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-property-index
+      title: SVG 2, Property Index
+      url: https://www.w3.org/TR/SVG/propidx.html
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - This package currently implements a parser-oriented subset of SVG style properties; this work item verifies the shared presentation-attribute mechanism rather than every property-specific value grammar.
+
+scope:
+  includes:
+    - Treating recognized presentation attributes as style inputs.
+    - Ensuring recognized presentation attributes are not preserved as unknown attributes.
+    - Ensuring presentation attributes participate below class style rules and above inherited values in the supported local cascade model.
+  excludes:
+    - Parsing every property listed in the SVG property index.
+    - Implementing unsupported selectors or media queries.
+    - Implementing `!important` declaration parsing.
+  assumptions:
+    - The parser's current CSS support is limited to class selectors parsed from style elements plus inline style declarations.
+
+terminology:
+  - id: term-presentation-attribute
+    term: presentation attribute
+    definition: An SVG attribute whose name matches or is similar to a supported CSS property and whose value is parsed as that property's value.
+    source_refs:
+      - svg2-presentation-attributes
+  - id: term-specificity-zero
+    term: specificity 0
+    definition: The cascade specificity assigned to presentation attributes at the author level.
+    source_refs:
+      - svg2-presentation-attributes
+
+structures:
+  - id: S001
+    name: Presentation attribute
+    kind: attribute
+    source_refs:
+      - svg2-presentation-attributes
+      - svg2-property-index
+    fields:
+      - name: name
+        type: css-property-name-or-similar-name
+        cardinality: required
+        position: attribute-name
+        constraints:
+          - Except for transform-related exceptions, the presentation attribute name is the same as the property name in lower-case letters.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-presentation-attributes
+      - name: value
+        type: css-property-value
+        cardinality: required
+        position: attribute-value
+        constraints:
+          - Parsed as a CSS property value, not as a declaration.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-presentation-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: conformance
+    statement: SVG user agents must support the CSS styling mechanisms described by the SVG styling chapter.
+    applies_to:
+      - SVGParser
+    source_refs:
+      - svg2-styling
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: Selected styling properties may be specified as presentation attributes on SVG elements using the corresponding attribute name.
+    applies_to:
+      - SVGParser.applyPresentationAttributes
+      - SVGPaintAttributes
+    source_refs:
+      - svg2-presentation-attributes
+      - svg2-property-index
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Presentation attribute values must be treated as property values rather than CSS declarations.
+    applies_to:
+      - SVGParser.applyPresentationAttributes
+    source_refs:
+      - svg2-presentation-attributes
+    testability: reviewable
+    notes:
+      - Property-specific invalid value handling is covered by individual property bullets.
+  - id: R004
+    normative_strength: MUST
+    kind: cascade
+    statement: Presentation attributes must contribute to the author cascade with specificity 0.
+    applies_to:
+      - SVGParser.parsePaintAttributes
+    source_refs:
+      - svg2-presentation-attributes
+    testability: testable
+    notes:
+      - In the current parser subset, class style rules have higher specificity than presentation attributes.
+  - id: R005
+    normative_strength: MUST_NOT
+    kind: cascade
+    statement: Attributes that are not supported presentation attributes for the relevant element must not be parsed as presentation attributes.
+    applies_to:
+      - SVGParser.parseUnknownAttributes
+    source_refs:
+      - svg2-presentation-attributes
+    testability: reviewable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: Recognized presentation attributes interpreted by the parser must not be duplicated as unknown attributes.
+    applies_to:
+      - SVGParser.parseUnknownAttributes
+    source_refs:
+      - svg2-presentation-attributes
+    testability: testable
+    notes:
+      - This is a representation requirement derived from treating recognized attributes as style inputs.
+
+algorithms:
+  - id: ALG001
+    name: Supported presentation attribute cascade order
+    kind: algorithm
+    summary: Apply inherited values, then recognized presentation attributes, then supported class style rules, then inline style declarations.
+    steps:
+      - Start with inherited or initial paint attributes.
+      - Reset non-inherited properties that the local model tracks explicitly.
+      - Apply recognized presentation attributes on the current SVG element.
+      - Apply supported class style rules from style elements.
+      - Apply inline style declarations.
+    preconditions:
+      - The element is in the SVG namespace and is being parsed into a supported SVG element representation.
+    postconditions:
+      - Presentation attributes override inherited values but are overridden by class rules and inline style declarations where the local parser supports those rule types.
+    requirement_refs:
+      - R002
+      - R004
+    source_refs:
+      - svg2-presentation-attributes
+
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A supported class selector style rule must override a conflicting presentation attribute in this package's supported cascade subset.
+    derived_from:
+      - R004
+    reasoning: SVG presentation attributes have specificity 0, while class selector rules have higher selector specificity in CSS cascading.
+    source_refs:
+      - svg2-presentation-attributes
+implementation_choices:
+  - id: IC001
+    topic: Parser subset
+    statement: The package may cover presentation attributes incrementally by preserving the cascade mechanism now and implementing individual property semantics under their own TODO bullets.
+    allowed_by:
+      - svg2-presentation-attributes
+      - svg2-property-index
+    source_refs:
+      - svg2-presentation-attributes
+      - svg2-property-index
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Property Index
+    reason: Identifies SVG properties and presentation-attribute availability for property-specific future bullets.
+    source_refs:
+      - svg2-property-index
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-styling
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-presentation-attributes
+      - svg2-property-index
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-presentation-attributes
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-presentation-attributes
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-presentation-attributes
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-presentation-attributes
+    map_item_refs: []
+  - item_id: ALG001
+    item_type: algorithm
+    source_refs:
+      - svg2-presentation-attributes
+    map_item_refs: []

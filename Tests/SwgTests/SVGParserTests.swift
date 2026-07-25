@@ -224,6 +224,34 @@ import Testing
 	#expect(paths["stroke"]?.unknownAttributes["vector-effect"] == nil)
 }
 
+@Test func svgParserAppliesPresentationAttributesWithCascadeSpecificity() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="red" stroke-width="1">
+		<style>.accent { fill: #336699; stroke-width: 7; }</style>
+		<path id="presented" d="M0 0 L10 10" fill="blue" stroke-width="2" stroke-linecap="round" data-note="kept"/>
+		<path id="styled" class="accent" d="M0 0 L10 10" fill="blue" stroke-width="2" style="opacity: 0.5"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let paths = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGPathData)? in
+		if case .path(let path) = element { return (path.id, path) }
+		return nil
+	})
+	let presented = try #require(paths["presented"])
+	let styled = try #require(paths["styled"])
+
+	#expect(presented.attributes.fill == .color(.blue))
+	#expect(presented.attributes.strokeWidth == 2)
+	#expect(presented.attributes.strokeLineCap == .round)
+	#expect(presented.unknownAttributes == ["data-note": "kept"])
+	#expect(styled.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(styled.attributes.strokeWidth == 7)
+	#expect(styled.attributes.opacity == 0.5)
+	#expect(styled.unknownAttributes["fill"] == nil)
+	#expect(styled.unknownAttributes["stroke-width"] == nil)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">
