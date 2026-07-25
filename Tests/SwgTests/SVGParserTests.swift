@@ -80,6 +80,46 @@ import Testing
 	#expect(invalid.attributes.fill == .color(.red))
 }
 
+@Test func svgParserPreservesNestedSVGViewportAsContainer() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="red">
+		<svg id="nested" x="10" y="20" width="30" height="40" viewBox="0 0 3 4" fill="#336699">
+			<path id="child" d="M0 0 L1 1"/>
+		</svg>
+		<path id="sibling" d="M0 0 L1 1"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.viewBox == Rect(x: 0, y: 0, width: 100, height: 100))
+	#expect(document.elementIDs == ["nested", "child", "sibling"])
+
+	guard case .svg(let nested) = document.elements.first else {
+		Issue.record("Expected first root child to be nested svg")
+		return
+	}
+	#expect(nested.id == "nested")
+	#expect(nested.x == 10)
+	#expect(nested.y == 20)
+	#expect(nested.width == 30)
+	#expect(nested.height == 40)
+	#expect(nested.viewBox == Rect(x: 0, y: 0, width: 3, height: 4))
+	#expect(nested.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .path(let child) = nested.children.first else {
+		Issue.record("Expected nested svg child to be a path")
+		return
+	}
+	#expect(child.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .path(let sibling) = document.elements.dropFirst().first else {
+		Issue.record("Expected root sibling to remain outside nested svg")
+		return
+	}
+	#expect(sibling.attributes.fill == .color(.red))
+}
+
 @Test func svgParserUsesFunctionalURLParserForLocalResourceReferences() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

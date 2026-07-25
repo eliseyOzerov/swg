@@ -1,0 +1,330 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: nested-svg-viewport
+  title: Nested svg viewport behavior
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture the structural and viewport behavior required when an svg element
+    appears inside SVG content.
+  non_goals:
+    - Full viewBox-to-viewport transform computation.
+    - preserveAspectRatio parsing or transform behavior.
+    - Overflow clipping behavior.
+    - Complete geometry-property percentage resolution for descendants.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-svg
+      title: Document and Container Elements - svg nested viewport behavior
+      artifact_path: spec/nested-svg-viewport/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-svg
+      title: SVG 2 Document Structure - The svg element
+      url: https://www.w3.org/TR/SVG2/struct.html#SVGElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-coords-new-viewport
+      title: SVG 2 Coordinate Systems - Establishing a new SVG viewport
+      url: https://www.w3.org/TR/SVG2/coords.html#EstablishingANewSVGViewport
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - >
+      SVG 2 describes svg as both the outer document-fragment element and a
+      structural/container element that can appear within SVG content.
+
+scope:
+  includes:
+    - Recognizing embedded svg elements as SVG container elements.
+    - Preserving an embedded svg element's child SVG subtree.
+    - Preserving embedded svg viewport bounds from x, y, width, and height.
+    - Preserving embedded svg viewBox data when present.
+    - Keeping the outermost svg element as document-level metadata rather than as a child element.
+  excludes:
+    - Computing the equivalent viewport transform.
+    - Clipping to the embedded viewport.
+    - Applying preserveAspectRatio.
+    - Expanding external referenced SVG documents.
+  assumptions:
+    - >
+      For this parser milestone, preserving parsed viewport data is sufficient;
+      rendering and CGPath transform application are covered by later coordinate-system bullets.
+
+terminology:
+  - id: term-svg-element
+    term: svg element
+    definition: >
+      The structural SVG element that defines an SVG document fragment and may
+      also appear within SVG content.
+    source_refs:
+      - svg2-struct-svg
+  - id: term-embedded-svg
+    term: embedded svg element
+    definition: >
+      An svg element that is a direct or indirect child of another SVG-namespaced
+      element, rather than the root of the SVG document fragment.
+    source_refs:
+      - svg2-struct-svg
+  - id: term-svg-viewport
+    term: SVG viewport
+    definition: >
+      A viewport used for drawing SVG content; nested SVG viewports may exist
+      within ancestor SVG viewports.
+    source_refs:
+      - svg2-coords-new-viewport
+
+structures:
+  - id: S001
+    name: Embedded SVG viewport
+    kind: structure
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-new-viewport
+    fields:
+      - name: id
+        type: string
+        cardinality: optional-in-source
+        position: null
+        constraints:
+          - Core id behavior is shared with all SVG elements.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-struct-svg
+      - name: x
+        type: length-percentage
+        cardinality: optional
+        position: top-left-x
+        constraints:
+          - Specifies the left coordinate of the embedded svg rectangular region.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-struct-svg
+      - name: y
+        type: length-percentage
+        cardinality: optional
+        position: top-left-y
+        constraints:
+          - Specifies the top coordinate of the embedded svg rectangular region.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-struct-svg
+      - name: width
+        type: length-percentage
+        cardinality: optional
+        position: viewport-width
+        constraints:
+          - Specifies the width of the embedded svg rectangular region.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-struct-svg
+      - name: height
+        type: length-percentage
+        cardinality: optional
+        position: viewport-height
+        constraints:
+          - Specifies the height of the embedded svg rectangular region.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-struct-svg
+      - name: viewBox
+        type: number-list-rectangle
+        cardinality: optional
+        position: null
+        constraints:
+          - When present, maps the named rectangle to the SVG viewport bounds.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-coords-new-viewport
+      - name: children
+        type: svg-element-list
+        cardinality: zero-or-more
+        position: child-content
+        constraints:
+          - svg is a container element and its content model permits SVG child elements.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-struct-svg
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      An svg element inside SVG content must be recognized as a structural SVG
+      element, not as a replacement for the outermost document fragment.
+    applies_to:
+      - embedded svg element
+    source_refs:
+      - svg2-struct-svg
+    testability: testable
+    notes:
+      - SVG 2 says svg elements can appear in the middle of SVG content.
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      An embedded svg element must behave as a container whose SVG child
+      elements remain in its child subtree.
+    applies_to:
+      - embedded svg element
+      - child SVG elements
+    source_refs:
+      - svg2-struct-svg
+    testability: testable
+    notes:
+      - The svg element category includes container element.
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      For an embedded svg element, x and y define the top-left corner of its
+      rectangular placement region, and width and height define that region's size.
+    applies_to:
+      - embedded svg element
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-new-viewport
+    testability: testable
+    notes:
+      - Outermost svg x and y have no effect and are outside this work item.
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      An embedded svg element establishes a new SVG viewport; its viewBox, when
+      specified, identifies the user-space rectangle that maps to that viewport.
+    applies_to:
+      - embedded svg element
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-new-viewport
+    testability: testable
+    notes:
+      - The actual equivalent transform is deferred to a later coordinate-system bullet.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      Percentage units on an embedded svg element's content are interpreted with
+      respect to the nearest ancestral SVG viewport.
+    applies_to:
+      - embedded svg element descendants
+    source_refs:
+      - svg2-coords-new-viewport
+    testability: reviewable
+    notes:
+      - Descendant geometry percentage resolution is intentionally deferred.
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      A parser that produces an SVG element tree must preserve embedded svg
+      nodes distinctly from the outer document root so descendants can later be
+      rendered in the correct viewport context.
+    derived_from:
+      - R001
+      - R002
+      - R004
+    reasoning: >
+      If embedded svg nodes are flattened or treated as document roots, their
+      child subtree and viewport-establishing behavior cannot be recovered by
+      downstream rendering.
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-new-viewport
+
+implementation_choices:
+  - id: IC001
+    topic: Internal representation
+    statement: >
+      The specification does not require a particular in-memory representation
+      for embedded svg elements.
+    allowed_by:
+      - R001
+      - R002
+    source_refs:
+      - svg2-struct-svg
+
+ambiguities:
+  - id: A001
+    question: >
+      How should invalid embedded svg width, height, or viewBox values be
+      represented before full rendering behavior exists?
+    impact: >
+      Rendering and error handling may need to distinguish omitted, invalid,
+      zero, and negative viewport dimensions in a later bullet.
+    options:
+      - Preserve only valid parsed values and use parser defaults for invalid values.
+      - Preserve raw attributes alongside parsed values for later validation.
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-new-viewport
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 viewBox attribute
+    reason: >
+      Embedded svg viewport behavior depends on preserving viewBox data, while
+      full viewBox transform computation is deferred.
+    source_refs:
+      - svg2-coords-new-viewport
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-svg
+    map_item_refs:
+      - document-container-elements-svg
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-struct-svg
+    map_item_refs:
+      - document-container-elements-svg
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-new-viewport
+    map_item_refs:
+      - document-container-elements-svg
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-new-viewport
+    map_item_refs:
+      - document-container-elements-svg
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-coords-new-viewport
+    map_item_refs:
+      - document-container-elements-svg

@@ -59,6 +59,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 	case polygon(SVGPolygonData)
 	case polyline(SVGPolygonData)
 	case group(SVGGroupData)
+	case svg(SVGViewportData)
 	case unknown(SVGUnknownElementData)
 	case use(SVGUseData)
 	case image(SVGImageData)
@@ -74,6 +75,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 		case .polygon(let data): [data.id]
 		case .polyline(let data): [data.id]
 		case .group(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
+		case .svg(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .unknown(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .use(let data): [data.id]
 		case .image(let data): [data.id]
@@ -220,6 +222,33 @@ public struct SVGGroupData: Equatable, Sendable {
 
 	public init(id: String, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
+		self.attributes = attributes
+		self.children = children
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an embedded SVG `<svg>` element that establishes a nested viewport.
+public struct SVGViewportData: Equatable, Sendable {
+	public let id: String
+	public let x: Double
+	public let y: Double
+	public let width: Double
+	public let height: Double
+	public let viewBox: Rect?
+	public let attributes: SVGPaintAttributes
+	public let children: [SVGElement]
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.x = x
+		self.y = y
+		self.width = width
+		self.height = height
+		self.viewBox = viewBox
 		self.attributes = attributes
 		self.children = children
 		self.language = language

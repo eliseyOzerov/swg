@@ -98,7 +98,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 		switch elementName {
 		case "svg":
-			parseSVGRoot(attributes)
+			if parsedElement.hasSVGAncestor(in: parsedElementStack.dropLast()) {
+				parseNestedSVGStart(attributes)
+				parsedElementStack[parsedElementStack.count - 1].role = .svgContainer
+			} else {
+				parseSVGRoot(attributes)
+			}
 		case "defs":
 			inDefs = true
 		case "style":
@@ -174,6 +179,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let elementName = parsedElement.localName
 
 		switch elementName {
+		case "svg":
+			if parsedElement.role == .svgContainer {
+				finalizeContainerElement()
+			}
 		case "defs":
 			inDefs = false
 		case "style":
@@ -315,6 +324,29 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: elementName)
 		let builder = SVGElementBuilder(kind: .unknown(name: elementName, namespaceURI: namespaceURI), id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
+		if inDefs {
+			defsElementStack.append(builder)
+		} else if !inClipPath && !inMask {
+			elementStack.append(builder)
+		}
+	}
+
+	private func parseNestedSVGStart(_ attributes: [String: String]) {
+		let attrs = parsePaintAttributes(attributes)
+		let id = resolveID(attributes["id"], elementName: "SVG")
+		let builder = SVGElementBuilder(
+			kind: .svg(
+				x: double(attributes["x"]),
+				y: double(attributes["y"]),
+				width: double(attributes["width"]),
+				height: double(attributes["height"]),
+				viewBox: attributes["viewBox"].flatMap(parseViewBox)
+			),
+			id: id,
+			attributes: attrs,
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "viewBox"])
+		)
 		if inDefs {
 			defsElementStack.append(builder)
 		} else if !inClipPath && !inMask {
@@ -674,17 +706,20 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseSVGRoot(_ attributes: [String: String]) {
 		rootID = attributes["id"]
-		if let vb = attributes["viewBox"] {
-			let parts = SVGListParser.parse(vb, itemParser: parseNumber) ?? []
-			if parts.count == 4 {
-				viewBox = Rect(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
-			}
+		if let vb = attributes["viewBox"], let parsedViewBox = parseViewBox(vb) {
+			viewBox = parsedViewBox
 		}
 		rootWidth = attributes["width"].flatMap { parseDimension($0, percentageBasis: .horizontal) }
 		rootHeight = attributes["height"].flatMap { parseDimension($0, percentageBasis: .vertical) }
 		rootLanguage = currentLanguage
 		rootPaintAttributes = parsePaintAttributes(attributes)
 		rootUnknownAttributes = parseUnknownAttributes(attributes, known: ["viewBox", "width", "height"])
+	}
+
+	private func parseViewBox(_ value: String) -> Rect? {
+		let parts = SVGListParser.parse(value, itemParser: parseNumber) ?? []
+		guard parts.count == 4 else { return nil }
+		return Rect(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
 	}
 
 	private func parseDimension(_ value: String, percentageBasis: SVGLengthPercentageBasis = .normalizedDiagonal) -> Double? {
@@ -874,10 +909,15 @@ private struct SVGParsedElement {
 		guard let namespaceURI else { return true }
 		return namespaceURI == SVGParser.svgNamespaceURI
 	}
+
+	func hasSVGAncestor<S: Sequence>(in ancestors: S) -> Bool where S.Element == SVGParsedElement {
+		ancestors.contains { $0.isSVGElement }
+	}
 }
 
 private enum SVGParsedElementRole {
 	case normal
+	case svgContainer
 	case unknownContainer
 }
 
@@ -910,6 +950,7 @@ private extension SVGElement {
 		case .polygon(let data): data.id
 		case .polyline(let data): data.id
 		case .group(let data): data.id
+		case .svg(let data): data.id
 		case .unknown(let data): data.id
 		case .use(let data): data.id
 		case .image(let data): data.id
@@ -922,6 +963,7 @@ private extension SVGElement {
 private final class SVGElementBuilder {
 	enum Kind {
 		case group
+		case svg(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?)
 		case unknown(name: String, namespaceURI: String?)
 	}
 
@@ -944,6 +986,8 @@ private final class SVGElementBuilder {
 		switch kind {
 		case .group:
 			.group(SVGGroupData(id: id, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
+		case .svg(let x, let y, let width, let height, let viewBox):
+			.svg(SVGViewportData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .unknown(let name, let namespaceURI):
 			.unknown(SVGUnknownElementData(id: id, name: name, namespaceURI: namespaceURI, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		}
