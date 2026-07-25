@@ -101,6 +101,16 @@ import Testing
 	#expect(Point(110, 70).applying(transform) == Point(205, 107))
 }
 
+@Test func svgPreserveAspectRatioNoneUsesNonUniformViewBoxScale() throws {
+	let transform = try #require(SVGPreserveAspectRatio(align: .none, meetOrSlice: .slice).viewBoxTransform(
+		from: Rect(x: 0, y: 0, width: 100, height: 50),
+		to: Rect(x: 0, y: 0, width: 300, height: 100)
+	))
+
+	#expect(transform == Transform(a: 3, b: 0, c: 0, d: 2, tx: 0, ty: 0))
+	#expect(Point(100, 50).applying(transform) == Point(300, 100))
+}
+
 @Test func svgParserParsesPaintValuesAndFallbacks() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

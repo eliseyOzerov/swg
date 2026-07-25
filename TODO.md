@@ -81,7 +81,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] User coordinate system.
 - [x] Viewport coordinate system.
 - [x] `viewBox` to viewport transform.
-- [ ] `preserveAspectRatio` `none`.
+- [x] `preserveAspectRatio` `none`.
 - [ ] `preserveAspectRatio` meet.
 - [ ] `preserveAspectRatio` slice.
 - [ ] `transform` list ordering.
