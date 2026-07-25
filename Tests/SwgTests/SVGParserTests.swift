@@ -341,6 +341,53 @@ import Testing
 	#expect(child.attributes.vectorEffect == SVGVectorEffect.none)
 }
 
+@Test func svgParserAppliesExplicitInheritKeywordForSupportedProperties() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>.override { fill: blue; opacity: 0.2; display: inline; clip-path: url(#other); transform: scale(2); vector-effect: none; }</style>
+		<g
+			id="parent"
+			fill="red"
+			stroke-width="4"
+			opacity="0.4"
+			display="none"
+			clip-path="url(#clip)"
+			filter="url(#filter)"
+			mask="url(#mask)"
+			transform="translate(5 6)"
+			vector-effect="non-scaling-stroke"
+		>
+			<path
+				id="child"
+				class="override"
+				d="M0 0 L10 10"
+				style="fill: inherit; stroke-width: inherit; opacity: inherit; display: inherit; clip-path: inherit; filter: inherit; mask: inherit; transform: inherit; vector-effect: inherit"
+			/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let parent) = document.elements.first else {
+		Issue.record("Expected parent group")
+		return
+	}
+	guard case .path(let child) = parent.children.first else {
+		Issue.record("Expected child path")
+		return
+	}
+
+	#expect(child.attributes.fill == .color(.red))
+	#expect(child.attributes.strokeWidth == 4)
+	#expect(child.attributes.opacity == 0.4)
+	#expect(child.attributes.display == .none)
+	#expect(child.attributes.clipPathID == "clip")
+	#expect(child.attributes.filterID == "filter")
+	#expect(child.attributes.maskID == "mask")
+	#expect(child.attributes.transform == Transform.identity.translatedBy(x: 5, y: 6))
+	#expect(child.attributes.vectorEffect == .effects([.nonScalingStroke], coordinateSpace: .viewport))
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

@@ -94,7 +94,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] Inline `style` attribute.
 - [x] `<style>` element.
 - [x] Inheritance.
-- [ ] `inherit`.
+- [x] `inherit`.
 - [ ] `currentColor`.
 - [ ] `<style>` `media`.
 

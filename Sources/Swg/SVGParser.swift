@@ -1081,16 +1081,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let parent = symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
 		var result = inheritedPaintAttributes(from: parent)
 
-		applyPresentationAttributes(attributes, to: &result)
+		applyPresentationAttributes(attributes, to: &result, inherited: parent)
 		if let className = attributes["class"] {
 			for cls in className.split(separator: " ") {
 				if let cssProps = styleSheet[String(cls)] {
-					applyCSS(cssProps, to: &result)
+					applyCSS(cssProps, to: &result, inherited: parent)
 				}
 			}
 		}
 		if let style = attributes["style"] {
-			applyCSS(parseInlineCSS(style), to: &result)
+			applyCSS(parseInlineCSS(style), to: &result, inherited: parent)
 		}
 		return result
 	}
@@ -1143,32 +1143,102 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
-	private func applyPresentationAttributes(_ attributes: [String: String], to result: inout SVGPaintAttributes) {
-		if let fill = attributes["fill"], let paint = parsePaint(fill) { result.fill = paint }
-		if let stroke = attributes["stroke"], let paint = parsePaint(stroke) { result.stroke = paint }
-		if let value = attributes["stroke-width"], let number = parseNumber(value) { result.strokeWidth = number }
-		if let cap = attributes["stroke-linecap"] { result.strokeLineCap = parseLineCap(cap) }
-		if let join = attributes["stroke-linejoin"] { result.strokeLineJoin = parseLineJoin(join) }
-		if let value = attributes["stroke-miterlimit"], let number = parseNumber(value) { result.strokeMiterLimit = number }
-		if let value = attributes["stroke-dasharray"] { result.strokeDashArray = parseDashArray(value) }
-		if let value = attributes["stroke-dashoffset"], let number = parseNumber(value) { result.strokeDashOffset = number }
-		if let value = attributes["stroke-opacity"], let number = parseNumber(value) { result.strokeOpacity = number }
-		if let value = attributes["opacity"], let number = parseNumber(value) { result.opacity = number }
-		if let value = attributes["fill-opacity"], let number = parseNumber(value) { result.fillOpacity = number }
-		if let value = attributes["fill-rule"] { result.fillRule = value == "evenodd" ? .evenOdd : .winding }
-		if let value = attributes["visibility"] {
-			result.visibility = value == "hidden" ? .hidden : value == "collapse" ? .collapse : .visible
+	private func applyPresentationAttributes(_ attributes: [String: String], to result: inout SVGPaintAttributes, inherited: SVGPaintAttributes) {
+		if let fill = attributes["fill"] {
+			if isInheritKeyword(fill) {
+				result.fill = inherited.fill
+			} else if let paint = parsePaint(fill) {
+				result.fill = paint
+			}
 		}
-		if let value = attributes["display"] { result.display = value == "none" ? .none : .inline }
-		if let value = attributes["clip-path"] { result.clipPathID = parseURLID(value) }
-		if let value = attributes["filter"] { result.filterID = parseURLID(value) }
-		if let value = attributes["mask"] { result.maskID = parseURLID(value) }
-		if let value = attributes["vector-effect"], let vectorEffect = parseVectorEffect(value) { result.vectorEffect = vectorEffect }
-		if let transform = attributes["transform"] { result.transform = parseTransform(transform) }
+		if let stroke = attributes["stroke"] {
+			if isInheritKeyword(stroke) {
+				result.stroke = inherited.stroke
+			} else if let paint = parsePaint(stroke) {
+				result.stroke = paint
+			}
+		}
+		if let value = attributes["stroke-width"] {
+			if isInheritKeyword(value) {
+				result.strokeWidth = inherited.strokeWidth
+			} else if let number = parseNumber(value) {
+				result.strokeWidth = number
+			}
+		}
+		if let cap = attributes["stroke-linecap"] {
+			result.strokeLineCap = isInheritKeyword(cap) ? inherited.strokeLineCap : parseLineCap(cap)
+		}
+		if let join = attributes["stroke-linejoin"] {
+			result.strokeLineJoin = isInheritKeyword(join) ? inherited.strokeLineJoin : parseLineJoin(join)
+		}
+		if let value = attributes["stroke-miterlimit"] {
+			if isInheritKeyword(value) {
+				result.strokeMiterLimit = inherited.strokeMiterLimit
+			} else if let number = parseNumber(value) {
+				result.strokeMiterLimit = number
+			}
+		}
+		if let value = attributes["stroke-dasharray"] {
+			result.strokeDashArray = isInheritKeyword(value) ? inherited.strokeDashArray : parseDashArray(value)
+		}
+		if let value = attributes["stroke-dashoffset"] {
+			if isInheritKeyword(value) {
+				result.strokeDashOffset = inherited.strokeDashOffset
+			} else if let number = parseNumber(value) {
+				result.strokeDashOffset = number
+			}
+		}
+		if let value = attributes["stroke-opacity"] {
+			if isInheritKeyword(value) {
+				result.strokeOpacity = inherited.strokeOpacity
+			} else if let number = parseNumber(value) {
+				result.strokeOpacity = number
+			}
+		}
+		if let value = attributes["opacity"] {
+			if isInheritKeyword(value) {
+				result.opacity = inherited.opacity
+			} else if let number = parseNumber(value) {
+				result.opacity = number
+			}
+		}
+		if let value = attributes["fill-opacity"] {
+			if isInheritKeyword(value) {
+				result.fillOpacity = inherited.fillOpacity
+			} else if let number = parseNumber(value) {
+				result.fillOpacity = number
+			}
+		}
+		if let value = attributes["fill-rule"] {
+			result.fillRule = isInheritKeyword(value) ? inherited.fillRule : value == "evenodd" ? .evenOdd : .winding
+		}
+		if let value = attributes["visibility"] {
+			result.visibility = isInheritKeyword(value) ? inherited.visibility : value == "hidden" ? .hidden : value == "collapse" ? .collapse : .visible
+		}
+		if let value = attributes["display"] {
+			result.display = isInheritKeyword(value) ? inherited.display : value == "none" ? .none : .inline
+		}
+		if let value = attributes["clip-path"] { result.clipPathID = isInheritKeyword(value) ? inherited.clipPathID : parseURLID(value) }
+		if let value = attributes["filter"] { result.filterID = isInheritKeyword(value) ? inherited.filterID : parseURLID(value) }
+		if let value = attributes["mask"] { result.maskID = isInheritKeyword(value) ? inherited.maskID : parseURLID(value) }
+		if let value = attributes["vector-effect"] {
+			if isInheritKeyword(value) {
+				result.vectorEffect = inherited.vectorEffect
+			} else if let vectorEffect = parseVectorEffect(value) {
+				result.vectorEffect = vectorEffect
+			}
+		}
+		if let transform = attributes["transform"] {
+			result.transform = isInheritKeyword(transform) ? inherited.transform : parseTransform(transform)
+		}
 	}
 
-	private func applyCSS(_ props: [String: String], to result: inout SVGPaintAttributes) {
-		applyPresentationAttributes(props, to: &result)
+	private func applyCSS(_ props: [String: String], to result: inout SVGPaintAttributes, inherited: SVGPaintAttributes) {
+		applyPresentationAttributes(props, to: &result, inherited: inherited)
+	}
+
+	private func isInheritKeyword(_ value: String) -> Bool {
+		value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "inherit"
 	}
 
 	private func parseDashArray(_ value: String) -> [Double] {

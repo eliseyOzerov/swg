@@ -1,0 +1,379 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: inherit
+  title: Explicit inherit keyword
+  domain: SVG 2 / CSS Cascading and Inheritance
+  profile: null
+  summary: Capture the CSS-wide `inherit` keyword behavior for supported SVG presentation and style properties parsed by swg.
+  non_goals:
+    - Implicit inheritance when no cascaded value exists, covered by the `inheritance` work item.
+    - Other CSS-wide keywords, including `initial`, `unset`, `revert`, and `all`.
+    - Full CSS cascade origin, importance, layer, specificity, animation, or transition processing.
+    - Complete computed-value resolution such as URL absolutization, percentage resolution, and color computation.
+    - Properties not currently represented in the parser-facing style model.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-cascade-inheritance
+      title: "CSS Cascading and Inheritance Level 3: Inheritance"
+      url: https://www.w3.org/TR/css-cascade-3/#inheritance
+      version: W3C Recommendation 11 February 2021
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-cascade-inherit-keyword
+      title: "CSS Cascading and Inheritance Level 3: Explicit Inheritance: the inherit keyword"
+      url: https://www.w3.org/TR/css-cascade-3/#inherit-initial
+      version: W3C Recommendation 11 February 2021
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-property-index
+      title: "SVG 2 Property Index"
+      url: https://www.w3.org/TR/SVG/propidx.html
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: informative
+  source_notes:
+    - CSS Cascade defines the behavior of the CSS-wide `inherit` keyword for all CSS properties.
+    - SVG 2 presentation attributes are parsed as CSS values and participate in CSS cascading and inheritance, so the same CSS-wide keyword behavior applies to supported presentation attributes.
+    - The SVG 2 property index is informative, but it is used here as a compact reference for the supported properties' inheritance flags and initial values.
+
+scope:
+  includes:
+    - Explicit `inherit` values supplied through supported SVG presentation attributes.
+    - Explicit `inherit` values supplied through supported class style rules.
+    - Explicit `inherit` values supplied through the inline `style` attribute.
+    - Supported inherited and non-inherited presentation/style properties represented in parser output.
+    - Cascaded `inherit` values overriding earlier declarations from presentation attributes or style rules.
+  excludes:
+    - CSS shorthands and longhand expansion beyond the package's supported property names.
+    - The `all` property and other CSS-wide keywords.
+    - External style sheets, user style sheets, user-agent style sheets, animations, transitions, and `!important`.
+    - Presentation attributes whose names are ordinary SVG attributes rather than presentation attributes for a CSS property.
+  assumptions:
+    - The parser stores values in a representation close enough to computed values for supported SVG properties to serve as the parent value for later children.
+    - Unsupported properties are ignored until they have their own TODO bullets and tests.
+    - Parent attributes used for explicit inheritance are the parent element's parser-visible values after that parent has applied its own cascade subset.
+
+terminology:
+  - id: term-inherit-keyword
+    term: inherit keyword
+    definition: A CSS-wide keyword that makes a property's specified and computed values equal to the inherited value.
+    source_refs:
+      - css-cascade-inherit-keyword
+  - id: term-inherited-value
+    term: inherited value
+    definition: The computed value of the property on the parent element, or the property's initial value for the root element.
+    source_refs:
+      - css-cascade-inheritance
+  - id: term-presentation-attribute
+    term: presentation attribute
+    definition: An SVG attribute corresponding to a CSS property that is parsed as a CSS value and participates in CSS cascading and inheritance.
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+structures:
+  - id: S001
+    name: Supported explicit inherit properties
+    kind: property-set
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-property-index
+    fields:
+      - name: fill
+        type: paint
+        cardinality: one
+        position: null
+        constraints:
+          - The `inherit` value must copy the parent value.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-property-index
+      - name: stroke
+        type: paint
+        cardinality: one
+        position: null
+        constraints:
+          - The `inherit` value must copy the parent value.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-property-index
+      - name: stroke-width
+        type: length-percentage
+        cardinality: one
+        position: null
+        constraints:
+          - The `inherit` value must copy the parent value.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-property-index
+      - name: opacity
+        type: alpha-value
+        cardinality: one
+        position: null
+        constraints:
+          - Although `opacity` is not inherited by default, an explicit `inherit` value must copy the parent value.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-property-index
+      - name: display
+        type: keyword
+        cardinality: one
+        position: null
+        constraints:
+          - Although `display` is not inherited by default, an explicit `inherit` value must copy the parent value.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-property-index
+      - name: clip-path
+        type: url-or-keyword
+        cardinality: one
+        position: null
+        constraints:
+          - The `inherit` value must copy the parent value when the property is supported.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-styling-presentation-attributes
+      - name: filter
+        type: url-or-keyword
+        cardinality: one
+        position: null
+        constraints:
+          - The `inherit` value must copy the parent value when the property is supported.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-styling-presentation-attributes
+      - name: mask
+        type: url-or-keyword
+        cardinality: one
+        position: null
+        constraints:
+          - The `inherit` value must copy the parent value when the property is supported.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-styling-presentation-attributes
+      - name: transform
+        type: transform-list
+        cardinality: one
+        position: null
+        constraints:
+          - The `inherit` value must copy the parent value when the property is supported.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-styling-presentation-attributes
+      - name: vector-effect
+        type: keyword
+        cardinality: one
+        position: null
+        constraints:
+          - Although `vector-effect` is not inherited by default, an explicit `inherit` value must copy the parent value.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-property-index
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: When a supported CSS property's cascaded value is `inherit`, the element's specified and computed value for that property must be the inherited value from its parent.
+    applies_to:
+      - Supported presentation attributes
+      - Supported class style declarations
+      - Supported inline style declarations
+    source_refs:
+      - css-cascade-inherit-keyword
+      - css-cascade-inheritance
+    testability: testable
+    notes:
+      - This applies regardless of whether the property normally inherits by default.
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: For supported properties that are not inherited by default, an explicit `inherit` declaration must still copy the parent's inherited value rather than using the property's initial value.
+    applies_to:
+      - display
+      - opacity
+      - vector-effect
+      - transform
+      - clip-path
+      - filter
+      - mask
+    source_refs:
+      - css-cascade-inherit-keyword
+      - svg2-property-index
+      - svg2-styling-presentation-attributes
+    testability: testable
+    notes:
+      - The SVG property index identifies `display`, `opacity`, and `vector-effect` as non-inherited; CSS Cascade still gives `inherit` explicit inheritance behavior for all properties.
+  - id: R003
+    normative_strength: MUST
+    kind: ordering
+    statement: An `inherit` declaration must take effect at the point where that declaration wins in the supported cascade order, replacing earlier values for the same property.
+    applies_to:
+      - Presentation attributes
+      - Class style rules
+      - Inline style attribute declarations
+    source_refs:
+      - css-cascade-inherit-keyword
+      - svg2-styling-presentation-attributes
+    testability: testable
+    notes:
+      - In this package's current subset, inline style declarations are the latest supported author-origin declarations.
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: SVG presentation attributes corresponding to supported properties must accept `inherit` as a CSS-wide property value because presentation attributes are parsed as CSS values.
+    applies_to:
+      - SVG namespace presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - css-cascade-inherit-keyword
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Explicit inherit resolution
+    kind: algorithm
+    summary: Resolve a winning `inherit` declaration by copying the parent element's value for that same property.
+    steps:
+      - Determine the parent element's current parser-visible value for the property.
+      - When a supported declaration's value is the CSS-wide `inherit` keyword, assign that parent value to the child property.
+      - Continue later supported cascade processing so later declarations can still replace the inherited value.
+    preconditions:
+      - The property name is supported by the parser.
+      - The declaration's value is the CSS-wide `inherit` keyword after CSS value parsing.
+    postconditions:
+      - The child element exposes the parent value for that property unless a later supported declaration replaces it.
+    requirement_refs:
+      - R001
+      - R003
+    source_refs:
+      - css-cascade-inherit-keyword
+      - css-cascade-inheritance
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A declaration uses `inherit` on a property not represented by the parser.
+    source_behavior: MUST
+    required_behavior: The CSS behavior applies in the source, but this package may ignore unsupported properties until their parser representation exists.
+    decision_required: false
+    source_refs:
+      - css-cascade-inherit-keyword
+  - id: I002
+    condition: A value merely contains the substring `inherit` but is not exactly the CSS-wide keyword.
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - css-cascade-inherit-keyword
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must demonstrate that explicit `inherit` copies parent values for both normally inherited and normally non-inherited supported properties.
+    derived_from:
+      - R001
+      - R002
+    reasoning: The CSS-wide keyword applies to all CSS properties, while the SVG property index differentiates which properties inherit by default; testing both cases prevents confusing explicit inheritance with default inheritance.
+    source_refs:
+      - css-cascade-inherit-keyword
+      - svg2-property-index
+
+implementation_choices:
+  - id: IC001
+    topic: Supported property boundary
+    statement: The package may limit this bullet to properties currently represented in its parser-facing style model, provided unchecked TODO bullets remain for unsupported SVG properties.
+    allowed_by:
+      - Current package scope
+      - User-directed bullet-by-bullet implementation workflow
+    source_refs: []
+  - id: IC002
+    topic: CSS tokenizer depth
+    statement: The package may recognize the CSS-wide keyword with its existing declaration/value parsing subset for this milestone.
+    allowed_by:
+      - Current parser architecture
+    source_refs: []
+
+ambiguities:
+  - id: A001
+    question: Should the parser eventually expose diagnostics when `inherit` appears on an unsupported property?
+    impact: Diagnostics would help strict SVG validation, but the current package primarily exposes parsed supported data.
+    options:
+      - Continue silently ignoring unsupported properties.
+      - Add a strict parsing mode with ignored-declaration diagnostics.
+    source_refs: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: CSS inheritance
+    reason: Defines inherited values and root fallback behavior used by the explicit `inherit` keyword.
+    source_refs:
+      - css-cascade-inheritance
+  - id: DEP002
+    kind: source-section
+    title: SVG presentation attributes
+    reason: Connects SVG attributes to CSS property value parsing and cascade participation.
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - css-cascade-inherit-keyword
+      - css-cascade-inheritance
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-cascade-inherit-keyword
+      - svg2-property-index
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-cascade-inherit-keyword
+      - svg2-styling-presentation-attributes
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - css-cascade-inherit-keyword
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - css-cascade-inherit-keyword
+      - svg2-property-index
+    map_item_refs: []
