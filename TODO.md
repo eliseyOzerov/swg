@@ -54,7 +54,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<line>` element.
 - [x] `<polyline>` element.
 - [x] `<polygon>` element.
-- [ ] Geometry properties: `x`, `y`, `cx`, `cy`, `r`, `rx`, `ry`, `width`, `height`.
+- [x] Geometry properties: `x`, `y`, `cx`, `cy`, `r`, `rx`, `ry`, `width`, `height`.
 
 ## Path Data
 

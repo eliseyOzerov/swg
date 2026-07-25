@@ -1,0 +1,580 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: basic-shape-geometry-properties
+  title: Basic shape geometry properties
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for geometry properties on basic
+    shape elements, including CSS property sources for x, y, cx, cy, r, rx, ry,
+    width, and height.
+  non_goals:
+    - Full CSS selector matching and stylesheet cascade.
+    - Animation of geometry properties.
+    - Geometry properties for svg, image, and foreignObject.
+    - min-width, max-width, min-height, and max-height constraints.
+    - Line endpoint properties x1, y1, x2, and y2.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: basic-shapes-geometry-properties
+      title: Basic Shapes - geometry properties
+      artifact_path: spec/basic-shape-geometry-properties/requirements.yaml
+  canonical_sources:
+    - id: svg2-geometry-properties
+      title: SVG 2 Geometry Properties
+      url: https://www.w3.org/TR/SVG2/geometry.html
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-shapes
+      title: SVG 2 Basic Shapes
+      url: https://www.w3.org/TR/SVG2/shapes.html
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Applying x, y, width, and height geometry properties to rect elements.
+    - Applying cx, cy, and r geometry properties to circle elements.
+    - Applying cx, cy, rx, and ry geometry properties to ellipse elements.
+    - Resolving length-percentage values against the current SVG viewport using the established package length parser.
+    - Reading geometry values from XML presentation attributes, class style rules parsed from style elements, and inline style attributes.
+  excludes:
+    - svg viewport geometry, which is covered by spec/svg-geometry-attributes/requirements.yaml.
+    - image and foreignObject geometry.
+    - Full CSS cascade, selector matching, specificity, media, inheritance, and shorthand handling.
+    - Animation.
+    - Line endpoint geometry properties.
+  assumptions:
+    - >
+      The package's existing CSS surface intentionally supports class selectors
+      from style elements plus inline style declarations.
+    - >
+      Geometry properties are not inherited, so shape geometry defaults are not
+      taken from ancestor element geometry declarations.
+    - >
+      The package can resolve x, cx, width, and rx percentages against viewport
+      width, y, cy, height, and ry percentages against viewport height, and r
+      percentages against the normalized viewport diagonal.
+
+terminology:
+  - id: term-geometry-property
+    term: geometry property
+    definition: >
+      An SVG property that describes an element's position or dimension and can
+      be specified through CSS property syntax as well as SVG presentation
+      attributes.
+    source_refs:
+      - svg2-geometry-properties
+  - id: term-basic-shape
+    term: basic shape
+    definition: >
+      An SVG graphics element defined by straight lines, curves, or both,
+      including rect, circle, and ellipse for this work item.
+    source_refs:
+      - svg2-shapes
+
+structures:
+  - id: S001
+    name: rect geometry properties
+    kind: structure
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    fields:
+      - name: x
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is 0.
+          - Applies to rect.
+          - Describes the horizontal coordinate of the element position.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-geometry-properties
+      - name: y
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is 0.
+          - Applies to rect.
+          - Describes the vertical coordinate of the element position.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-geometry-properties
+      - name: width
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Applies to rect.
+          - A computed value of auto on rect is treated as 0.
+          - A computed value of 0 disables rendering.
+        requirement_refs:
+          - R003
+          - R009
+        source_refs:
+          - svg2-geometry-properties
+          - svg2-shapes
+      - name: height
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Applies to rect.
+          - A computed value of auto on rect is treated as 0.
+          - A computed value of 0 disables rendering.
+        requirement_refs:
+          - R003
+          - R009
+        source_refs:
+          - svg2-geometry-properties
+          - svg2-shapes
+      - name: rx
+        type: length-percentage-or-auto
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is auto.
+          - Applies to rect.
+          - Negative values are illegal.
+        requirement_refs:
+          - R007
+          - R009
+        source_refs:
+          - svg2-geometry-properties
+      - name: ry
+        type: length-percentage-or-auto
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is auto.
+          - Applies to rect.
+          - Negative values are illegal.
+        requirement_refs:
+          - R008
+          - R009
+        source_refs:
+          - svg2-geometry-properties
+  - id: S002
+    name: circle geometry properties
+    kind: structure
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    fields:
+      - name: cx
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is 0.
+          - Applies to circle.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-geometry-properties
+      - name: cy
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is 0.
+          - Applies to circle.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-geometry-properties
+      - name: r
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is 0.
+          - Applies to circle.
+          - Negative values are illegal.
+        requirement_refs:
+          - R006
+          - R009
+        source_refs:
+          - svg2-geometry-properties
+  - id: S003
+    name: ellipse geometry properties
+    kind: structure
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    fields:
+      - name: cx
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is 0.
+          - Applies to ellipse.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-geometry-properties
+      - name: cy
+        type: length-percentage
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is 0.
+          - Applies to ellipse.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-geometry-properties
+      - name: rx
+        type: length-percentage-or-auto
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is auto.
+          - Applies to ellipse.
+          - Negative values are illegal.
+          - Both rx and ry as auto disable rendering.
+        requirement_refs:
+          - R007
+          - R009
+        source_refs:
+          - svg2-geometry-properties
+          - svg2-shapes
+      - name: ry
+        type: length-percentage-or-auto
+        cardinality: optional
+        position: geometry-property
+        constraints:
+          - Initial value is auto.
+          - Applies to ellipse.
+          - Negative values are illegal.
+          - Both rx and ry as auto disable rendering.
+        requirement_refs:
+          - R008
+          - R009
+        source_refs:
+          - svg2-geometry-properties
+          - svg2-shapes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The x geometry property applies to rect and describes the horizontal
+      coordinate of the element position with initial value 0.
+    applies_to:
+      - rect geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The y geometry property applies to rect and describes the vertical
+      coordinate of the element position with initial value 0.
+    applies_to:
+      - rect geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The width and height geometry properties apply to rect and size the
+      rectangle.
+    applies_to:
+      - rect geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The cx geometry property applies to circle and ellipse and describes the
+      horizontal center coordinate with initial value 0.
+    applies_to:
+      - circle geometry
+      - ellipse geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The cy geometry property applies to circle and ellipse and describes the
+      vertical center coordinate with initial value 0.
+    applies_to:
+      - circle geometry
+      - ellipse geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The r geometry property applies to circle and describes its radius with
+      initial value 0.
+    applies_to:
+      - circle geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The rx geometry property applies to ellipse and rect, describing the
+      horizontal ellipse radius or rect curve radius, with initial value auto.
+    applies_to:
+      - rect geometry
+      - ellipse geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The ry geometry property applies to ellipse and rect, describing the
+      vertical ellipse radius or rect curve radius, with initial value auto.
+    applies_to:
+      - rect geometry
+      - ellipse geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R009
+    normative_strength: MUST
+    kind: error
+    statement: >
+      Negative r, rx, and ry values are illegal, and negative rect width or
+      height values are parsing errors that must be ignored.
+    applies_to:
+      - rect geometry
+      - circle geometry
+      - ellipse geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes: []
+  - id: R010
+    normative_strength: MUST
+    kind: cascade
+    statement: >
+      Geometry properties can be specified through CSS property declarations in
+      addition to their SVG presentation attribute form.
+    applies_to:
+      - basic shape geometry
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    testability: testable
+    notes:
+      - This package milestone is limited to its existing class and inline style CSS support.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Negative r, rx, or ry.
+    source_behavior: MUST
+    required_behavior: Treat as illegal and use the omitted or auto behavior for that property.
+    decision_required: false
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+  - id: I002
+    condition: Negative rect width or height.
+    source_behavior: MUST
+    required_behavior: Ignore as a parsing error and use the package fallback for that property.
+    decision_required: false
+    source_refs:
+      - svg2-shapes
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, class and inline CSS geometry declarations must feed the
+      same parsed numeric geometry stored on SVGRectData, SVGCircleData, and
+      SVGEllipseData as XML geometry attributes.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+      - R006
+      - R007
+      - R008
+      - R010
+    reasoning: >
+      The package stores normalized shape geometry directly on parsed shape data
+      types, so CSS geometry properties need to resolve before those data
+      values are constructed.
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+
+implementation_choices:
+  - id: IC001
+    topic: CSS support boundary
+    statement: >
+      This bullet uses the package's existing CSS subset: simple class
+      selectors from style elements and inline style declarations.
+    allowed_by:
+      - R010
+    source_refs:
+      - svg2-geometry-properties
+  - id: IC002
+    topic: Percentage basis
+    statement: >
+      Resolve x, cx, width, and rx percentages horizontally; y, cy, height, and
+      ry percentages vertically; and r percentages against the normalized
+      diagonal viewport basis.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+      - R006
+      - R007
+      - R008
+    source_refs:
+      - svg2-geometry-properties
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Units
+    reason: >
+      Geometry property values use length-percentage syntax and viewport
+      percentage bases.
+    source_refs:
+      - svg2-geometry-properties
+  - id: DEP002
+    kind: existing-artifact
+    title: SVG viewport geometry attributes
+    reason: >
+      svg element x, y, width, and height geometry are already covered outside
+      this Basic Shapes bullet.
+    source_refs:
+      - svg2-geometry-properties
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R009
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties
+  - item_id: R010
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+      - svg2-shapes
+    map_item_refs:
+      - basic-shapes-geometry-properties

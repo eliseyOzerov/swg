@@ -992,6 +992,63 @@ import Testing
 	#expect(defaulted.path.commands == [])
 }
 
+@Test func svgParserAppliesBasicShapeGeometryPropertiesFromCSS() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100">
+		<style>
+			.rect-geometry { x: 10%; y: 25%; width: 50%; height: 50%; rx: 4; ry: 3; }
+			.circle-geometry { cx: 25%; cy: 50%; r: 10; }
+			.ellipse-geometry { cx: 75%; cy: 50%; rx: 10%; ry: 25%; }
+		</style>
+		<rect id="box" class="rect-geometry" x="1" y="1" width="1" height="1" rx="1" ry="1"/>
+		<circle id="dot" class="circle-geometry"/>
+		<ellipse id="oval" class="ellipse-geometry" style="cx: 80%; ry: 10"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let rects = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGRectData)? in
+		if case .rect(let rect) = element {
+			return (rect.id, rect)
+		}
+		return nil
+	})
+	let circles = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGCircleData)? in
+		if case .circle(let circle) = element {
+			return (circle.id, circle)
+		}
+		return nil
+	})
+	let ellipses = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGEllipseData)? in
+		if case .ellipse(let ellipse) = element {
+			return (ellipse.id, ellipse)
+		}
+		return nil
+	})
+
+	let box = try #require(rects["box"])
+	#expect(box.x == 20)
+	#expect(box.y == 25)
+	#expect(box.width == 100)
+	#expect(box.height == 50)
+	#expect(box.rx == 4)
+	#expect(box.ry == 3)
+	#expect(box.path.svgPathData(precision: 0) == "M 24 25 L 116 25 A 4 3 0 0 1 120 28 L 120 72 A 4 3 0 0 1 116 75 L 24 75 A 4 3 0 0 1 20 72 L 20 28 A 4 3 0 0 1 24 25 Z")
+
+	let dot = try #require(circles["dot"])
+	#expect(dot.cx == 50)
+	#expect(dot.cy == 50)
+	#expect(dot.r == 10)
+	#expect(dot.path.commands.first == .move(to: Point(60, 50)))
+
+	let oval = try #require(ellipses["oval"])
+	#expect(oval.cx == 160)
+	#expect(oval.cy == 50)
+	#expect(oval.rx == 20)
+	#expect(oval.ry == 10)
+	#expect(oval.path.commands.first == .move(to: Point(180, 50)))
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

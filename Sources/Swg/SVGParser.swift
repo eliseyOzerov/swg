@@ -22,6 +22,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		"stroke-width", "style", "transform", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
 		"zoomAndPan"
 	]
+	private static let basicShapeGeometryPropertyNames: Set<String> = [
+		"x", "y", "cx", "cy", "r", "rx", "ry", "width", "height"
+	]
 
 	private let supportedExtensions: Set<String>
 	private let languagePreferences: [String]
@@ -418,23 +421,26 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Rect")
 			setCurrentParsedElementID(id)
-			let parsedRX = nonnegativeOptionalDouble(attributes["rx"])
-			let parsedRY = nonnegativeOptionalDouble(attributes["ry"])
-			appendElement(.rect(SVGRectData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: nonnegativeDouble(attributes["width"]), height: nonnegativeDouble(attributes["height"]), rx: parsedRX ?? 0, ry: parsedRY ?? 0, attributes: attrs, rxIsAuto: parsedRX == nil, ryIsAuto: parsedRY == nil, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "rx", "ry"]))))
+			let geometry = parseBasicShapeGeometryProperties(attributes)
+			let parsedRX = nonnegativeOptionalDimension(geometry["rx"], percentageBasis: .horizontal)
+			let parsedRY = nonnegativeOptionalDimension(geometry["ry"], percentageBasis: .vertical)
+			appendElement(.rect(SVGRectData(id: id, x: dimension(geometry["x"], percentageBasis: .horizontal), y: dimension(geometry["y"], percentageBasis: .vertical), width: nonnegativeDimension(geometry["width"], percentageBasis: .horizontal), height: nonnegativeDimension(geometry["height"], percentageBasis: .vertical), rx: parsedRX ?? 0, ry: parsedRY ?? 0, attributes: attrs, rxIsAuto: parsedRX == nil, ryIsAuto: parsedRY == nil, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "rx", "ry"]))))
 			return true
 		case "circle":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Circle")
 			setCurrentParsedElementID(id)
-			appendElement(.circle(SVGCircleData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), r: nonnegativeDouble(attributes["r"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "r"]))))
+			let geometry = parseBasicShapeGeometryProperties(attributes)
+			appendElement(.circle(SVGCircleData(id: id, cx: dimension(geometry["cx"], percentageBasis: .horizontal), cy: dimension(geometry["cy"], percentageBasis: .vertical), r: nonnegativeDimension(geometry["r"], percentageBasis: .normalizedDiagonal), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "r"]))))
 			return true
 		case "ellipse":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Ellipse")
 			setCurrentParsedElementID(id)
-			let parsedRX = nonnegativeOptionalDouble(attributes["rx"])
-			let parsedRY = nonnegativeOptionalDouble(attributes["ry"])
-			appendElement(.ellipse(SVGEllipseData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), rx: parsedRX ?? 0, ry: parsedRY ?? 0, attributes: attrs, rxIsAuto: parsedRX == nil, ryIsAuto: parsedRY == nil, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "rx", "ry"]))))
+			let geometry = parseBasicShapeGeometryProperties(attributes)
+			let parsedRX = nonnegativeOptionalDimension(geometry["rx"], percentageBasis: .horizontal)
+			let parsedRY = nonnegativeOptionalDimension(geometry["ry"], percentageBasis: .vertical)
+			appendElement(.ellipse(SVGEllipseData(id: id, cx: dimension(geometry["cx"], percentageBasis: .horizontal), cy: dimension(geometry["cy"], percentageBasis: .vertical), rx: parsedRX ?? 0, ry: parsedRY ?? 0, attributes: attrs, rxIsAuto: parsedRX == nil, ryIsAuto: parsedRY == nil, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "rx", "ry"]))))
 			return true
 		case "line":
 			let attrs = parsePaintAttributes(attributes)
@@ -1097,6 +1103,30 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
+	private func parseBasicShapeGeometryProperties(_ attributes: [String: String]) -> [String: String] {
+		var result: [String: String] = [:]
+		applyGeometryProperties(attributes, to: &result)
+
+		if let className = attributes["class"] {
+			for cls in className.split(separator: " ") {
+				if let cssProps = styleSheet[String(cls)] {
+					applyGeometryProperties(cssProps, to: &result)
+				}
+			}
+		}
+
+		if let style = attributes["style"] {
+			applyGeometryProperties(parseInlineCSS(style), to: &result)
+		}
+		return result
+	}
+
+	private func applyGeometryProperties(_ properties: [String: String], to result: inout [String: String]) {
+		for (name, value) in properties where Self.basicShapeGeometryPropertyNames.contains(name) {
+			result[name] = value
+		}
+	}
+
 	private func applyPresentationAttributes(_ attributes: [String: String], to result: inout SVGPaintAttributes) {
 		if let fill = attributes["fill"], let paint = parsePaint(fill) { result.fill = paint }
 		if let stroke = attributes["stroke"], let paint = parsePaint(stroke) { result.stroke = paint }
@@ -1385,14 +1415,23 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return number
 	}
 
-	private func nonnegativeDouble(_ value: String?) -> Double {
-		let number = double(value)
-		return number < 0 ? 0 : number
+	private func dimension(_ value: String?, percentageBasis: SVGLengthPercentageBasis) -> Double {
+		guard let value, let length = parseDimension(value, context: currentViewportContext, percentageBasis: percentageBasis) else { return 0 }
+		return length
 	}
 
-	private func nonnegativeOptionalDouble(_ value: String?) -> Double? {
-		guard let value, let number = parseNumber(value), number >= 0 else { return nil }
-		return number
+	private func nonnegativeDimension(_ value: String?, percentageBasis: SVGLengthPercentageBasis) -> Double {
+		let length = dimension(value, percentageBasis: percentageBasis)
+		return length < 0 ? 0 : length
+	}
+
+	private func nonnegativeOptionalDimension(_ value: String?, percentageBasis: SVGLengthPercentageBasis) -> Double? {
+		guard let value else { return nil }
+		if value.trimmingCharacters(in: .whitespacesAndNewlines) == "auto" {
+			return nil
+		}
+		guard let length = parseDimension(value, context: currentViewportContext, percentageBasis: percentageBasis), length >= 0 else { return nil }
+		return length
 	}
 
 	private func parseNumber(_ value: String) -> Double? {
