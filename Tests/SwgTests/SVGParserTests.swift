@@ -38,6 +38,30 @@ import Testing
 	#expect(path.attributes.strokeWidth == 2)
 }
 
+@Test func svgParserMultipliesTransformListsFromLeftToRight() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<g id="translateThenScale" transform="translate(10,0) scale(2)"/>
+		<g id="scaleThenTranslate" transform="scale(2) translate(10,0)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let translateThenScale) = document.elements.first else {
+		Issue.record("Expected first group")
+		return
+	}
+	guard case .group(let scaleThenTranslate) = document.elements.dropFirst().first else {
+		Issue.record("Expected second group")
+		return
+	}
+
+	#expect(translateThenScale.attributes.transform == Transform(a: 2, b: 0, c: 0, d: 2, tx: 10, ty: 0))
+	#expect(Point(1, 0).applying(translateThenScale.attributes.transform) == Point(12, 0))
+	#expect(scaleThenTranslate.attributes.transform == Transform(a: 2, b: 0, c: 0, d: 2, tx: 20, ty: 0))
+	#expect(Point(1, 0).applying(scaleThenTranslate.attributes.transform) == Point(22, 0))
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

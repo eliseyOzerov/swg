@@ -125,12 +125,12 @@ public struct Transform: Equatable, Hashable, Sendable {
 
 	public func concatenating(_ other: Transform) -> Transform {
 		Transform(
-			a: a * other.a + b * other.c,
-			b: a * other.b + b * other.d,
-			c: c * other.a + d * other.c,
-			d: c * other.b + d * other.d,
-			tx: tx * other.a + ty * other.c + other.tx,
-			ty: tx * other.b + ty * other.d + other.ty
+			a: a * other.a + c * other.b,
+			b: b * other.a + d * other.b,
+			c: a * other.c + c * other.d,
+			d: b * other.c + d * other.d,
+			tx: a * other.tx + c * other.ty + tx,
+			ty: b * other.tx + d * other.ty + ty
 		)
 	}
 }

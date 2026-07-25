@@ -1,0 +1,148 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: transform-list-ordering
+  title: SVG transform list ordering
+  domain: SVG 2 / CSS Transforms Level 1
+  profile: null
+  summary: SVG transform attributes use the CSS Transforms rendering model, where transform functions are multiplied from left to right to produce the element transformation matrix.
+  non_goals:
+    - Individual transform function argument semantics.
+    - Transform-origin handling.
+    - 3D transform functions.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-coords-transform-property
+      title: SVG 2, 8.5 The transform property
+      url: https://www.w3.org/TR/SVG2/coords.html#TransformProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-transforms-rendering-model
+      title: CSS Transforms Module Level 1, 3 The Transform Rendering Model
+      url: https://www.w3.org/TR/css-transforms-1/#transform-rendering
+      version: Candidate Recommendation 14 February 2019
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 delegates support for the transform property and presentation attribute to CSS Transforms Level 1.
+
+scope:
+  includes:
+    - Ordering of multiple transform functions in one SVG transform attribute.
+    - Matrix concatenation behavior used by parsed transform lists.
+  excludes:
+    - Parsing every transform function form.
+    - Transform-origin offsets.
+  assumptions:
+    - The package represents 2D transforms using the six-value affine matrix model applied to points as column vectors.
+
+terminology:
+  - id: term-transform-function
+    term: transform function
+    definition: A single transform operation such as translate or scale that can be represented as a matrix.
+    source_refs:
+      - css-transforms-rendering-model
+  - id: term-transformation-matrix
+    term: transformation matrix
+    definition: The matrix computed from an element transform value and used to map local coordinates into the parent coordinate system.
+    source_refs:
+      - css-transforms-rendering-model
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: conformance
+    statement: SVG user agents must support the transform property and presentation attribute as defined by CSS Transforms Level 1.
+    applies_to:
+      - SVGParser.parseTransform
+    source_refs:
+      - svg2-coords-transform-property
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: ordering
+    statement: The transformation matrix must be computed by starting with the identity matrix and multiplying each transform function from the transform value from left to right.
+    applies_to:
+      - SVGParser.parseTransform
+      - Transform.concatenating
+    source_refs:
+      - css-transforms-rendering-model
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Reversing the order of non-commuting transform functions must produce a different transformation matrix.
+    applies_to:
+      - SVGParser.parseTransform
+      - Transform.concatenating
+    source_refs:
+      - css-transforms-rendering-model
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Transform list matrix computation
+    kind: algorithm
+    summary: Compute an element transformation matrix by accumulating transform function matrices in source order.
+    steps:
+      - Start with the identity matrix.
+      - Multiply by each transform function in the transform value from left to right.
+      - Use the resulting matrix to map local coordinates into the parent coordinate system.
+    preconditions:
+      - A transform value contains one or more supported transform functions.
+    postconditions:
+      - The accumulated matrix reflects the specified function order.
+    requirement_refs:
+      - R002
+    source_refs:
+      - css-transforms-rendering-model
+
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices: []
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: CSS Transforms Module Level 1, 3 The Transform Rendering Model
+    reason: SVG 2 normatively delegates transform support to CSS Transforms.
+    source_refs:
+      - svg2-coords-transform-property
+      - css-transforms-rendering-model
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-coords-transform-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-transforms-rendering-model
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-transforms-rendering-model
+    map_item_refs: []
+  - item_id: ALG001
+    item_type: algorithm
+    source_refs:
+      - css-transforms-rendering-model
+    map_item_refs: []
