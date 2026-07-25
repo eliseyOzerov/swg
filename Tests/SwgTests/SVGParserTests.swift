@@ -68,6 +68,28 @@ import Testing
 	])
 }
 
+@Test func svgParserResolvesViewportCoordinatesFromViewportDimensions() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 20 10">
+		<svg id="nested" x="50%" y="25%" width="25%" height="50%" viewBox="0 0 5 5"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.viewBox == Rect(x: 0, y: 0, width: 20, height: 10))
+	guard case .svg(let nested) = document.elements.first else {
+		Issue.record("Expected nested svg child")
+		return
+	}
+
+	#expect(nested.x == 100)
+	#expect(nested.y == 25)
+	#expect(nested.width == 50)
+	#expect(nested.height == 50)
+	#expect(nested.viewBox == Rect(x: 0, y: 0, width: 5, height: 5))
+}
+
 @Test func svgParserParsesPaintValuesAndFallbacks() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

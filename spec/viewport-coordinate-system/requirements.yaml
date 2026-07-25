@@ -1,0 +1,114 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: viewport-coordinate-system
+  title: SVG viewport coordinate system
+  domain: SVG 2
+  profile: null
+  summary: SVG viewport dimensions establish the viewport coordinate space used for viewport-positioned geometry before descendant viewBox transforms.
+  non_goals:
+    - Computing the full viewBox-to-viewport transform.
+    - preserveAspectRatio fitting behavior.
+    - Renderer-specific pixel output.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-coords-initial-viewport
+      title: SVG 2, 8.3 The initial viewport
+      url: https://www.w3.org/TR/SVG2/coords.html#InitialViewport
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-coords-viewbox-transform
+      title: SVG 2, 8.6 The viewBox attribute
+      url: https://www.w3.org/TR/SVG2/coords.html#ViewBoxAttribute
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes: []
+
+scope:
+  includes:
+    - Root SVG width and height as viewport dimensions.
+    - Nested SVG x, y, width, and height resolution in the current viewport coordinate system.
+  excludes:
+    - CSS positioning fallback.
+    - ViewBox scaling of descendant geometry.
+  assumptions:
+    - Parsed nested SVG viewport geometry is stored before applying the nested element's viewBox transform.
+
+terminology:
+  - id: T001
+    term: viewport
+    definition: The finite rectangular region into which SVG content is rendered.
+    source_refs:
+      - svg2-coords-initial-viewport
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: The outermost SVG element's width and height presentation attributes must establish the initial viewport dimensions when CSS layout dimensions are not supplied.
+    applies_to:
+      - SVGParser
+      - SVGDocument
+    source_refs:
+      - svg2-coords-initial-viewport
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Viewport-positioned attributes such as nested SVG `x`, `y`, `width`, and `height` must resolve against the current viewport dimensions, not the element's viewBox coordinate rectangle.
+    applies_to:
+      - SVGParser
+      - SVGViewportData
+    source_refs:
+      - svg2-coords-viewbox-transform
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: A viewBox transform must not affect the `x`, `y`, `width`, or `height` attributes on the element that has the viewBox attribute.
+    applies_to:
+      - SVGParser
+      - SVGViewportData
+    source_refs:
+      - svg2-coords-viewbox-transform
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices: []
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-coords-initial-viewport
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-coords-viewbox-transform
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-coords-viewbox-transform
+    map_item_refs: []
