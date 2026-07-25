@@ -172,3 +172,48 @@ import Testing
 	}
 	#expect(child.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
 }
+
+@Test func svgParserPreservesUnknownAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" xmlns:tool="https://example.com/tool" viewBox="0 0 20 20" data-root="root-value" tool:root-note="root-note">
+		<path id="mark" d="M0 0 L10 10" fill="#336699" data-name="primary" tool:note="kept"/>
+		<mysteryElement id="wrapper" data-wrapper="wrapper-value" tool:state="active">
+			<circle id="dot" cx="5" cy="5" r="2" data-dot="dot-value"/>
+		</mysteryElement>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.unknownAttributes == [
+		"data-root": "root-value",
+		"tool:root-note": "root-note"
+	])
+
+	guard case .path(let path) = document.elements.first else {
+		Issue.record("Expected first element to be a path")
+		return
+	}
+	#expect(path.unknownAttributes == [
+		"data-name": "primary",
+		"tool:note": "kept"
+	])
+	#expect(path.unknownAttributes["id"] == nil)
+	#expect(path.unknownAttributes["d"] == nil)
+	#expect(path.unknownAttributes["fill"] == nil)
+
+	guard case .unknown(let unknown) = document.elements.dropFirst().first else {
+		Issue.record("Expected second element to be unknown")
+		return
+	}
+	#expect(unknown.unknownAttributes == [
+		"data-wrapper": "wrapper-value",
+		"tool:state": "active"
+	])
+
+	guard case .circle(let circle) = unknown.children.first else {
+		Issue.record("Expected unknown child to be a circle")
+		return
+	}
+	#expect(circle.unknownAttributes == ["data-dot": "dot-value"])
+}

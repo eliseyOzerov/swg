@@ -1,0 +1,130 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: unknown-attributes
+  title: Unknown SVG attribute preservation
+  domain: SVG 2 / XML 1.0
+  profile: null
+  summary: Preserve XML attributes that the parser does not interpret so callers can inspect custom, vendor, data, and foreign-prefixed attribute values after parsing.
+  non_goals:
+    - Interpret custom attributes for rendering.
+    - Preserve namespace declaration attributes as ordinary unknown attributes.
+    - Resolve namespace URIs for preserved foreign-prefixed attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: xml10-start-tags
+      title: XML 1.0 Start-Tags, End-Tags, and Empty-Element Tags
+      url: https://www.w3.org/TR/xml/#sec-starttags
+      version: Fifth Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-foreign-namespaces
+      title: SVG 2 Foreign namespaces and private data
+      url: https://www.w3.org/TR/SVG/struct.html#ForeignNamespaces
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Unknown attributes on the root svg element.
+    - Unknown attributes on known SVG elements.
+    - Unknown attributes on preserved unknown SVG elements.
+    - Namespaced or prefixed attributes that are not interpreted by the parser.
+  excludes:
+    - Namespace declaration preservation.
+    - Namespace URI expansion for preserved attributes.
+    - Presentation attribute preservation as unknowns when they are already interpreted into SVGPaintAttributes.
+  assumptions:
+    - Preserved attribute keys use the qualified names supplied by Foundation XMLParser.
+
+terminology:
+  - id: term-attribute-specification
+    term: Attribute specification
+    definition: A name and value associated with an XML start tag or empty-element tag.
+    source_refs:
+      - xml10-start-tags
+  - id: term-unknown-attribute
+    term: Unknown attribute
+    definition: An XML attribute that the current swg parser does not interpret as a structural, geometry, style, paint, namespace declaration, or URL-reference field.
+    source_refs:
+      - xml10-start-tags
+      - svg2-foreign-namespaces
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parsed document must preserve root svg attributes that are not interpreted by the parser and are not namespace declarations.
+    applies_to:
+      - SVGDocument
+    source_refs:
+      - xml10-start-tags
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: Parsed SVG elements must preserve attributes that are not interpreted by the parser and are not namespace declarations.
+    applies_to:
+      - SVGElement data
+    source_refs:
+      - xml10-start-tags
+      - svg2-foreign-namespaces
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: Interpreted presentation, style, geometry, identity, href, and namespace declaration attributes must not be duplicated as unknown attributes.
+    applies_to:
+      - unknown attribute filtering
+    source_refs:
+      - xml10-start-tags
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Attribute key form
+    statement: Preserved attributes keep the qualified name strings delivered by Foundation XMLParser until namespace-aware attribute modeling is introduced.
+    allowed_by:
+      - Current parser architecture
+    source_refs:
+      - xml10-start-tags
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - xml10-start-tags
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - xml10-start-tags
+      - svg2-foreign-namespaces
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - xml10-start-tags
+    map_item_refs: []
