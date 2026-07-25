@@ -180,6 +180,17 @@ public enum SVGPathDataParser {
 				let sweep = clockwise ? 1 : 0
 				parts.append("A \(format(radius, precision: precision)) \(format(radius, precision: precision)) 0 \(largeArc) \(sweep) \(format(end, precision: precision))")
 				current = end
+			case .ellipticalArc(let center, let radiusX, let radiusY, let startAngle, let endAngle, let clockwise):
+				let start = Point(center.x + cos(startAngle) * radiusX, center.y + sin(startAngle) * radiusY)
+				let end = Point(center.x + cos(endAngle) * radiusX, center.y + sin(endAngle) * radiusY)
+				if current?.distance(to: start) ?? .infinity > 0.000001 {
+					parts.append("L \(format(start, precision: precision))")
+				}
+				let delta = normalizedArcDelta(from: startAngle, to: endAngle, clockwise: clockwise)
+				let largeArc = abs(delta) > .pi ? 1 : 0
+				let sweep = clockwise ? 1 : 0
+				parts.append("A \(format(radiusX, precision: precision)) \(format(radiusY, precision: precision)) 0 \(largeArc) \(sweep) \(format(end, precision: precision))")
+				current = end
 			case .close:
 				parts.append("Z")
 			case .rect(let rect):
@@ -507,6 +518,38 @@ public extension SVGCircleData {
 			.arc(center: center, radius: r, startAngle: .pi * 3 / 2, endAngle: .pi * 2, clockwise: true),
 			.close,
 		])
+	}
+}
+
+public extension SVGEllipseData {
+	/// The equivalent path for this ellipse.
+	var path: Path {
+		let radii = usedRadii
+		guard radii.x > 0, radii.y > 0 else { return Path() }
+		let center = Point(cx, cy)
+		return Path(commands: [
+			.move(to: Point(cx + radii.x, cy)),
+			.ellipticalArc(center: center, radiusX: radii.x, radiusY: radii.y, startAngle: 0, endAngle: .pi / 2, clockwise: true),
+			.ellipticalArc(center: center, radiusX: radii.x, radiusY: radii.y, startAngle: .pi / 2, endAngle: .pi, clockwise: true),
+			.ellipticalArc(center: center, radiusX: radii.x, radiusY: radii.y, startAngle: .pi, endAngle: .pi * 3 / 2, clockwise: true),
+			.ellipticalArc(center: center, radiusX: radii.x, radiusY: radii.y, startAngle: .pi * 3 / 2, endAngle: .pi * 2, clockwise: true),
+			.close,
+		])
+	}
+
+	/// The used ellipse radii after resolving auto values.
+	var usedRadii: (x: Double, y: Double) {
+		let hasRX = !rxIsAuto && rx >= 0
+		let hasRY = !ryIsAuto && ry >= 0
+		guard hasRX || hasRY else { return (0, 0) }
+
+		if hasRX, hasRY {
+			return (rx, ry)
+		} else if hasRX {
+			return (rx, rx)
+		} else {
+			return (ry, ry)
+		}
 	}
 }
 

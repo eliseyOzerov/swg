@@ -292,16 +292,20 @@ public struct SVGEllipseData: Equatable, Sendable {
 	public let cy: Double
 	public let rx: Double
 	public let ry: Double
+	public let rxIsAuto: Bool
+	public let ryIsAuto: Bool
 	public let attributes: SVGPaintAttributes
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, cx: Double, cy: Double, rx: Double, ry: Double, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, cx: Double, cy: Double, rx: Double, ry: Double, attributes: SVGPaintAttributes, rxIsAuto: Bool = false, ryIsAuto: Bool = false, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.cx = cx
 		self.cy = cy
 		self.rx = rx
 		self.ry = ry
+		self.rxIsAuto = rxIsAuto
+		self.ryIsAuto = ryIsAuto
 		self.attributes = attributes
 		self.language = language
 		self.unknownAttributes = unknownAttributes

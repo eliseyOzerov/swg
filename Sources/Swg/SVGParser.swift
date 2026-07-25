@@ -432,7 +432,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Ellipse")
 			setCurrentParsedElementID(id)
-			appendElement(.ellipse(SVGEllipseData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "rx", "ry"]))))
+			let parsedRX = nonnegativeOptionalDouble(attributes["rx"])
+			let parsedRY = nonnegativeOptionalDouble(attributes["ry"])
+			appendElement(.ellipse(SVGEllipseData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), rx: parsedRX ?? 0, ry: parsedRY ?? 0, attributes: attrs, rxIsAuto: parsedRX == nil, ryIsAuto: parsedRY == nil, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "rx", "ry"]))))
 			return true
 		case "line":
 			let attrs = parsePaintAttributes(attributes)

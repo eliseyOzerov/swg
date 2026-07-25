@@ -1,0 +1,412 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: ellipse
+  title: ellipse element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the ellipse element, including
+    center/radii geometry, auto and invalid radius handling, and equivalent
+    path generation.
+  non_goals:
+    - CSS geometry property cascade beyond XML attributes.
+    - Percentage rx/ry resolution.
+    - DOM interface conformance.
+    - Rendering backend behavior.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: basic-shapes-ellipse
+      title: Basic Shapes - ellipse
+      artifact_path: spec/ellipse/requirements.yaml
+  canonical_sources:
+    - id: svg2-shapes-ellipse
+      title: SVG 2 Basic Shapes - The ellipse element
+      url: https://www.w3.org/TR/SVG2/shapes.html#EllipseElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Recognizing ellipse as an SVG graphics, renderable, shape element.
+    - Parsing cx and cy as ellipse center coordinates.
+    - Parsing rx and ry as ellipse x- and y-axis radii.
+    - Treating negative rx or ry values as invalid auto values.
+    - Resolving one auto radius from the specified opposite radius without rect clamping.
+    - Producing no equivalent path when both radii are auto or either used radius is zero.
+    - Producing an ellipse equivalent path made of four quarter-ellipse arc segments.
+  excludes:
+    - CSS geometry property cascade.
+    - Percentage rx/ry resolution.
+    - Arc-to-cubic flattening quality.
+    - Rendering backend behavior.
+  assumptions:
+    - >
+      The package can represent omitted or invalid rx/ry values as auto flags in
+      addition to public numeric fallback values.
+    - >
+      The package can use a structured elliptical arc command for each equivalent
+      quarter arc while preserving the geometry required by SVG 2.
+
+terminology:
+  - id: term-ellipse
+    term: ellipse
+    definition: >
+      A basic SVG shape element defined by a center point and two radii.
+    source_refs:
+      - svg2-shapes-ellipse
+  - id: term-ellipse-center
+    term: ellipse center
+    definition: >
+      The point identified by the cx and cy geometry properties.
+    source_refs:
+      - svg2-shapes-ellipse
+  - id: term-auto-radius
+    term: auto radius
+    definition: >
+      An omitted or invalid ellipse radius whose used value may be determined
+      from the opposite radius.
+    source_refs:
+      - svg2-shapes-ellipse
+
+structures:
+  - id: S001
+    name: ellipse geometry
+    kind: structure
+    source_refs:
+      - svg2-shapes-ellipse
+    fields:
+      - name: cx
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the x-coordinate of the ellipse center.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-shapes-ellipse
+      - name: cy
+        type: length-percentage
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the y-coordinate of the ellipse center.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-shapes-ellipse
+      - name: rx
+        type: length-percentage-or-auto
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the x-axis radius.
+          - Negative values are illegal and ignored as parsing errors.
+          - Auto is converted using the rectangle radius auto rules, without rect clamping.
+        requirement_refs:
+          - R003
+          - R004
+          - R006
+        source_refs:
+          - svg2-shapes-ellipse
+      - name: ry
+        type: length-percentage-or-auto
+        cardinality: one
+        position: geometry-property
+        constraints:
+          - Defines the y-axis radius.
+          - Negative values are illegal and ignored as parsing errors.
+          - Auto is converted using the rectangle radius auto rules, without rect clamping.
+        requirement_refs:
+          - R003
+          - R004
+          - R006
+        source_refs:
+          - svg2-shapes-ellipse
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      An ellipse element is an SVG graphics, renderable, shape element.
+    applies_to:
+      - ellipse element
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The cx and cy coordinates define the center of the ellipse.
+    applies_to:
+      - ellipse geometry
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      The rx and ry properties define the x- and y-axis radii of the ellipse.
+    applies_to:
+      - ellipse geometry
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: error
+    statement: >
+      A negative rx or ry value is illegal and must be ignored as a parsing
+      error.
+    applies_to:
+      - ellipse radius
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: rendering
+    statement: >
+      A computed value of zero for either radius, or auto for both radii,
+      disables rendering of the ellipse.
+    applies_to:
+      - ellipse equivalent path
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: algorithm
+    statement: >
+      An auto rx or ry value is converted to a used value using the rectangle
+      auto-radius rules, but without clamping based on width or height.
+    applies_to:
+      - ellipse radius
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The equivalent path for an ellipse consists of four elliptical arc
+      segments, each covering one quarter of the ellipse.
+    applies_to:
+      - ellipse equivalent path
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The equivalent path begins at the 3 o'clock point on the ellipse radius
+      and proceeds clockwise before transformations.
+    applies_to:
+      - ellipse equivalent path
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: testable
+    notes: []
+  - id: R009
+    normative_strength: MUST
+    kind: path
+    statement: >
+      The rx and ry parameters for equivalent arc commands are the used values
+      of the ellipse rx and ry properties after conversion to local user units.
+    applies_to:
+      - ellipse equivalent path
+    source_refs:
+      - svg2-shapes-ellipse
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: ellipse equivalent path
+    kind: algorithm
+    summary: >
+      Build an equivalent path from the center and used radii by moving to the
+      rightmost point and adding four quarter-ellipse arcs around the center.
+    steps:
+      - Move to (cx + rx, cy).
+      - Add an arc to (cx, cy + ry).
+      - Add an arc to (cx - rx, cy).
+      - Add an arc to (cx, cy - ry).
+      - Add a final arc that completes the segment and closes the path.
+    preconditions:
+      - The used rx and ry values are positive.
+    postconditions:
+      - The path covers the same geometry as the ellipse.
+    requirement_refs:
+      - R007
+      - R008
+      - R009
+    source_refs:
+      - svg2-shapes-ellipse
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Negative rx or ry.
+    source_behavior: MUST
+    required_behavior: Ignore as a parsing error and treat that radius as auto for used-radius computation.
+    decision_required: false
+    source_refs:
+      - svg2-shapes-ellipse
+  - id: I002
+    condition: Both rx and ry auto.
+    source_behavior: MUST
+    required_behavior: Do not produce visible ellipse geometry.
+    decision_required: false
+    source_refs:
+      - svg2-shapes-ellipse
+  - id: I003
+    condition: Either used rx or used ry is zero.
+    source_behavior: MUST
+    required_behavior: Do not produce visible ellipse geometry.
+    decision_required: false
+    source_refs:
+      - svg2-shapes-ellipse
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, a parsed ellipse with positive used radii must expose a
+      Path that moves to (cx + usedRx, cy), contains four elliptical arc
+      commands centered at (cx, cy), and closes after the final arc.
+    derived_from:
+      - R007
+      - R008
+      - R009
+      - ALG001
+    reasoning: >
+      The package exposes equivalent geometry through Path commands; four
+      quarter-ellipse arc commands preserve the SVG equivalent path geometry.
+    source_refs:
+      - svg2-shapes-ellipse
+  - id: D002
+    normative_strength: MUST
+    statement: >
+      For this package, an ellipse with non-positive used radii must expose an
+      empty equivalent Path.
+    derived_from:
+      - R005
+    reasoning: >
+      The source disables rendering for zero radii or both-auto radii; an empty
+      equivalent Path preserves that behavior for path conversion.
+    source_refs:
+      - svg2-shapes-ellipse
+
+implementation_choices:
+  - id: IC001
+    topic: Auto radius representation
+    statement: >
+      The source defines auto as a computed value; the parser may preserve this
+      as internal flags while exposing numeric fallback values for compatibility.
+    allowed_by:
+      - R006
+    source_refs:
+      - svg2-shapes-ellipse
+  - id: IC002
+    topic: Arc representation
+    statement: >
+      The source defines the equivalent path in SVG path syntax, but this
+      package may represent each quarter arc with its structured elliptical arc
+      command until SVG arc commands are represented independently.
+    allowed_by:
+      - R007
+      - R008
+      - R009
+    source_refs:
+      - svg2-shapes-ellipse
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Units
+    reason: >
+      Percentage rx/ry resolution depends on SVG length and percentage unit rules.
+    source_refs:
+      - svg2-shapes-ellipse
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse
+  - item_id: R009
+    item_type: requirement
+    source_refs:
+      - svg2-shapes-ellipse
+    map_item_refs:
+      - basic-shapes-ellipse

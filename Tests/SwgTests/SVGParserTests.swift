@@ -811,6 +811,67 @@ import Testing
 	#expect(negativeRadius.path.commands == [])
 }
 
+@Test func svgParserPreservesEllipseElementsAndEquivalentPaths() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+		<ellipse id="oval" cx="20" cy="12" rx="8" ry="4" fill="#336699" data-note="kept"/>
+		<ellipse id="auto-rx" cx="5" cy="6" ry="3"/>
+		<ellipse id="auto-ry" cx="7" cy="8" rx="2"/>
+		<ellipse id="defaulted"/>
+		<ellipse id="zero-radius" cx="10" cy="10" rx="0" ry="4"/>
+		<ellipse id="negative-rx" cx="10" cy="10" rx="-2" ry="4"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let ellipses = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGEllipseData)? in
+		if case .ellipse(let ellipse) = element {
+			return (ellipse.id, ellipse)
+		}
+		return nil
+	})
+
+	let oval = try #require(ellipses["oval"])
+	#expect(oval.cx == 20)
+	#expect(oval.cy == 12)
+	#expect(oval.rx == 8)
+	#expect(oval.ry == 4)
+	#expect(oval.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(oval.unknownAttributes == ["data-note": "kept"])
+	let center = Point(20, 12)
+	let expectedCommands: [PathCommand] = [
+		.move(to: Point(28, 12)),
+		.ellipticalArc(center: center, radiusX: 8, radiusY: 4, startAngle: 0, endAngle: .pi / 2, clockwise: true),
+		.ellipticalArc(center: center, radiusX: 8, radiusY: 4, startAngle: .pi / 2, endAngle: .pi, clockwise: true),
+		.ellipticalArc(center: center, radiusX: 8, radiusY: 4, startAngle: .pi, endAngle: .pi * 3 / 2, clockwise: true),
+		.ellipticalArc(center: center, radiusX: 8, radiusY: 4, startAngle: .pi * 3 / 2, endAngle: .pi * 2, clockwise: true),
+		.close,
+	]
+	#expect(oval.path.commands == expectedCommands)
+	#expect(oval.path.svgPathData(precision: 0) == "M 28 12 A 8 4 0 0 1 20 16 A 8 4 0 0 1 12 12 A 8 4 0 0 1 20 8 A 8 4 0 0 1 28 12 Z")
+
+	let autoRX = try #require(ellipses["auto-rx"])
+	#expect(autoRX.rx == 0)
+	#expect(autoRX.ry == 3)
+	#expect(autoRX.path.commands.first == .move(to: Point(8, 6)))
+	#expect(autoRX.path.svgPathData(precision: 0) == "M 8 6 A 3 3 0 0 1 5 9 A 3 3 0 0 1 2 6 A 3 3 0 0 1 5 3 A 3 3 0 0 1 8 6 Z")
+
+	let autoRY = try #require(ellipses["auto-ry"])
+	#expect(autoRY.rx == 2)
+	#expect(autoRY.ry == 0)
+	#expect(autoRY.path.svgPathData(precision: 0) == "M 9 8 A 2 2 0 0 1 7 10 A 2 2 0 0 1 5 8 A 2 2 0 0 1 7 6 A 2 2 0 0 1 9 8 Z")
+
+	let defaulted = try #require(ellipses["defaulted"])
+	#expect(defaulted.path.commands == [])
+
+	let zeroRadius = try #require(ellipses["zero-radius"])
+	#expect(zeroRadius.path.commands == [])
+
+	let negativeRX = try #require(ellipses["negative-rx"])
+	#expect(negativeRX.rx == 0)
+	#expect(negativeRX.path.svgPathData(precision: 0) == "M 14 10 A 4 4 0 0 1 10 14 A 4 4 0 0 1 6 10 A 4 4 0 0 1 10 6 A 4 4 0 0 1 14 10 Z")
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

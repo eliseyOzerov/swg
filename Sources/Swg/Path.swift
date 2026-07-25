@@ -27,6 +27,7 @@ public enum PathCommand: Equatable, Hashable, Sendable {
 	case cubic(to: Point, control1: Point, control2: Point)
 	case quad(to: Point, control: Point)
 	case arc(center: Point, radius: Double, startAngle: Double, endAngle: Double, clockwise: Bool)
+	case ellipticalArc(center: Point, radiusX: Double, radiusY: Double, startAngle: Double, endAngle: Double, clockwise: Bool)
 	case close
 	case rect(Rect)
 	case ellipse(Rect)
@@ -59,6 +60,10 @@ public struct Path: Equatable, Hashable, Sendable {
 
 	public mutating func arc(center: Point, radius: Double, startAngle: Double, endAngle: Double, clockwise: Bool) {
 		commands.append(.arc(center: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: clockwise))
+	}
+
+	public mutating func ellipticalArc(center: Point, radiusX: Double, radiusY: Double, startAngle: Double, endAngle: Double, clockwise: Bool) {
+		commands.append(.ellipticalArc(center: center, radiusX: radiusX, radiusY: radiusY, startAngle: startAngle, endAngle: endAngle, clockwise: clockwise))
 	}
 
 	public mutating func close() {
