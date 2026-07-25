@@ -124,18 +124,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `text-rendering`.
 - [ ] `image-rendering`.
 
-## Colors
-
-- [x] Hex color.
-- [ ] Short hex color.
-- [ ] `rgb()`.
-- [ ] `rgba()`.
-- [ ] Percentage RGB values.
-- [ ] Named CSS colors.
-- [ ] `transparent`.
-- [ ] `currentColor`.
-- [ ] ICC colors.
-
 ## Gradients and Patterns
 
 - [x] `<linearGradient>` element with stops.
@@ -205,14 +193,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `text-anchor`.
 - [ ] `dominant-baseline`.
 - [ ] `alignment-baseline`.
-- [ ] `font-family`.
-- [ ] `font-size`.
-- [ ] `font-weight`.
-- [ ] `font-style`.
-- [ ] `letter-spacing`.
-- [ ] `word-spacing`.
 - [ ] `white-space`.
-- [ ] `inline-size`.
 
 ## Embedded Content
 
