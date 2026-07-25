@@ -1,44 +1,8 @@
 # swg SVG Coverage TODO
 
-`swg` aims to load an SVG file, parse it into an inspectable Swift model, convert supported vector content into `CGPath`, and expose a SwiftUI `SwgView`.
+This checklist is test-gated: only mark an item `- [x]` when there is at least one focused test proving that SVG feature. Existing code without a focused test stays unchecked.
 
-This checklist is test-gated: only mark an item `- [x]` when there is at least one focused test proving that feature. Existing code without a focused test stays unchecked.
-
-Primary references:
-
-- SVG 2 specification: https://www.w3.org/TR/SVG/
-- SVG 2 element index: https://www.w3.org/TR/SVG/eltindex.html
-- SVG 2 attribute index: https://www.w3.org/TR/SVG/attindex.html
-- SVG 2 property index: https://www.w3.org/TR/SVG/propidx.html
-
-## Product Milestones
-
-- [ ] Parse SVG file data from `Data`, `String`, local URL, and bundle resource.
-- [ ] Preserve an inspectable `SVGDocument` tree with definitions, metadata, styling, and unsupported nodes.
-- [ ] Convert supported static vector shapes into one or more `CGPath` values.
-- [ ] Convert supported static vector shapes plus paint into a render plan for SwiftUI.
-- [ ] Provide `SwgView` for SwiftUI rendering.
-- [ ] Provide snapshot or pixel tests for `SwgView`.
-- [ ] Provide conformance fixture tests from real SVG files.
-- [ ] Provide error reporting that identifies unsupported SVG features without silently corrupting output.
-
-## Current Tested Coverage
-
-- [x] Parse SVG XML with Foundation `XMLParser`.
-- [x] Parse root `svg` `viewBox`.
-- [ ] Parse root `svg` `width` and `height` fallback through document parsing.
-- [x] Parse `<g>` as a grouped element.
-- [x] Parse `transform="translate(...)"` on a group.
-- [x] Parse `<style>` class rules.
-- [x] Apply class-based `fill` style to a path.
-- [x] Apply class-based `stroke-width` style to a path.
-- [x] Parse `<linearGradient>` with `<stop>` children.
-- [x] Parse SVG path data relative `h`, `v`, and `l` commands.
-- [x] Parse SVG path data closepath `z`.
-- [x] Parse SVG path data smooth cubic `S` reflection.
-- [x] Convert SVG path data elliptical arc `A` commands into cubic path commands.
-- [x] Serialize editable path commands back to SVG path data.
-- [x] Create `SVGPathData` from an editable `Path`.
+References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (https://www.w3.org/TR/SVG/eltindex.html), attribute index (https://www.w3.org/TR/SVG/attindex.html), property index (https://www.w3.org/TR/SVG/propidx.html).
 
 ## Core Parsing Infrastructure
 
@@ -47,11 +11,10 @@ Primary references:
 - [ ] XML comments and processing instructions.
 - [ ] Unknown element preservation.
 - [ ] Unknown attribute preservation.
-- [ ] Parser diagnostics with line and column.
 - [ ] Whitespace normalization rules.
 - [ ] `xml:space`.
 - [ ] `lang` and `xml:lang`.
-- [ ] `id` uniqueness diagnostics.
+- [ ] `id`.
 - [ ] URL reference resolution.
 - [ ] Fragment references.
 - [ ] External resource references.
@@ -73,15 +36,14 @@ Primary references:
 - [ ] List parsing with comma and whitespace separators.
 - [ ] Paint value parsing.
 - [ ] IRI and functional IRI parsing.
-- [ ] Preserve invalid values for diagnostics.
 
 ## Document and Container Elements
 
 - [ ] `<svg>` nested viewport behavior.
 - [ ] `<svg>` `x`, `y`, `width`, `height`.
-- [ ] `<svg>` `viewBox`.
+- [x] `<svg>` `viewBox`.
 - [ ] `<svg>` `preserveAspectRatio`.
-- [ ] `<g>`.
+- [x] `<g>`.
 - [ ] `<defs>`.
 - [ ] `<symbol>`.
 - [ ] `<use>`.
@@ -93,9 +55,9 @@ Primary references:
 - [ ] `<metadata>`.
 - [ ] `<unknown>` / foreign unknown SVG elements.
 
-## Basic Shapes to Path
+## Basic Shapes
 
-- [ ] `<path>` element.
+- [x] `<path>` element.
 - [ ] `<rect>` element.
 - [ ] `<rect>` rounded corners with `rx`.
 - [ ] `<rect>` rounded corners with `ry`.
@@ -108,8 +70,8 @@ Primary references:
 
 ## Path Data
 
-- [x] `M` / `m` moveto through relative-line fixture.
-- [x] `L` / `l` lineto through relative-line fixture.
+- [x] `M` / `m` moveto.
+- [x] `L` / `l` lineto.
 - [x] `H` / `h` horizontal lineto.
 - [x] `V` / `v` vertical lineto.
 - [x] `C` / `c` cubic Bezier.
@@ -126,9 +88,6 @@ Primary references:
 - [ ] Arc radius correction.
 - [ ] Degenerate arc handling.
 - [ ] Path data error recovery.
-- [ ] Path bounds.
-- [ ] Path transform application.
-- [ ] Path to `CGPath`.
 
 ## Coordinate Systems and Transforms
 
@@ -167,7 +126,6 @@ Primary references:
 - [ ] `unset`.
 - [ ] `currentColor`.
 - [ ] Media queries.
-- [ ] Style parse diagnostics.
 
 ## Painting
 
@@ -198,7 +156,7 @@ Primary references:
 
 ## Colors
 
-- [x] Hex color through CSS class fill fixture.
+- [x] Hex color.
 - [ ] Short hex color.
 - [ ] Eight-digit hex with alpha.
 - [ ] `rgb()`.
@@ -207,7 +165,7 @@ Primary references:
 - [ ] Named CSS colors.
 - [ ] `transparent`.
 - [ ] `currentColor`.
-- [ ] ICC color / color profiles policy.
+- [ ] ICC color and color profiles.
 
 ## Gradients and Patterns
 
@@ -227,7 +185,6 @@ Primary references:
 - [ ] Pattern content coordinate systems.
 - [ ] Pattern template inheritance via `href`.
 - [ ] Paint server fallback colors.
-- [ ] Paint servers in SwiftUI render plan.
 
 ## Clipping, Masking, and Compositing
 
@@ -239,7 +196,7 @@ Primary references:
 - [ ] `<mask>`.
 - [ ] `mask`.
 - [ ] Mask coordinate systems.
-- [ ] Mask luminance vs alpha policy.
+- [ ] Mask luminance and alpha behavior.
 - [ ] `opacity`.
 - [ ] Group opacity.
 - [ ] `mix-blend-mode`.
@@ -250,8 +207,8 @@ Primary references:
 
 - [ ] `<filter>`.
 - [ ] Filter primitive region calculation.
-- [ ] Parse `<feGaussianBlur>` primitive.
-- [ ] Parse `<feDropShadow>` primitive.
+- [ ] `<feGaussianBlur>`.
+- [ ] `<feDropShadow>`.
 - [ ] `<feBlend>`.
 - [ ] `<feColorMatrix>`.
 - [ ] `<feComponentTransfer>`.
@@ -275,7 +232,6 @@ Primary references:
 - [ ] `<feSpotLight>`.
 - [ ] `<feTile>`.
 - [ ] `<feTurbulence>`.
-- [ ] Filter render support in SwiftUI or documented fallback.
 
 ## Text
 
@@ -297,8 +253,6 @@ Primary references:
 - [ ] `white-space`.
 - [ ] `inline-size`.
 - [ ] Auto-wrapped text.
-- [ ] Text-to-path conversion for `CGPath`.
-- [ ] Text rendering in `SwgView`.
 
 ## Embedded Content
 
@@ -306,11 +260,11 @@ Primary references:
 - [ ] `<image>` data URIs.
 - [ ] `<image>` sizing.
 - [ ] `<image>` aspect ratio behavior.
-- [ ] `<foreignObject>` preservation.
-- [ ] `<audio>` policy.
-- [ ] `<video>` policy.
-- [ ] `<iframe>` policy.
-- [ ] `<canvas>` policy.
+- [ ] `<foreignObject>`.
+- [ ] `<audio>`.
+- [ ] `<video>`.
+- [ ] `<iframe>`.
+- [ ] `<canvas>`.
 
 ## Reuse and Linking
 
@@ -321,7 +275,7 @@ Primary references:
 - [ ] Shadow tree style inheritance behavior.
 - [ ] Cyclic reference detection.
 - [ ] External document references.
-- [ ] `<a>` link preservation.
+- [ ] `<a>` linking.
 
 ## Markers
 
@@ -332,7 +286,6 @@ Primary references:
 - [ ] Marker orientation.
 - [ ] Marker units.
 - [ ] Marker viewBox.
-- [ ] Marker rendering in SwiftUI.
 
 ## Animation and Dynamic SVG
 
@@ -345,51 +298,13 @@ Primary references:
 - [ ] Timing attributes.
 - [ ] Value interpolation.
 - [ ] Additive and accumulate behavior.
-- [ ] Static rendering policy for animated SVG.
-- [ ] SwiftUI animation mapping policy.
 
 ## Scripting and Interactivity
 
-- [ ] `<script>` preservation or rejection policy.
-- [ ] Event attributes policy.
+- [ ] `<script>`.
+- [ ] Event attributes.
 - [ ] Pointer-events property.
 - [ ] Cursor property.
 - [ ] Focus and tab index attributes.
 - [ ] Accessibility ARIA attributes.
 - [ ] `role`.
-
-## Swift and Apple Rendering
-
-- [ ] Add Apple-only `CGPath` conversion API.
-- [ ] Convert path data to `CGPath`.
-- [ ] Convert rect to `CGPath`.
-- [ ] Convert rounded rect to `CGPath`.
-- [ ] Convert circle to `CGPath`.
-- [ ] Convert ellipse to `CGPath`.
-- [ ] Convert line to `CGPath`.
-- [ ] Convert polyline to `CGPath`.
-- [ ] Convert polygon to `CGPath`.
-- [ ] Apply transforms to `CGPath`.
-- [ ] Resolve `<use>` before path conversion.
-- [ ] Resolve clipping before rendering.
-- [ ] Create SwiftUI `Shape` wrapper.
-- [ ] Create SwiftUI `View` wrapper.
-- [ ] Render fills in SwiftUI.
-- [ ] Render strokes in SwiftUI.
-- [ ] Render gradients in SwiftUI.
-- [ ] Render masks/clips in SwiftUI.
-- [ ] Render text in SwiftUI.
-- [ ] Render images in SwiftUI.
-
-## Test Fixtures and Quality Gates
-
-- [ ] Add fixture loader for SVG files.
-- [ ] Add W3C-style tiny fixtures by feature.
-- [ ] Add real-world icon fixtures.
-- [ ] Add malformed-input fixtures.
-- [ ] Add parser diagnostics assertions.
-- [ ] Add `CGPath` structural assertions.
-- [ ] Add SwiftUI snapshot tests.
-- [ ] Add golden SVG-to-model tests.
-- [ ] Add performance tests for large SVG files.
-- [ ] Add fuzz tests for path data tokenization.
