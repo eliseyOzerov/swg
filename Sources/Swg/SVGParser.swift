@@ -418,7 +418,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Rect")
 			setCurrentParsedElementID(id)
-			appendElement(.rect(SVGRectData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: nonnegativeDouble(attributes["width"]), height: nonnegativeDouble(attributes["height"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "rx", "ry"]))))
+			let parsedRX = nonnegativeOptionalDouble(attributes["rx"])
+			let parsedRY = nonnegativeOptionalDouble(attributes["ry"])
+			appendElement(.rect(SVGRectData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: nonnegativeDouble(attributes["width"]), height: nonnegativeDouble(attributes["height"]), rx: parsedRX ?? 0, ry: parsedRY ?? 0, attributes: attrs, rxIsAuto: parsedRX == nil, ryIsAuto: parsedRY == nil, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "rx", "ry"]))))
 			return true
 		case "circle":
 			let attrs = parsePaintAttributes(attributes)
@@ -1384,6 +1386,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func nonnegativeDouble(_ value: String?) -> Double {
 		let number = double(value)
 		return number < 0 ? 0 : number
+	}
+
+	private func nonnegativeOptionalDouble(_ value: String?) -> Double? {
+		guard let value, let number = parseNumber(value), number >= 0 else { return nil }
+		return number
 	}
 
 	private func parseNumber(_ value: String) -> Double? {

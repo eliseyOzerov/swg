@@ -459,10 +459,38 @@ public extension SVGPathData {
 }
 
 public extension SVGRectData {
-	/// The square-corner equivalent path for this rectangle.
+	/// The equivalent path for this rectangle.
 	var path: Path {
 		guard width > 0, height > 0 else { return Path() }
-		return Path(commands: [.rect(Rect(x: x, y: y, width: width, height: height))])
+		let radii = usedCornerRadii
+		let rect = Rect(x: x, y: y, width: width, height: height)
+		guard radii.x > 0, radii.y > 0 else {
+			return Path(commands: [.rect(rect)])
+		}
+		return Path(commands: [.roundedRect(rect, cornerWidth: radii.x, cornerHeight: radii.y)])
+	}
+
+	/// The used rounded-corner radii after resolving auto values and clamping.
+	var usedCornerRadii: (x: Double, y: Double) {
+		let hasRX = !rxIsAuto && rx >= 0
+		let hasRY = !ryIsAuto && ry >= 0
+		guard hasRX || hasRY else { return (0, 0) }
+
+		let resolvedRX: Double
+		let resolvedRY: Double
+		if hasRX, hasRY {
+			resolvedRX = rx
+			resolvedRY = ry
+		} else if hasRX {
+			resolvedRX = rx
+			resolvedRY = rx
+		} else {
+			resolvedRX = ry
+			resolvedRY = ry
+		}
+
+		guard resolvedRX > 0, resolvedRY > 0 else { return (0, 0) }
+		return (min(resolvedRX, width / 2), min(resolvedRY, height / 2))
 	}
 }
 
