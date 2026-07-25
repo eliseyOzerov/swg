@@ -80,6 +80,31 @@ import Testing
 	#expect(invalid.attributes.fill == .color(.red))
 }
 
+@Test func svgParserUsesFunctionalURLParserForLocalResourceReferences() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<path id="styled" d="M0 0 L1 1" clip-path="url( '#clip' )" filter='url("#filter")' mask="url(#mask)" fill='url("#paint")'/>
+		<path id="invalid" d="M0 0 L1 1" clip-path="url(#first) url(#second)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let paths = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGPathData)? in
+		if case .path(let path) = element {
+			return (path.id, path)
+		}
+		return nil
+	})
+	let styled = try #require(paths["styled"])
+	let invalid = try #require(paths["invalid"])
+
+	#expect(styled.attributes.clipPathID == "clip")
+	#expect(styled.attributes.filterID == "filter")
+	#expect(styled.attributes.maskID == "mask")
+	#expect(styled.attributes.fill == .url("paint"))
+	#expect(invalid.attributes.clipPathID == nil)
+}
+
 @Test func svgParserUsesAngleUnitsForRotateTransforms() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

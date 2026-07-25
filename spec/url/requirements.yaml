@@ -1,0 +1,275 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: url
+  title: SVG URL and functional URL parsing
+  domain: SVG 2 attribute syntax / SVG 1.1 IRI references
+  profile: null
+  summary: Parse SVG URL references in bare attribute form and functional url(...) presentation form, preserving non-local references and extracting local fragment identifiers for local paint and resource consumers.
+  non_goals:
+    - Resolve relative URLs against a document base URL.
+    - Fetch or validate external resources.
+    - Validate target element type or reference existence.
+    - Implement XML Base processing.
+    - Implement full CSS tokenization and escape handling for url(...).
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-attribute-url
+      title: SVG 2 Basic Data Types, Attribute syntax URL parsing
+      url: https://www.w3.org/TR/SVG2/types.html#syntax
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-funciri
+      title: SVG 1.1 Basic Data Types, <FuncIRI>
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeFuncIRI
+      version: SVG 1.1 Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-iri-references
+      title: SVG 1.1 Linking, IRI references
+      url: https://www.w3.org/TR/SVG11/linking.html#IRIReference
+      version: SVG 1.1 Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+    - SVG 2 references the URL Standard for attributes defined as URL; SVG 1.1 defines IRI and FuncIRI terms used by many SVG presentation attributes.
+
+scope:
+  includes:
+    - Bare URL/IRI references from attributes such as href.
+    - Functional URL references of the form url(...).
+    - Local fragment-only references of the form #id.
+    - Non-local references with optional fragments, preserved as raw URL strings.
+    - Functional URL references with quoted or unquoted payloads.
+  excludes:
+    - URL resolution against a base URL.
+    - URL percent-encoding, IRI-to-URI conversion, and network retrieval.
+    - CSS comments, escapes, and advanced tokenizer recovery in url(...).
+    - Target validation for clip paths, filters, masks, paint servers, or use references.
+  assumptions:
+    - The parser can preserve a normalized raw URL string without resolving it.
+    - Existing local-ID fields can consume only local fragment references until those fields are widened to model external resource URLs.
+
+terminology:
+  - id: term-url
+    term: URL
+    definition: A resource reference parsed according to the URL Standard when an SVG attribute is defined as URL.
+    source_refs:
+      - svg2-attribute-url
+  - id: term-iri
+    term: IRI
+    definition: An internationalized resource identifier that can identify an external resource or a fragment within a document.
+    source_refs:
+      - svg11-iri-references
+  - id: term-funciri
+    term: FuncIRI
+    definition: Functional notation for an IRI using url( and ) delimiters.
+    source_refs:
+      - svg11-funciri
+      - svg11-iri-references
+  - id: term-local-reference
+    term: local reference
+    definition: A reference that contains only a fragment identifier for an element in the current document.
+    source_refs:
+      - svg11-iri-references
+
+structures:
+  - id: S001
+    name: URL reference
+    kind: structure
+    source_refs:
+      - svg2-attribute-url
+      - svg11-iri-references
+    fields:
+      - name: rawValue
+        type: string
+        cardinality: one
+        position: null
+        constraints:
+          - Preserves the parsed reference payload after surrounding whitespace and optional URL quotes are removed.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-attribute-url
+          - svg11-iri-references
+      - name: fragment
+        type: string?
+        cardinality: zero-or-one
+        position: null
+        constraints:
+          - Present when the parsed reference contains a non-empty fragment identifier.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg11-iri-references
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser must accept non-empty bare URL/IRI reference strings and preserve the reference value after trimming surrounding whitespace.
+    applies_to:
+      - href
+      - xlink:href
+      - SVGURLReference
+    source_refs:
+      - svg2-attribute-url
+      - svg11-iri-references
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser must accept functional URL references delimited by url( and ), including quoted payloads.
+    applies_to:
+      - presentation attributes using FuncIRI
+      - SVGURLReference
+    source_refs:
+      - svg11-funciri
+      - svg11-iri-references
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser must identify non-empty fragment identifiers in local references such as #id and in non-local references that include a #fragment suffix.
+    applies_to:
+      - SVGURLReference
+    source_refs:
+      - svg11-iri-references
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: For current local-ID consumers, functional URL references must produce a local fragment ID only when the functional URL payload is a local fragment reference.
+    applies_to:
+      - clip-path
+      - filter
+      - mask
+      - SVGPaint local paint server references
+    source_refs:
+      - svg11-iri-references
+    testability: testable
+    notes:
+      - External resource support remains a separate consumer-model expansion.
+  - id: R005
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: The functional URL parser must not accept trailing tokens after the closing parenthesis.
+    applies_to:
+      - presentation attributes using FuncIRI
+      - SVGURLReference
+    source_refs:
+      - svg11-funciri
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: The parser must not accept empty URL references or empty local fragments.
+    applies_to:
+      - SVGURLReference
+    source_refs:
+      - svg2-attribute-url
+      - svg11-iri-references
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Empty URL string or url() with an empty payload.
+    source_behavior: INVALID
+    required_behavior: reject
+    decision_required: false
+    source_refs:
+      - svg2-attribute-url
+      - svg11-funciri
+  - id: I002
+    condition: Functional URL payload with unmatched quotes or trailing tokens after the closing parenthesis.
+    source_behavior: INVALID
+    required_behavior: reject
+    decision_required: false
+    source_refs:
+      - svg11-funciri
+
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Base URL resolution
+    statement: swg preserves non-local URL strings without resolving them until the parser has document URL and XML Base support.
+    allowed_by:
+      - Current parser API does not accept a document base URL.
+    source_refs:
+      - svg2-attribute-url
+      - svg11-iri-references
+  - id: IC002
+    topic: Local-ID consumer fields
+    statement: Existing fields named clipPathID, filterID, maskID, and local SVGPaint URL targets continue to store only local fragment IDs.
+    allowed_by:
+      - Current document model stores local references as strings rather than URL reference objects.
+    source_refs:
+      - svg11-iri-references
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: external-standard
+    title: WHATWG URL Standard
+    reason: SVG 2 delegates URL attribute parsing to the URL Standard.
+    source_refs:
+      - svg2-attribute-url
+  - id: DEP002
+    kind: future-work
+    title: XML Base support
+    reason: Relative URL absolutization requires XML Base processing.
+    source_refs:
+      - svg11-iri-references
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-attribute-url
+      - svg11-iri-references
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-funciri
+      - svg11-iri-references
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg11-iri-references
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg11-iri-references
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg11-funciri
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-attribute-url
+      - svg11-iri-references
+    map_item_refs: []

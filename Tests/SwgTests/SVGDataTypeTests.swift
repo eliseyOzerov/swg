@@ -202,3 +202,37 @@ import Testing
 	#expect(SVGListParser.parse("1, 2 -3", itemParser: SVGNumberParser.parse) == [1, 2, -3])
 	#expect(SVGListParser.parse("1, nope", itemParser: SVGNumberParser.parse) == nil)
 }
+
+@Test func svgURLParserParsesBareReferencesAndFragments() throws {
+	let local = try #require(SVGURLParser.parse(" #clip "))
+	let nonlocal = try #require(SVGURLParser.parse("icons.svg#mark"))
+	let external = try #require(SVGURLParser.parse("https://example.com/icon.svg"))
+
+	#expect(local.rawValue == "#clip")
+	#expect(local.fragment == "clip")
+	#expect(local.localFragmentID == "clip")
+	#expect(nonlocal.rawValue == "icons.svg#mark")
+	#expect(nonlocal.fragment == "mark")
+	#expect(nonlocal.localFragmentID == nil)
+	#expect(external.rawValue == "https://example.com/icon.svg")
+	#expect(external.fragment == nil)
+	#expect(SVGURLParser.parse("") == nil)
+	#expect(SVGURLParser.parse("#") == nil)
+}
+
+@Test func svgURLParserParsesFunctionalReferences() throws {
+	let unquoted = try #require(SVGURLParser.parseFunctional("url(#paint)"))
+	let singleQuoted = try #require(SVGURLParser.parseFunctional("url( '#mask' )"))
+	let doubleQuoted = try #require(SVGURLParser.parseFunctional("url(\"icons.svg#asset\")"))
+
+	#expect(unquoted.rawValue == "#paint")
+	#expect(unquoted.localFragmentID == "paint")
+	#expect(singleQuoted.rawValue == "#mask")
+	#expect(singleQuoted.localFragmentID == "mask")
+	#expect(doubleQuoted.rawValue == "icons.svg#asset")
+	#expect(doubleQuoted.fragment == "asset")
+	#expect(doubleQuoted.localFragmentID == nil)
+	#expect(SVGURLParser.parseFunctional("url()") == nil)
+	#expect(SVGURLParser.parseFunctional("url(#a) url(#b)") == nil)
+	#expect(SVGURLParser.parseFunctional("url('#broken)") == nil)
+}

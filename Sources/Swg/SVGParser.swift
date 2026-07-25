@@ -373,8 +373,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseHref(_ attributes: [String: String]) -> String? {
-		let raw = attributes["href"] ?? xlinkAttribute("href", in: attributes)
-		return raw?.hasPrefix("#") == true ? String(raw!.dropFirst()) : raw
+		guard let raw = attributes["href"] ?? xlinkAttribute("href", in: attributes), let reference = SVGURLParser.parse(raw) else { return nil }
+		return reference.localFragmentID ?? reference.rawValue
 	}
 
 	private func parseUse(_ attributes: [String: String]) {
@@ -385,7 +385,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseImage(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "Image")
-		let href = attributes["href"] ?? xlinkAttribute("href", in: attributes) ?? ""
+		let href = (attributes["href"] ?? xlinkAttribute("href", in: attributes)).flatMap { SVGURLParser.parse($0)?.rawValue } ?? ""
 		appendElement(.image(SVGImageData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), href: href, attributes: parsePaintAttributes(attributes), language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y", "width", "height"]))))
 	}
 
@@ -669,11 +669,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseURLID(_ value: String) -> String? {
-		let trimmed = value.trimmingCharacters(in: .whitespaces)
-		if trimmed.hasPrefix("url(#") && trimmed.hasSuffix(")") {
-			return String(trimmed.dropFirst(5).dropLast())
-		}
-		return nil
+		SVGURLParser.parseFunctional(value)?.localFragmentID
 	}
 
 	private func parseSVGRoot(_ attributes: [String: String]) {
@@ -714,10 +710,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parsePaintServerReference(_ value: String) -> SVGPaint? {
-		guard value.hasPrefix("url("), let closingParenthesis = value.firstIndex(of: ")") else { return nil }
-		let urlText = String(value[...closingParenthesis])
-		guard let id = parseURLID(urlText) else { return nil }
-		let fallbackText = value[value.index(after: closingParenthesis)...].trimmingCharacters(in: .whitespacesAndNewlines)
+		guard let parsed = SVGURLParser.parseFunctionalPrefix(value), let id = parsed.reference.localFragmentID else { return nil }
+		let fallbackText = parsed.remainder
 		guard !fallbackText.isEmpty else { return .url(id) }
 		guard let fallback = parsePaintFallback(fallbackText) else { return nil }
 		return .urlWithFallback(id, fallback)

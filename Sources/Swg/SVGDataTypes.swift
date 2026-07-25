@@ -196,6 +196,91 @@ enum SVGListParser {
 	}
 }
 
+/// A parsed SVG URL reference with its preserved value and optional fragment.
+struct SVGURLReference: Equatable, Sendable {
+	var rawValue: String
+	var fragment: String?
+
+	var localFragmentID: String? {
+		rawValue.hasPrefix("#") ? fragment : nil
+	}
+}
+
+/// Parses bare SVG URL references and functional `url(...)` references.
+enum SVGURLParser {
+	private static let whitespace = CharacterSet.whitespacesAndNewlines
+
+	static func parse(_ value: String) -> SVGURLReference? {
+		let trimmed = value.trimmingCharacters(in: whitespace)
+		guard !trimmed.isEmpty else { return nil }
+		let fragment = parseFragment(in: trimmed)
+		if trimmed.hasPrefix("#"), fragment == nil {
+			return nil
+		}
+		return SVGURLReference(rawValue: trimmed, fragment: fragment)
+	}
+
+	static func parseFunctional(_ value: String) -> SVGURLReference? {
+		guard let parsed = parseFunctionalPrefix(value), parsed.remainder.isEmpty else { return nil }
+		return parsed.reference
+	}
+
+	static func parseFunctionalPrefix(_ value: String) -> (reference: SVGURLReference, remainder: String)? {
+		let trimmed = value.trimmingCharacters(in: whitespace)
+		guard trimmed.hasPrefix("url(") else { return nil }
+
+		var index = trimmed.index(trimmed.startIndex, offsetBy: 4)
+		let payloadStart = index
+		var quote: Character?
+		var closingParenthesis: String.Index?
+		while index < trimmed.endIndex {
+			let character = trimmed[index]
+			if let activeQuote = quote {
+				if character == activeQuote {
+					quote = nil
+				}
+			} else if character == "'" || character == "\"" {
+				quote = character
+			} else if character == ")" {
+				closingParenthesis = index
+				break
+			}
+			index = trimmed.index(after: index)
+		}
+		guard let closingParenthesis else { return nil }
+
+		let payload = String(trimmed[payloadStart..<closingParenthesis])
+		guard let reference = parsePayload(payload) else { return nil }
+		let remainderStart = trimmed.index(after: closingParenthesis)
+		let remainder = trimmed[remainderStart...].trimmingCharacters(in: whitespace)
+		return (reference, remainder)
+	}
+
+	private static func parsePayload(_ value: String) -> SVGURLReference? {
+		let trimmed = value.trimmingCharacters(in: whitespace)
+		guard !trimmed.isEmpty else { return nil }
+		if let quote = trimmed.first, quote == "'" || quote == "\"" {
+			guard trimmed.last == quote, trimmed.count >= 2 else { return nil }
+			let payloadStart = trimmed.index(after: trimmed.startIndex)
+			let payloadEnd = trimmed.index(before: trimmed.endIndex)
+			return parse(String(trimmed[payloadStart..<payloadEnd]))
+		}
+		guard !trimmed.contains(where: isDisallowedUnquotedPayloadCharacter) else { return nil }
+		return parse(trimmed)
+	}
+
+	private static func parseFragment(in value: String) -> String? {
+		guard let marker = value.firstIndex(of: "#") else { return nil }
+		let fragmentStart = value.index(after: marker)
+		guard fragmentStart < value.endIndex else { return nil }
+		return String(value[fragmentStart...])
+	}
+
+	private static func isDisallowedUnquotedPayloadCharacter(_ character: Character) -> Bool {
+		character == "'" || character == "\"" || character == "(" || character == ")" || character.unicodeScalars.contains { whitespace.contains($0) }
+	}
+}
+
 /// Context used to resolve SVG relative length units into user units.
 struct SVGLengthContext: Equatable, Sendable {
 	var fontSize: Double
