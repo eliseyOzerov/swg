@@ -461,7 +461,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseUse(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "Use")
 		let href = parseHref(attributes) ?? ""
-		appendElement(.use(SVGUseData(id: id, href: href, x: double(attributes["x"]), y: double(attributes["y"]), attributes: parsePaintAttributes(attributes), language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y"]))))
+		let viewportContext = currentViewportContext
+		appendElement(.use(SVGUseData(
+			id: id,
+			href: href,
+			x: parseSVGPosition(attributes["x"], percentageBasis: .horizontal, context: viewportContext),
+			y: parseSVGPosition(attributes["y"], percentageBasis: .vertical, context: viewportContext),
+			width: parseUseSize(attributes["width"], percentageBasis: .horizontal, context: viewportContext),
+			height: parseUseSize(attributes["height"], percentageBasis: .vertical, context: viewportContext),
+			attributes: parsePaintAttributes(attributes),
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y", "width", "height"])
+		)))
 	}
 
 	private func parseImage(_ attributes: [String: String]) {
@@ -842,6 +853,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			return percentageBasis.referenceDistance(in: context)
 		}
 		return parseDimension(value, context: context, percentageBasis: percentageBasis) ?? percentageBasis.referenceDistance(in: context)
+	}
+
+	private func parseUseSize(_ value: String?, percentageBasis: SVGLengthPercentageBasis, context: SVGLengthContext) -> Double? {
+		guard let value else { return nil }
+		if value.trimmingCharacters(in: .whitespacesAndNewlines) == "auto" {
+			return nil
+		}
+		guard let size = parseDimension(value, context: context, percentageBasis: percentageBasis), size >= 0 else {
+			return nil
+		}
+		return size
 	}
 
 	private func parseDimension(_ value: String, context: SVGLengthContext = .default, percentageBasis: SVGLengthPercentageBasis = .normalizedDiagonal) -> Double? {

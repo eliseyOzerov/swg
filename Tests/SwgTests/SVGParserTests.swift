@@ -355,6 +355,40 @@ import Testing
 	#expect(use.href == "preferred")
 }
 
+@Test func svgParserPreservesUseGeometryAndReferenceOverrides() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100">
+		<use id="copy" href="#pin" xlink:href="#fallback" x="10%" y="20%" width="50%" height="40%"/>
+		<use id="auto" href="#pin" width="auto" height="auto"/>
+		<use id="illegal" href="#pin" width="-1" height="-2"/>
+		<use id="external" href="sprite.svg"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let uses = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGUseData)? in
+		if case .use(let use) = element {
+			return (use.id, use)
+		}
+		return nil
+	})
+	let copy = try #require(uses["copy"])
+	let auto = try #require(uses["auto"])
+	let illegal = try #require(uses["illegal"])
+	let external = try #require(uses["external"])
+
+	#expect(copy.href == "pin")
+	#expect(copy.x == 20)
+	#expect(copy.y == 20)
+	#expect(copy.width == 100)
+	#expect(copy.height == 40)
+	#expect(auto.width == nil)
+	#expect(auto.height == nil)
+	#expect(illegal.width == nil)
+	#expect(illegal.height == nil)
+	#expect(external.href == "sprite.svg")
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

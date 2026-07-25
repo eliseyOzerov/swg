@@ -1,0 +1,297 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: use
+  title: use element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the use element as a renderable
+    graphics-referencing structural element with URL and geometry attributes.
+  non_goals:
+    - Creating a DOM-compatible use-element shadow tree.
+    - Rendering cloned referenced graphics.
+    - Resolving external documents or cross-origin security policy.
+    - Detecting circular references during rendering.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-use
+      title: Document and Container Elements - use
+      artifact_path: spec/use/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-use
+      title: SVG 2 Document Structure - The use element
+      url: https://www.w3.org/TR/SVG2/struct.html#UseElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - Recognizing use as a renderable graphics-referencing structural element.
+    - Preserving href and deprecated xlink:href URL references.
+    - Giving href precedence over xlink:href when both are present.
+    - Preserving x and y geometry values as position data.
+    - Preserving non-auto width and height values for referenced viewports.
+    - Treating negative width and height as illegal values.
+  excludes:
+    - Cloning referenced subtrees for rendering.
+    - Style scoping and inheritance inside use-element shadow trees.
+    - Updating shadow trees after source DOM mutation.
+    - Full URL fetch, parsing, and same-origin enforcement.
+  assumptions:
+    - >
+      A parser-oriented representation may store the target URL and geometry
+      information without immediately resolving or cloning referenced graphics.
+    - >
+      Omitted or auto width/height can be represented as absent override values.
+
+terminology:
+  - id: term-use
+    term: use
+    definition: >
+      An SVG renderable structural element that references another element or
+      document for graphical content.
+    source_refs:
+      - svg2-struct-use
+  - id: term-referenced-element
+    term: referenced element
+    definition: >
+      The element identified by href or xlink:href, or the root element of a
+      referenced document when the URL has no fragment.
+    source_refs:
+      - svg2-struct-use
+
+structures:
+  - id: S001
+    name: use element
+    kind: structure
+    source_refs:
+      - svg2-struct-use
+    fields:
+      - name: href
+        type: url
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - href points to the element, fragment, or document to clone for rendering.
+          - xlink:href is deprecated but supported when href is absent.
+          - href takes precedence over xlink:href.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-struct-use
+      - name: x-y
+        type: length-percentage
+        cardinality: zero-or-more
+        position: attributes
+        constraints:
+          - x and y position the referenced graphics.
+          - x and y define an additional translate transform.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-struct-use
+      - name: width-height
+        type: auto-or-length-percentage
+        cardinality: zero-or-more
+        position: attributes
+        constraints:
+          - width and height affect referenced svg or symbol viewports.
+          - auto or omitted values do not override referenced viewport sizes.
+          - negative width or height values are illegal.
+          - zero width or height disables rendering when the properties have an effect.
+        requirement_refs:
+          - R005
+          - R006
+        source_refs:
+          - svg2-struct-use
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A use element must be represented as a renderable graphics-referencing
+      structural SVG element.
+    applies_to:
+      - use element
+    source_refs:
+      - svg2-struct-use
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      The href attribute identifies the referenced element or document used for
+      cloned rendering.
+    applies_to:
+      - use href
+    source_refs:
+      - svg2-struct-use
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      When href is absent, xlink:href is used as the deprecated reference
+      attribute; when both are present, href takes precedence.
+    applies_to:
+      - use href
+      - use xlink:href
+    source_refs:
+      - svg2-struct-use
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      x and y on use provide the positioning values for the referenced graphics.
+    applies_to:
+      - use x
+      - use y
+    source_refs:
+      - svg2-struct-use
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      Non-auto width and height values on use are available as viewport-size
+      overrides when the referenced element is svg or symbol.
+    applies_to:
+      - use width
+      - use height
+    source_refs:
+      - svg2-struct-use
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: error
+    statement: >
+      Negative width and height values on use are illegal values.
+    applies_to:
+      - use width
+      - use height
+    source_refs:
+      - svg2-struct-use
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: >
+      A use element has an unresolved, invalid, or circular URL reference.
+    source_behavior: REQUIRED
+    required_behavior: >
+      The use element is in error and is not rendered; for bounding boxes it is
+      equivalent to an empty container.
+    decision_required: false
+    source_refs:
+      - svg2-struct-use
+  - id: I002
+    condition: A use width or height computes to a negative value.
+    source_behavior: REQUIRED
+    required_behavior: The value is illegal.
+    decision_required: false
+    source_refs:
+      - svg2-struct-use
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      A parser that does not render immediately must still preserve use URL,
+      position, and viewport-override data so a later renderer can perform
+      spec-conformant instantiation.
+    derived_from:
+      - R002
+      - R004
+      - R005
+    reasoning: >
+      These values determine the referenced content and its eventual placement.
+    source_refs:
+      - svg2-struct-use
+
+implementation_choices:
+  - id: IC001
+    topic: Auto width and height representation
+    statement: >
+      The source defines auto behavior but does not require a specific parser
+      representation for omitted or auto use dimensions.
+    allowed_by:
+      - R005
+    source_refs:
+      - svg2-struct-use
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 URL reference attributes
+    reason: use href handling depends on common URL reference processing.
+    source_refs:
+      - svg2-struct-use
+  - id: DEP002
+    kind: source-section
+    title: SVG 2 symbol element
+    reason: use width and height overrides apply to referenced symbol viewports.
+    source_refs:
+      - svg2-struct-use
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-use
+    map_item_refs:
+      - document-container-elements-use
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-struct-use
+    map_item_refs:
+      - document-container-elements-use
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-struct-use
+    map_item_refs:
+      - document-container-elements-use
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-struct-use
+    map_item_refs:
+      - document-container-elements-use
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-struct-use
+    map_item_refs:
+      - document-container-elements-use
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-struct-use
+    map_item_refs:
+      - document-container-elements-use

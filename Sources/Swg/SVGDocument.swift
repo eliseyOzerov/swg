@@ -356,15 +356,19 @@ public struct SVGUseData: Equatable, Sendable {
 	public let href: String
 	public let x: Double
 	public let y: Double
+	public let width: Double?
+	public let height: Double?
 	public let attributes: SVGPaintAttributes
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, href: String, x: Double, y: Double, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, href: String, x: Double, y: Double, width: Double? = nil, height: Double? = nil, attributes: SVGPaintAttributes, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.href = href
 		self.x = x
 		self.y = y
+		self.width = width
+		self.height = height
 		self.attributes = attributes
 		self.language = language
 		self.unknownAttributes = unknownAttributes
