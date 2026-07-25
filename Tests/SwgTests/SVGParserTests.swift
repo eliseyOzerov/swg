@@ -434,6 +434,35 @@ import Testing
 	#expect(englishChild.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
 }
 
+@Test func svgParserStoresPredefinedViewsOutsideRenderableElements() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" lang="en">
+		<view id="closeup" viewBox="10 20 30 40" preserveAspectRatio="xMaxYMin slice" zoomAndPan="disable" data-note="kept"/>
+		<view id="plain" data-empty="yes"/>
+		<path id="visible" d="M0 0 L1 1"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["visible"])
+	#expect(document.defs.views.keys.sorted() == ["closeup", "plain"])
+
+	let closeup = try #require(document.defs.views["closeup"])
+	#expect(closeup.id == "closeup")
+	#expect(closeup.viewBox == Rect(x: 10, y: 20, width: 30, height: 40))
+	#expect(closeup.preserveAspectRatio == SVGPreserveAspectRatio(align: .xMaxYMin, meetOrSlice: .slice))
+	#expect(closeup.zoomAndPan == .disable)
+	#expect(closeup.language == "en")
+	#expect(closeup.unknownAttributes == ["data-note": "kept"])
+
+	let plain = try #require(document.defs.views["plain"])
+	#expect(plain.viewBox == nil)
+	#expect(plain.preserveAspectRatio == nil)
+	#expect(plain.zoomAndPan == nil)
+	#expect(plain.unknownAttributes == ["data-empty": "yes"])
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

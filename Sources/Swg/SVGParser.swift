@@ -19,7 +19,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let globalAttributeNames: Set<String> = [
 		"class", "clip-path", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
-		"stroke-width", "style", "transform", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage"
+		"stroke-width", "style", "transform", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
+		"zoomAndPan"
 	]
 
 	private let supportedExtensions: Set<String>
@@ -133,6 +134,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "switch":
 			parseSwitchStart(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .switchContainer
+		case "view":
+			parseView(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .skipped
 		case "style":
 			inStyleElement = true
 			styleText = ""
@@ -399,6 +403,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		} else if !inClipPath && !inMask {
 			elementStack.append(builder)
 		}
+	}
+
+	private func parseView(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "View")
+		defs.views[id] = SVGViewData(
+			id: id,
+			viewBox: attributes["viewBox"].flatMap(parseViewBox),
+			preserveAspectRatio: parseOptionalPreserveAspectRatio(attributes["preserveAspectRatio"]),
+			zoomAndPan: parseZoomAndPan(attributes["zoomAndPan"]),
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["viewBox", "preserveAspectRatio"])
+		)
 	}
 
 	private func parseUnknownElementStart(_ elementName: String, namespaceURI: String?, attributes: [String: String]) {
@@ -860,15 +876,19 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parsePreserveAspectRatio(_ value: String?) -> SVGPreserveAspectRatio {
-		guard let value else { return .default }
+		parseOptionalPreserveAspectRatio(value) ?? .default
+	}
+
+	private func parseOptionalPreserveAspectRatio(_ value: String?) -> SVGPreserveAspectRatio? {
+		guard let value else { return nil }
 		let tokens = value.split(whereSeparator: { $0.isWhitespace }).map(String.init)
-		guard tokens.count == 1 || tokens.count == 2 else { return .default }
-		guard let align = parsePreserveAspectRatioAlign(tokens[0]) else { return .default }
+		guard tokens.count == 1 || tokens.count == 2 else { return nil }
+		guard let align = parsePreserveAspectRatioAlign(tokens[0]) else { return nil }
 		if align == .none {
 			return SVGPreserveAspectRatio(align: .none, meetOrSlice: nil)
 		}
 		if tokens.count == 2 {
-			guard let meetOrSlice = parseMeetOrSlice(tokens[1]) else { return .default }
+			guard let meetOrSlice = parseMeetOrSlice(tokens[1]) else { return nil }
 			return SVGPreserveAspectRatio(align: align, meetOrSlice: meetOrSlice)
 		}
 		return SVGPreserveAspectRatio(align: align, meetOrSlice: .meet)
@@ -894,6 +914,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		switch value {
 		case "meet": .meet
 		case "slice": .slice
+		default: nil
+		}
+	}
+
+	private func parseZoomAndPan(_ value: String?) -> SVGZoomAndPan? {
+		switch value {
+		case "disable": .disable
+		case "magnify": .magnify
 		default: nil
 		}
 	}

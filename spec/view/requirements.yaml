@@ -1,0 +1,309 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: view
+  title: view element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture parser-visible SVG 2 behavior for predefined views declared with
+    the view element. A view records view specification attributes that can
+    override the root svg view when the document is addressed by fragment ID.
+  non_goals:
+    - Resolving URL fragments or applying a selected view to rendered output.
+    - Implementing svgView() fragment parsing.
+    - Animation, script, style, or descriptive child element behavior inside view.
+    - DOM interface conformance.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-view
+      title: Document and Container Elements - view
+      artifact_path: spec/view/requirements.yaml
+  canonical_sources:
+    - id: svg2-linking-fragments
+      title: SVG 2 Linking - SVG fragment identifiers
+      url: https://www.w3.org/TR/SVG2/linking.html#SVGFragmentIdentifiers
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-linking-view
+      title: SVG 2 Linking - Predefined views, the view element
+      url: https://www.w3.org/TR/SVG2/linking.html#ViewElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-interact-zoom-pan
+      title: SVG 2 Scripting and Interactivity - Magnification and panning
+      url: https://www.w3.org/TR/SVG2/interact.html#ZoomAndPanAttribute
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - Recognizing view elements as predefined view declarations.
+    - Preserving explicit viewBox, preserveAspectRatio, and zoomAndPan attributes.
+    - Preserving id so fragment identifiers can address predefined views.
+    - Keeping view out of the renderable element tree because its category is none.
+    - Preserving whether a view specification attribute was omitted.
+  excludes:
+    - Applying a view selected by a fragment identifier.
+    - Parsing media fragments or time fragments.
+    - Rendering or exposing child descriptive elements.
+    - User agent magnification and panning controls.
+  assumptions:
+    - >
+      A parser-oriented implementation may store view declarations in a
+      definition registry keyed by id until fragment resolution exists.
+    - >
+      Omitted view specification attributes are represented distinctly from
+      explicit defaults so they do not reset root svg values later.
+
+terminology:
+  - id: term-view
+    term: view
+    definition: >
+      An SVG element with no element category that defines a predefined view
+      addressable by a fragment identifier.
+    source_refs:
+      - svg2-linking-view
+  - id: term-view-specification-attribute
+    term: view specification attribute
+    definition: >
+      An attribute such as viewBox, preserveAspectRatio, or zoomAndPan that can
+      override the corresponding root svg view parameter when a view is selected.
+    source_refs:
+      - svg2-linking-fragments
+      - svg2-linking-view
+
+structures:
+  - id: S001
+    name: view declaration
+    kind: structure
+    source_refs:
+      - svg2-linking-view
+    fields:
+      - name: id
+        type: string
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Core attributes include id.
+          - Fragment identifiers can address a view element by id.
+        requirement_refs:
+          - R001
+          - R004
+        source_refs:
+          - svg2-linking-fragments
+          - svg2-linking-view
+      - name: viewBox
+        type: viewBox
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Only an included attribute overrides the corresponding root svg parameter.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg2-linking-fragments
+          - svg2-linking-view
+      - name: preserveAspectRatio
+        type: preserveAspectRatio
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Only an included attribute overrides the corresponding root svg parameter.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg2-linking-fragments
+          - svg2-linking-view
+      - name: zoomAndPan
+        type: enum
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Values are disable or magnify.
+          - Only an included attribute overrides the corresponding root svg parameter.
+        requirement_refs:
+          - R003
+          - R004
+          - R005
+        source_refs:
+          - svg2-linking-fragments
+          - svg2-linking-view
+          - svg2-interact-zoom-pan
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A view element must be recognized as an SVG element that defines a
+      predefined view.
+    applies_to:
+      - view element
+    source_refs:
+      - svg2-linking-view
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: >
+      A view element must not be treated as a renderable graphics or container
+      element in the document element tree because its category is none.
+    applies_to:
+      - view element
+    source_refs:
+      - svg2-linking-view
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A view element may include viewBox, preserveAspectRatio, and zoomAndPan
+      attributes as view specification attributes.
+    applies_to:
+      - view element
+    source_refs:
+      - svg2-linking-view
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      When a fragment identifier addresses a view element, included view
+      specification attributes on that view override the corresponding
+      attributes on the root svg element; omitted parameters do not reset root
+      svg values.
+    applies_to:
+      - fragment-identified view element
+    source_refs:
+      - svg2-linking-fragments
+    testability: reviewable
+    notes:
+      - This bullet stores enough information for later fragment resolution.
+  - id: R005
+    normative_strength: MUST
+    kind: value
+    statement: >
+      The zoomAndPan attribute has the SVG-defined values disable and magnify.
+    applies_to:
+      - view element
+      - outermost svg element
+    source_refs:
+      - svg2-interact-zoom-pan
+    testability: testable
+    notes:
+      - The SVG 2 prose and attribute table disagree on the initial value; this work item tests explicit values only.
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: view element without id
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-linking-fragments
+      - svg2-linking-view
+  - id: I002
+    condition: invalid zoomAndPan value
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-interact-zoom-pan
+
+recommendations: []
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: storage
+    statement: Store parsed view declarations in the document definitions registry keyed by id.
+    allowed_by:
+      - R001
+      - R004
+    source_refs:
+      - svg2-linking-fragments
+      - svg2-linking-view
+  - id: IC002
+    topic: malformed values
+    statement: Invalid viewBox, preserveAspectRatio, and zoomAndPan values may be ignored by the parser for this bullet.
+    allowed_by:
+      - I002
+    source_refs:
+      - svg2-linking-view
+      - svg2-interact-zoom-pan
+
+ambiguities:
+  - id: A001
+    question: What initial zoomAndPan value should be exposed when the attribute is omitted?
+    impact: >
+      SVG 2 prose says the default is magnify, while the nearby attribute table
+      lists disable as the initial value.
+    options:
+      - Preserve omitted values as absent for view override semantics.
+      - Choose one initial value for a fully computed DOM-facing API later.
+    source_refs:
+      - svg2-interact-zoom-pan
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG fragment identifiers
+    reason: Defines how fragment references select predefined views and override root view parameters.
+    source_refs:
+      - svg2-linking-fragments
+  - id: DEP002
+    kind: source-section
+    title: Magnification and panning
+    reason: Defines zoomAndPan values.
+    source_refs:
+      - svg2-interact-zoom-pan
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-linking-view
+    map_item_refs:
+      - document-container-elements-view
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-linking-view
+    map_item_refs:
+      - document-container-elements-view
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-linking-view
+    map_item_refs:
+      - document-container-elements-view
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-linking-fragments
+    map_item_refs:
+      - document-container-elements-view
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-interact-zoom-pan
+    map_item_refs:
+      - document-container-elements-view

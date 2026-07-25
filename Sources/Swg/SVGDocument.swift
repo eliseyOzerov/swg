@@ -30,6 +30,7 @@ public struct SVGDefs: Equatable, Sendable {
 	public var linearGradients: [String: SVGLinearGradientDef]
 	public var radialGradients: [String: SVGRadialGradientDef]
 	public var symbols: [String: SVGSymbolData]
+	public var views: [String: SVGViewData]
 	public var clipPaths: [String: [SVGElement]]
 	public var filters: [String: SVGFilterDef]
 	public var masks: [String: SVGMaskDef]
@@ -39,6 +40,7 @@ public struct SVGDefs: Equatable, Sendable {
 		linearGradients: [String: SVGLinearGradientDef] = [:],
 		radialGradients: [String: SVGRadialGradientDef] = [:],
 		symbols: [String: SVGSymbolData] = [:],
+		views: [String: SVGViewData] = [:],
 		clipPaths: [String: [SVGElement]] = [:],
 		filters: [String: SVGFilterDef] = [:],
 		masks: [String: SVGMaskDef] = [:],
@@ -47,6 +49,7 @@ public struct SVGDefs: Equatable, Sendable {
 		self.linearGradients = linearGradients
 		self.radialGradients = radialGradients
 		self.symbols = symbols
+		self.views = views
 		self.clipPaths = clipPaths
 		self.filters = filters
 		self.masks = masks
@@ -315,6 +318,25 @@ public struct SVGSymbolData: Equatable, Sendable {
 	}
 }
 
+/// Data for an SVG `<view>` element that defines a predefined view.
+public struct SVGViewData: Equatable, Sendable {
+	public let id: String
+	public let viewBox: Rect?
+	public let preserveAspectRatio: SVGPreserveAspectRatio?
+	public let zoomAndPan: SVGZoomAndPan?
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, viewBox: Rect? = nil, preserveAspectRatio: SVGPreserveAspectRatio? = nil, zoomAndPan: SVGZoomAndPan? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.viewBox = viewBox
+		self.preserveAspectRatio = preserveAspectRatio
+		self.zoomAndPan = zoomAndPan
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
 /// How an SVG `viewBox` is aligned within its viewport.
 public struct SVGPreserveAspectRatio: Equatable, Sendable {
 	public var align: SVGPreserveAspectRatioAlign
@@ -346,6 +368,12 @@ public enum SVGPreserveAspectRatioAlign: Equatable, Hashable, Sendable {
 public enum SVGMeetOrSlice: Equatable, Hashable, Sendable {
 	case meet
 	case slice
+}
+
+/// Magnification and panning policy values for SVG `zoomAndPan`.
+public enum SVGZoomAndPan: Equatable, Hashable, Sendable {
+	case disable
+	case magnify
 }
 
 /// Data for an unknown SVG element preserved as a renderable container.
