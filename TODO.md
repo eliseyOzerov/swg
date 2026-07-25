@@ -9,17 +9,10 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] XML namespaces, including default SVG namespace and `xlink`.
 - [x] XML entity handling.
 - [x] XML comments and processing instructions.
-- [x] Unknown element preservation.
-- [x] Unknown attribute preservation.
 - [x] Whitespace normalization rules.
 - [ ] `xml:space`.
 - [ ] `lang` and `xml:lang`.
 - [ ] `id`.
-- [ ] URL reference resolution.
-- [ ] Fragment references.
-- [ ] External resource references.
-- [ ] Data URI references.
-- [ ] Error handling for malformed SVG.
 
 ## Basic Data Types
 
