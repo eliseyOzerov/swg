@@ -18,3 +18,18 @@ import Testing
 	#expect(SVGIntegerParser.parse("10px") == nil)
 	#expect(SVGIntegerParser.parse("1 2") == nil)
 }
+
+@Test func svgLengthParserParsesUnitlessLengthsAsUserUnits() {
+	#expect(SVGLengthParser.parseUnitless("0") == 0)
+	#expect(SVGLengthParser.parseUnitless("42") == 42)
+	#expect(SVGLengthParser.parseUnitless(" +.5 ") == 0.5)
+	#expect(SVGLengthParser.parseUnitless("-.25e2") == -25)
+}
+
+@Test func svgLengthParserRejectsUnitsForUnitlessLengthParsing() {
+	#expect(SVGLengthParser.parseUnitless("") == nil)
+	#expect(SVGLengthParser.parseUnitless("10px") == nil)
+	#expect(SVGLengthParser.parseUnitless("10pt") == nil)
+	#expect(SVGLengthParser.parseUnitless("10%") == nil)
+	#expect(SVGLengthParser.parseUnitless("1 2") == nil)
+}

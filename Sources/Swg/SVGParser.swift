@@ -693,7 +693,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseDimension(_ value: String) -> Double? {
-		parseNumber(value.replacingOccurrences(of: "px", with: "").replacingOccurrences(of: "pt", with: ""))
+		SVGLengthParser.parseUnitless(value)
 	}
 
 	private func resolveID(_ explicit: String?, elementName: String) -> String {
@@ -815,17 +815,6 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseNumber(_ value: String) -> Double? {
 		SVGNumberParser.parse(value)
-	}
-}
-
-private enum SVGNumberParser {
-	private static let pattern = #"^[+-]?(?:(?:[0-9]+(?:[Ee][+-]?[0-9]+)?)|(?:[0-9]*\.[0-9]+(?:[Ee][+-]?[0-9]+)?))$"#
-
-	static func parse(_ value: String) -> Double? {
-		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-		guard trimmed.range(of: pattern, options: .regularExpression) != nil else { return nil }
-		guard let number = Double(trimmed), number.isFinite else { return nil }
-		return number
 	}
 }
 

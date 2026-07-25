@@ -1,0 +1,181 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: length-without-units
+  title: SVG length parsing without units
+  domain: SVG
+  profile: null
+  summary: Parse SVG length values that omit a unit identifier, treating the numeric value as a distance in the current user coordinate system.
+  non_goals:
+    - Absolute length units such as px, pt, pc, mm, cm, and in.
+    - Font-relative length units such as em, ex, ch, and rem.
+    - Viewport-relative length units.
+    - Percentage length resolution.
+    - CSS property length differences.
+    - Attribute-specific non-negative or directional constraints.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-types-length
+      title: SVG 1.1 Basic Data Types - length
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeLength
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-length-value
+      title: SVG 2 Basic Data Types and Interfaces - SVGLength value
+      url: https://www.w3.org/TR/SVG/types.html#__svg__SVGLength__value
+      version: null
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 1.1 provides the content attribute length grammar and states how omitted units are interpreted.
+    - SVG 2 describes unitless SVGLength values as numbers when computing the length value.
+
+scope:
+  includes:
+    - Single SVG length values with no unit suffix.
+    - SVG number grammar for the numeric portion.
+    - Leading and trailing XML whitespace around the length value.
+    - Root svg width and height fallback viewBox behavior for unitless lengths.
+  excludes:
+    - Unit suffix conversion.
+    - Percentage basis resolution.
+    - List parsing.
+    - Geometry CSS property parsing.
+  assumptions:
+    - Unitless SVG lengths are represented in the package as Double values in current user units.
+    - Invalid or unsupported length values return nil so callers can keep existing initial or fallback behavior.
+
+terminology:
+  - id: length
+    term: length
+    definition: A distance measurement expressed as a number and an optional unit identifier.
+    source_refs:
+      - svg11-types-length
+  - id: unitless-length
+    term: unitless length
+    definition: An SVG length value whose syntax is only the numeric portion and whose value is in the current user coordinate system.
+    source_refs:
+      - svg11-types-length
+      - svg2-length-value
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: A unitless SVG length must accept the SVG number grammar as its entire value.
+    applies_to:
+      - Single unitless SVG length values.
+    source_refs:
+      - svg11-types-length
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: When an SVG length value has no unit identifier, the numeric value represents a distance in the current user coordinate system.
+    applies_to:
+      - Single unitless SVG length values.
+    source_refs:
+      - svg11-types-length
+      - svg2-length-value
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST_NOT
+    kind: scope
+    statement: This work item must not accept unit suffixes as completed coverage for unitless length parsing.
+    applies_to:
+      - Unitless length parser.
+    source_refs:
+      - svg11-types-length
+    testability: testable
+    notes:
+      - Unit suffixes are covered by later TODO bullets.
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: If root svg width and height are valid unitless lengths and no viewBox is provided, they define the fallback document viewBox width and height in user units.
+    applies_to:
+      - Root svg width attribute.
+      - Root svg height attribute.
+    source_refs:
+      - svg11-types-length
+    testability: testable
+    notes:
+      - This records the package's existing fallback viewBox behavior while making the length syntax explicit.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A length value contains a unit suffix, percentage suffix, malformed number, or internal whitespace.
+    source_behavior: valid for some later length forms or invalid depending on the suffix
+    required_behavior: Return nil for the unitless length parser in this work item.
+    decision_required: false
+    source_refs:
+      - svg11-types-length
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Storage
+    statement: Store unitless length values as Double user-unit values.
+    allowed_by:
+      - SVG 2 computes unitless SVGLength values by returning the number itself.
+    source_refs:
+      - svg2-length-value
+  - id: IC002
+    topic: Boundary whitespace
+    statement: Trim leading and trailing XML whitespace before parsing a single unitless length value.
+    allowed_by:
+      - XML attribute values are delivered as strings and the package already applies this behavior to related numeric data types.
+    source_refs:
+      - svg11-types-length
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG number grammar
+    reason: The length grammar is based on the SVG number data type.
+    source_refs:
+      - svg11-types-length
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+      - svg2-length-value
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+    map_item_refs: []
