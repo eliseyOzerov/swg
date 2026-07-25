@@ -83,7 +83,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `viewBox` to viewport transform.
 - [x] `preserveAspectRatio` `none`.
 - [x] `preserveAspectRatio` meet.
-- [ ] `preserveAspectRatio` slice.
+- [x] `preserveAspectRatio` slice.
 - [ ] `transform` list ordering.
 - [ ] `matrix`.
 - [x] `translate`.

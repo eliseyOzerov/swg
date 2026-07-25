@@ -127,6 +127,23 @@ import Testing
 	#expect(Point(100, 50).applying(maxAligned) == Point(300, 300))
 }
 
+@Test func svgPreserveAspectRatioSliceUsesUniformCoveringScale() throws {
+	let centered = try #require(SVGPreserveAspectRatio(align: .xMidYMid, meetOrSlice: .slice).viewBoxTransform(
+		from: Rect(x: 0, y: 0, width: 100, height: 50),
+		to: Rect(x: 0, y: 0, width: 300, height: 300)
+	))
+	let minAligned = try #require(SVGPreserveAspectRatio(align: .xMinYMin, meetOrSlice: .slice).viewBoxTransform(
+		from: Rect(x: 0, y: 0, width: 100, height: 50),
+		to: Rect(x: 0, y: 0, width: 300, height: 300)
+	))
+
+	#expect(centered == Transform(a: 6, b: 0, c: 0, d: 6, tx: -150, ty: 0))
+	#expect(Point(0, 0).applying(centered) == Point(-150, 0))
+	#expect(Point(100, 50).applying(centered) == Point(450, 300))
+	#expect(minAligned == Transform(a: 6, b: 0, c: 0, d: 6, tx: 0, ty: 0))
+	#expect(Point(100, 50).applying(minAligned) == Point(600, 300))
+}
+
 @Test func svgParserParsesPaintValuesAndFallbacks() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
