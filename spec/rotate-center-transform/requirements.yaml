@@ -1,0 +1,276 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: rotate-center-transform
+  title: SVG rotate(angle cx cy) transform function
+  domain: SVG 2 / CSS Transforms Level 1
+  profile: null
+  summary: The three-value SVG `rotate` transform function rotates local coordinates around an explicit point in the current user coordinate system.
+  non_goals:
+    - Single-angle `rotate(angle)`.
+    - CSS transform-origin behavior.
+    - Transform-list ordering.
+    - CSS Transitions using SVG transform attributes.
+    - 3D rotate functions.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-coords-transform-property
+      title: SVG 2, 8.5 The transform property
+      url: https://www.w3.org/TR/SVG2/coords.html#TransformProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-transforms-svg-transform-syntax
+      title: CSS Transforms Module Level 1, 7.2 Syntax of the SVG transform attribute
+      url: https://www.w3.org/TR/css-transforms-1/#svg-transform
+      version: Candidate Recommendation 14 February 2019
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-transforms-svg-functions
+      title: CSS Transforms Module Level 1, 7.3 SVG transform functions
+      url: https://www.w3.org/TR/css-transforms-1/#svg-transform-functions
+      version: Candidate Recommendation 14 February 2019
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 requires support for the transform property and presentation attribute as defined by CSS Transforms Level 1.
+    - CSS Transforms defines the three-value SVG rotate form as SVG-specific and not directly mappable to a single CSS transform function.
+
+scope:
+  includes:
+    - Parsing valid three-value `rotate` transform functions in SVG transform attributes.
+    - Interpreting the first value as a degree angle.
+    - Interpreting the second and third values as the rotation origin coordinates `cx` and `cy`.
+    - Applying the equivalent translate-rotate-translate transform.
+  excludes:
+    - Single-value `rotate` syntax.
+    - Malformed rotate argument recovery.
+    - Transform-origin.
+    - Transition serialization.
+  assumptions:
+    - The package stores transform angles internally in radians.
+
+terminology:
+  - id: term-three-value-rotate
+    term: three-value rotate
+    definition: An SVG rotate transform with an angle value followed by horizontal and vertical origin coordinates.
+    source_refs:
+      - css-transforms-svg-transform-syntax
+      - css-transforms-svg-functions
+  - id: term-rotation-origin
+    term: rotation origin
+    definition: The point defined by `cx` and `cy` around which the three-value rotate transform rotates coordinates.
+    source_refs:
+      - css-transforms-svg-functions
+
+structures:
+  - id: S001
+    name: rotate(angle cx cy)
+    kind: transform-function
+    source_refs:
+      - css-transforms-svg-transform-syntax
+      - css-transforms-svg-functions
+    fields:
+      - name: angle
+        type: number
+        cardinality: required
+        position: 1
+        constraints:
+          - Interpreted as a CSS angle in degrees.
+        requirement_refs:
+          - R002
+          - R004
+        source_refs:
+          - css-transforms-svg-transform-syntax
+          - css-transforms-svg-functions
+      - name: cx
+        type: number
+        cardinality: optional-with-cy
+        position: 2
+        constraints:
+          - Interpreted as a CSS px length.
+          - Defines the horizontal coordinate of the rotation origin.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - css-transforms-svg-functions
+      - name: cy
+        type: number
+        cardinality: optional-with-cx
+        position: 3
+        constraints:
+          - Interpreted as a CSS px length.
+          - Defines the vertical coordinate of the rotation origin.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - css-transforms-svg-functions
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: conformance
+    statement: SVG user agents must support the transform property and presentation attribute as defined by CSS Transforms Level 1.
+    applies_to:
+      - SVGParser.parseTransform
+    source_refs:
+      - svg2-coords-transform-property
+    testability: reviewable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The SVG transform attribute `rotate` function must accept either one number or one number followed by two additional numbers.
+    applies_to:
+      - SVGParser.parseTransform
+    source_refs:
+      - css-transforms-svg-transform-syntax
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: In the three-value SVG rotate form, the second and third numbers represent `cx` and `cy`, interpreted as px lengths that define the origin for rotation.
+    applies_to:
+      - SVGParser.parseTransform
+      - Transform
+    source_refs:
+      - css-transforms-svg-functions
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The three-value SVG rotate form must behave equivalently to translating by `cx, cy`, rotating by the first number interpreted as degrees, then translating by `-cx, -cy`.
+    applies_to:
+      - Transform.rotated
+      - Point.applying
+      - SVGParser.parseTransform
+    source_refs:
+      - css-transforms-svg-functions
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: The explicit rotation origin point must remain invariant under the equivalent three-value rotate transform.
+    applies_to:
+      - Transform.rotated
+      - Point.applying
+      - SVGParser.parseTransform
+    source_refs:
+      - css-transforms-svg-functions
+    testability: testable
+    notes:
+      - Derived from the translate-rotate-translate equivalence.
+
+algorithms:
+  - id: ALG001
+    name: Equivalent three-value rotate transform
+    kind: algorithm
+    summary: Compose a translation to the origin point, the angle rotation, and the inverse translation away from the origin point.
+    steps:
+      - Translate by `cx, cy`.
+      - Rotate by the first number interpreted as degrees.
+      - Translate by `-cx, -cy`.
+    preconditions:
+      - The SVG rotate function has exactly three valid number arguments.
+    postconditions:
+      - The point `cx, cy` maps to itself.
+    requirement_refs:
+      - R004
+      - R005
+    source_refs:
+      - css-transforms-svg-functions
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `rotate` transform with neither one nor three valid number values.
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - css-transforms-svg-transform-syntax
+
+recommendations: []
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: The three-value rotate matrix must leave the explicit center point unchanged.
+    derived_from:
+      - R003
+      - R004
+    reasoning: Translating a point at `cx, cy` by `-cx, -cy` moves it to the rotation origin, so rotation does not move it, and the final translation restores the original coordinates.
+    source_refs:
+      - css-transforms-svg-functions
+implementation_choices:
+  - id: IC001
+    topic: Internal angle representation
+    statement: The source defines SVG rotate input values as numbers interpreted as degrees, but does not require a particular internal representation.
+    allowed_by:
+      - css-transforms-svg-functions
+    source_refs:
+      - css-transforms-svg-functions
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: CSS Transforms Module Level 1, 7.2 Syntax of the SVG transform attribute
+    reason: Defines the valid argument structure for SVG rotate transform functions.
+    source_refs:
+      - css-transforms-svg-transform-syntax
+  - id: DEP002
+    kind: source-section
+    title: CSS Transforms Module Level 1, 7.3 SVG transform functions
+    reason: Defines interpretation of the three values and the equivalent transform composition.
+    source_refs:
+      - css-transforms-svg-functions
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-coords-transform-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-transforms-svg-transform-syntax
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-transforms-svg-functions
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-transforms-svg-functions
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-transforms-svg-functions
+    map_item_refs: []
+  - item_id: ALG001
+    item_type: algorithm
+    source_refs:
+      - css-transforms-svg-functions
+    map_item_refs: []
+  - item_id: S001
+    item_type: structure
+    source_refs:
+      - css-transforms-svg-transform-syntax
+      - css-transforms-svg-functions
+    map_item_refs: []

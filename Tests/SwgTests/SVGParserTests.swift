@@ -122,6 +122,28 @@ import Testing
 	#expect(abs(point.y - 2) < 0.000001)
 }
 
+@Test func svgParserParsesCenteredRotateTransformFunction() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+		<g id="rotated" transform="rotate(90 10 20)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let group) = document.elements.first else {
+		Issue.record("Expected centered rotate group")
+		return
+	}
+
+	expectTransformApproximately(group.attributes.transform, Transform(a: 0, b: 1, c: -1, d: 0, tx: 30, ty: 10))
+	let center = Point(10, 20).applying(group.attributes.transform)
+	#expect(abs(center.x - 10) < 0.000001)
+	#expect(abs(center.y - 20) < 0.000001)
+	let rotated = Point(12, 20).applying(group.attributes.transform)
+	#expect(abs(rotated.x - 10) < 0.000001)
+	#expect(abs(rotated.y - 22) < 0.000001)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

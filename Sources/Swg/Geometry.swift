@@ -123,6 +123,12 @@ public struct Transform: Equatable, Hashable, Sendable {
 		return concatenating(Transform(a: cosine, b: sine, c: -sine, d: cosine, tx: 0, ty: 0))
 	}
 
+	public func rotated(by angle: Double, center: Point) -> Transform {
+		translatedBy(x: center.x, y: center.y)
+			.rotated(by: angle)
+			.translatedBy(x: -center.x, y: -center.y)
+	}
+
 	public func concatenating(_ other: Transform) -> Transform {
 		Transform(
 			a: a * other.a + c * other.b,

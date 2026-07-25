@@ -1389,7 +1389,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				transform = transform.scaledBy(x: args[0], y: args.count >= 2 ? args[1] : args[0])
 			case "rotate" where !argTexts.isEmpty:
 				guard let angle = SVGAngleParser.parse(argTexts[0]) else { break }
-				transform = transform.rotated(by: angle)
+				if args.count >= 3 {
+					transform = transform.rotated(by: angle, center: Point(args[1], args[2]))
+				} else {
+					transform = transform.rotated(by: angle)
+				}
 			case "matrix" where args.count == 6:
 				transform = transform.concatenating(Transform(a: args[0], b: args[1], c: args[2], d: args[3], tx: args[4], ty: args[5]))
 			default:

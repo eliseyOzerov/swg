@@ -83,7 +83,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `translate`.
 - [x] `scale`.
 - [x] `rotate(angle)`.
-- [ ] `rotate(angle cx cy)`.
+- [x] `rotate(angle cx cy)`.
 - [ ] `skewX`.
 - [ ] `skewY`.
 - [ ] `vector-effect`.
