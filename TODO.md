@@ -42,7 +42,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `<title>`.
 - [ ] `<desc>`.
 - [ ] `<metadata>`.
-- [ ] `<unknown>`.
 
 ## Basic Shapes
 
@@ -242,10 +241,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] `<image>` sizing.
 - [ ] `<image>` aspect ratio behavior.
 - [ ] `<foreignObject>`.
-- [ ] `<audio>`.
-- [ ] `<video>`.
-- [ ] `<iframe>`.
-- [ ] `<canvas>`.
 
 ## Reuse and Linking
 
