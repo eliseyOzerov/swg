@@ -1,0 +1,237 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stroke-linejoin-bevel
+  title: Stroke linejoin bevel value
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of `stroke-linejoin` when its specified or inherited value is `bevel`.
+  non_goals:
+    - "`stroke-linejoin: miter`, covered by a separate Painting TODO bullet."
+    - "`stroke-linejoin: round`, covered by a separate Painting TODO bullet."
+    - "`stroke-linejoin: miter-clip` and `stroke-linejoin: arcs`, which are SVG 2 values but are not represented by the current package line join model."
+    - Renderer construction of line join geometry.
+    - Miter-limit clipping or fallback during stroke rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-stroke-linejoin-property
+      title: "SVG 2 Painting: Controlling line joins: the stroke-linejoin and stroke-miterlimit properties"
+      url: https://www.w3.org/TR/SVG/painting.html#LineJoin
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `stroke-linejoin` with value grammar `miter | miter-clip | round | bevel | arcs`, initial value `miter`, inheritance yes, and computed value as specified.
+    - SVG 2 describes `bevel` as a bevelled corner whose shape is a triangle filling the area between two stroked segments.
+    - SVG presentation attributes participate in styling, so `stroke-linejoin` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `stroke-linejoin` property on SVG shapes and renderable containers.
+    - Explicit `stroke-linejoin: bevel` declarations and presentation attributes.
+    - Inheritance of `bevel` from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Invalid `stroke-linejoin` values leaving the current inherited or default value unchanged.
+  excludes:
+    - The `miter` and `round` values beyond initial/default and inherited fallback context.
+    - The SVG 2 `miter-clip` and `arcs` values.
+    - Renderer geometry for line joins.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The parser stores `bevel` using the package's existing `LineJoin.bevel` case.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+
+terminology:
+  - id: term-stroke-linejoin
+    term: stroke-linejoin
+    definition: The SVG property that selects the shape used at stroked corners of paths or basic shapes.
+    source_refs:
+      - svg2-stroke-linejoin-property
+  - id: term-bevel
+    term: bevel
+    definition: The linejoin value that forms a bevelled corner by filling the area between stroked segments with a triangle.
+    source_refs:
+      - svg2-stroke-linejoin-property
+
+structures:
+  - id: S001
+    name: Stroke linejoin parser state
+    kind: structure
+    source_refs:
+      - svg2-stroke-linejoin-property
+    fields:
+      - name: strokeLineJoin
+        type: LineJoin
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is `miter`.
+          - SVG 2 values include `miter`, `miter-clip`, `round`, `bevel`, and `arcs`; this work item verifies `bevel`.
+          - The property is inherited.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-stroke-linejoin-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `stroke-linejoin` property must accept `bevel` as a valid specified value.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-linejoin-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`stroke-linejoin` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-linejoin-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "The computed value for `stroke-linejoin: bevel` must remain `bevel`."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-linejoin-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `stroke-linejoin` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-linejoin-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A bevel line join must form a triangular bevel shape that fills the area between the two stroked segments.
+    applies_to:
+      - SVG stroke rendering
+    source_refs:
+      - svg2-stroke-linejoin-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the value for renderer consumption; renderer geometry coverage is outside this work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `stroke-linejoin` value is not in the SVG grammar `miter | miter-clip | round | bevel | arcs`.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-linejoin-property
+  - id: I002
+    condition: A `stroke-linejoin` value is `miter-clip` or `arcs`.
+    source_behavior: REQUIRED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-stroke-linejoin-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `stroke-linejoin` declaration must expose `bevel` when its inherited value is `bevel`.
+    derived_from:
+      - R002
+      - R003
+    reasoning: Because `stroke-linejoin` is inherited and computed as specified, inherited parser state must preserve a `bevel` value.
+    source_refs:
+      - svg2-stroke-linejoin-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may represent SVG `bevel` with its existing `LineJoin.bevel` case.
+    allowed_by:
+      - The source defines behavior and value semantics, not programming-language enum case names.
+    source_refs:
+      - svg2-stroke-linejoin-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`stroke-linejoin` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linejoin-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linejoin-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linejoin-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-linejoin-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linejoin-property
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_or_unsupported_input
+    source_refs:
+      - svg2-stroke-linejoin-property
+    map_item_refs: []
+  - item_id: I002
+    item_type: invalid_or_unsupported_input
+    source_refs:
+      - svg2-stroke-linejoin-property
+    map_item_refs: []

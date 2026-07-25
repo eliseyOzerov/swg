@@ -112,7 +112,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `stroke-linecap: square`.
 - [x] `stroke-linejoin: miter`.
 - [x] `stroke-linejoin: round`.
-- [ ] `stroke-linejoin: bevel`.
+- [x] `stroke-linejoin: bevel`.
 - [ ] `stroke-miterlimit`.
 - [ ] `stroke-dasharray`.
 - [ ] `stroke-dashoffset`.
