@@ -36,6 +36,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var defs = SVGDefs()
 	private var inDefs = false
 	private var defsElementStack: [SVGElementBuilder] = []
+	private var symbolElementStack: [SVGElementBuilder] = []
 	private var currentLinearGradient: SVGLinearGradientDef?
 	private var currentRadialGradient: SVGRadialGradientDef?
 	private var currentGradientStops: [SVGGradientStop] = []
@@ -108,6 +109,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			}
 		case "defs":
 			inDefs = true
+		case "symbol":
+			parseSymbolStart(attributes)
 		case "style":
 			inStyleElement = true
 			styleText = ""
@@ -150,7 +153,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Group")
 			let builder = SVGElementBuilder(kind: .group, id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
-			if inDefs {
+			if !symbolElementStack.isEmpty {
+				symbolElementStack.append(builder)
+			} else if inDefs {
 				defsElementStack.append(builder)
 			} else if !inClipPath && !inMask {
 				elementStack.append(builder)
@@ -188,6 +193,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			popViewportContext()
 		case "defs":
 			inDefs = false
+		case "symbol":
+			finalizeSymbolElement()
+			popViewportContext()
 		case "style":
 			styleText += characterBuffer
 			characterBuffer = ""
@@ -257,6 +265,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		defs = SVGDefs()
 		inDefs = false
 		defsElementStack = []
+		symbolElementStack = []
 		currentLinearGradient = nil
 		currentRadialGradient = nil
 		currentGradientStops = []
@@ -325,11 +334,39 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
+	private func parseSymbolStart(_ attributes: [String: String]) {
+		let attrs = parsePaintAttributes(attributes)
+		let id = resolveID(attributes["id"], elementName: "Symbol")
+		let viewportContext = currentViewportContext
+		let width = parseSVGSize(attributes["width"], percentageBasis: .horizontal, context: viewportContext)
+		let height = parseSVGSize(attributes["height"], percentageBasis: .vertical, context: viewportContext)
+		let builder = SVGElementBuilder(
+			kind: .symbol(
+				x: parseSVGPosition(attributes["x"], percentageBasis: .horizontal, context: viewportContext),
+				y: parseSVGPosition(attributes["y"], percentageBasis: .vertical, context: viewportContext),
+				width: width,
+				height: height,
+				viewBox: attributes["viewBox"].flatMap(parseViewBox),
+				preserveAspectRatio: parsePreserveAspectRatio(attributes["preserveAspectRatio"]),
+				refX: attributes["refX"],
+				refY: attributes["refY"]
+			),
+			id: id,
+			attributes: attrs,
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "viewBox", "preserveAspectRatio", "refX", "refY"])
+		)
+		symbolElementStack.append(builder)
+		pushViewportContext(width: width, height: height, base: viewportContext)
+	}
+
 	private func parseUnknownElementStart(_ elementName: String, namespaceURI: String?, attributes: [String: String]) {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: elementName)
 		let builder = SVGElementBuilder(kind: .unknown(name: elementName, namespaceURI: namespaceURI), id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
-		if inDefs {
+		if !symbolElementStack.isEmpty {
+			symbolElementStack.append(builder)
+		} else if inDefs {
 			defsElementStack.append(builder)
 		} else if !inClipPath && !inMask {
 			elementStack.append(builder)
@@ -356,7 +393,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			language: currentLanguage,
 			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "viewBox", "preserveAspectRatio"])
 		)
-		if inDefs {
+		if !symbolElementStack.isEmpty {
+			symbolElementStack.append(builder)
+		} else if inDefs {
 			defsElementStack.append(builder)
 		} else if !inClipPath && !inMask {
 			elementStack.append(builder)
@@ -622,6 +661,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			maskElements.append(element)
 			return
 		}
+		if let symbolBuilder = symbolElementStack.last {
+			symbolBuilder.children.append(element)
+			return
+		}
 		if inDefs {
 			if let last = defsElementStack.last {
 				last.children.append(element)
@@ -638,7 +681,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func finalizeContainerElement() {
-		if inDefs {
+		if let builder = symbolElementStack.last, !builder.isSymbol {
+			_ = symbolElementStack.popLast()
+			appendElement(builder.buildElement())
+		} else if inDefs {
 			guard let builder = defsElementStack.popLast() else { return }
 			let element = builder.buildElement()
 			if let parent = defsElementStack.last {
@@ -651,8 +697,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
+	private func finalizeSymbolElement() {
+		guard let builder = symbolElementStack.popLast() else { return }
+		defs.symbols[builder.id] = builder.buildSymbolData()
+	}
+
 	private func parsePaintAttributes(_ attributes: [String: String]) -> SVGPaintAttributes {
-		let inherited = (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
+		let inherited = symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
 		var result = inherited
 		result.transform = .identity
 
@@ -1045,6 +1096,7 @@ private final class SVGElementBuilder {
 	enum Kind {
 		case group
 		case svg(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio)
+		case symbol(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio, refX: String?, refY: String?)
 		case unknown(name: String, namespaceURI: String?)
 	}
 
@@ -1054,6 +1106,13 @@ private final class SVGElementBuilder {
 	let language: String?
 	let unknownAttributes: [String: String]
 	var children: [SVGElement] = []
+
+	var isSymbol: Bool {
+		if case .symbol = kind {
+			return true
+		}
+		return false
+	}
 
 	init(kind: Kind, id: String, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
 		self.kind = kind
@@ -1069,8 +1128,19 @@ private final class SVGElementBuilder {
 			.group(SVGGroupData(id: id, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .svg(let x, let y, let width, let height, let viewBox, let preserveAspectRatio):
 			.svg(SVGViewportData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
+		case .symbol:
+			.unknown(SVGUnknownElementData(id: id, name: "symbol", namespaceURI: SVGParser.svgNamespaceURI, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .unknown(let name, let namespaceURI):
 			.unknown(SVGUnknownElementData(id: id, name: name, namespaceURI: namespaceURI, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
+		}
+	}
+
+	func buildSymbolData() -> SVGSymbolData {
+		switch kind {
+		case .symbol(let x, let y, let width, let height, let viewBox, let preserveAspectRatio, let refX, let refY):
+			SVGSymbolData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, refX: refX, refY: refY, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes)
+		case .group, .svg, .unknown:
+			SVGSymbolData(id: id, x: 0, y: 0, width: 0, height: 0, viewBox: nil, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes)
 		}
 	}
 }

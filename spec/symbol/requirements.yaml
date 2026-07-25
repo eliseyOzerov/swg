@@ -1,0 +1,285 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: symbol
+  title: symbol element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the symbol element as a reusable
+    graphical template container that establishes nested coordinates when
+    instantiated, but is not rendered directly.
+  non_goals:
+    - Rendering a symbol through a use-element shadow tree.
+    - Applying viewBox and preserveAspectRatio transforms to symbol contents.
+    - Clipping symbol rendering with overflow.
+    - Complete content-model validation.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-symbol
+      title: Document and Container Elements - symbol
+      artifact_path: spec/symbol/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-symbol
+      title: SVG 2 Document Structure - The symbol element
+      url: https://www.w3.org/TR/SVG2/struct.html#SymbolElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - Recognizing symbol as a structural container element.
+    - Preserving symbol descendants for later use references.
+    - Ensuring symbol elements are not treated as directly rendered content.
+    - Preserving viewBox and preserveAspectRatio attributes on symbols.
+    - Preserving x, y, width, and height geometry properties used when instantiated.
+    - Preserving refX and refY reference-point attributes for later layout.
+  excludes:
+    - Creating or rendering use-element shadow trees.
+    - Resolving refX and refY keyword values to coordinates.
+    - Applying symbol viewport clipping.
+    - DOM interface conformance.
+  assumptions:
+    - >
+      The parser may store symbols in a definitions registry keyed by ID rather
+      than preserving literal symbol nodes in the renderable tree.
+    - >
+      A parser-oriented implementation may preserve refX and refY as raw
+      author-provided values until viewport transform/layout work is implemented.
+
+terminology:
+  - id: term-symbol
+    term: symbol
+    definition: >
+      An SVG structural container used to define a graphical template that can
+      be instantiated by use.
+    source_refs:
+      - svg2-struct-symbol
+  - id: term-reference-point
+    term: reference point
+    definition: >
+      The point defined by refX and refY that is placed at the symbol's
+      positioning coordinate during instantiation.
+    source_refs:
+      - svg2-struct-symbol
+
+structures:
+  - id: S001
+    name: symbol container
+    kind: structure
+    source_refs:
+      - svg2-struct-symbol
+    fields:
+      - name: children
+        type: svg-element-list
+        cardinality: zero-or-more
+        position: child-content
+        constraints:
+          - Symbol is a container element.
+          - Symbol can contain graphical, paint server, descriptive, and structural content.
+          - Symbol contents are preserved for use instantiation.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-struct-symbol
+      - name: viewBox
+        type: rect
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Symbols support viewBox.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-struct-symbol
+      - name: preserveAspectRatio
+        type: preserveAspectRatio
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Symbols support preserveAspectRatio.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-struct-symbol
+      - name: geometry
+        type: x-y-width-height
+        cardinality: zero-or-more
+        position: attributes
+        constraints:
+          - x, y, width, and height have the same effect as on svg when a symbol is instantiated by use.
+          - width and height computing to auto are treated as 100% unless overridden by use.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-struct-symbol
+      - name: refX-refY
+        type: length-or-keyword
+        cardinality: zero-or-more
+        position: attributes
+        constraints:
+          - refX defines the horizontal reference point.
+          - refY defines the vertical reference point.
+          - Omitted refX or refY makes no adjustment in that dimension.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-struct-symbol
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A symbol element must be treated as an SVG structural container whose
+      children are valid SVG content for later reuse.
+    applies_to:
+      - symbol element
+    source_refs:
+      - svg2-struct-symbol
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: >
+      A symbol element must never be rendered directly; its intended use is as
+      referenced content for use.
+    applies_to:
+      - symbol element
+    source_refs:
+      - svg2-struct-symbol
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      A symbol element must accept and preserve viewBox and preserveAspectRatio
+      data used for its nested coordinate system.
+    applies_to:
+      - symbol element
+    source_refs:
+      - svg2-struct-symbol
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      The x, y, width, and height geometry properties on a symbol must be
+      available for use-instantiation layout with the same effect as on svg.
+    applies_to:
+      - symbol element
+    source_refs:
+      - svg2-struct-symbol
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      refX and refY define the reference point used to place a symbol during
+      instantiation; omitted values make no adjustment in their dimension.
+    applies_to:
+      - symbol element
+    source_refs:
+      - svg2-struct-symbol
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations:
+  - id: N001
+    normative_strength: DESCRIPTIVE
+    statement: >
+      Symbols are rendered similarly to nested svg elements when instantiated by use.
+    source_refs:
+      - svg2-struct-symbol
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      A parser that separates renderable content from definitions must place
+      symbols in a reusable definitions registry rather than in the renderable
+      element list.
+    derived_from:
+      - R001
+      - R002
+    reasoning: >
+      The symbol's descendants must be preserved for reuse, while the symbol
+      itself must not render directly.
+    source_refs:
+      - svg2-struct-symbol
+
+implementation_choices:
+  - id: IC001
+    topic: Reference-point representation
+    statement: >
+      The specification defines refX/refY behavior for rendering, but does not
+      require a parser to resolve the values before layout.
+    allowed_by:
+      - R005
+    source_refs:
+      - svg2-struct-symbol
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 use element
+    reason: Symbol rendering depends on use-element instantiation.
+    source_refs:
+      - svg2-struct-symbol
+  - id: DEP002
+    kind: source-section
+    title: SVG 2 viewBox and preserveAspectRatio
+    reason: Symbols establish nested coordinate systems using these attributes.
+    source_refs:
+      - svg2-struct-symbol
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-symbol
+    map_item_refs:
+      - document-container-elements-symbol
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-struct-symbol
+    map_item_refs:
+      - document-container-elements-symbol
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-struct-symbol
+    map_item_refs:
+      - document-container-elements-symbol
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-struct-symbol
+    map_item_refs:
+      - document-container-elements-symbol
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-struct-symbol
+    map_item_refs:
+      - document-container-elements-symbol

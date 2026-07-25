@@ -29,6 +29,7 @@ public struct SVGDocument: Equatable, Sendable {
 public struct SVGDefs: Equatable, Sendable {
 	public var linearGradients: [String: SVGLinearGradientDef]
 	public var radialGradients: [String: SVGRadialGradientDef]
+	public var symbols: [String: SVGSymbolData]
 	public var clipPaths: [String: [SVGElement]]
 	public var filters: [String: SVGFilterDef]
 	public var masks: [String: SVGMaskDef]
@@ -37,6 +38,7 @@ public struct SVGDefs: Equatable, Sendable {
 	public init(
 		linearGradients: [String: SVGLinearGradientDef] = [:],
 		radialGradients: [String: SVGRadialGradientDef] = [:],
+		symbols: [String: SVGSymbolData] = [:],
 		clipPaths: [String: [SVGElement]] = [:],
 		filters: [String: SVGFilterDef] = [:],
 		masks: [String: SVGMaskDef] = [:],
@@ -44,6 +46,7 @@ public struct SVGDefs: Equatable, Sendable {
 	) {
 		self.linearGradients = linearGradients
 		self.radialGradients = radialGradients
+		self.symbols = symbols
 		self.clipPaths = clipPaths
 		self.filters = filters
 		self.masks = masks
@@ -253,6 +256,39 @@ public struct SVGViewportData: Equatable, Sendable {
 		self.height = height
 		self.viewBox = viewBox
 		self.preserveAspectRatio = preserveAspectRatio
+		self.attributes = attributes
+		self.children = children
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<symbol>` template that can be instantiated by `<use>`.
+public struct SVGSymbolData: Equatable, Sendable {
+	public let id: String
+	public let x: Double
+	public let y: Double
+	public let width: Double
+	public let height: Double
+	public let viewBox: Rect?
+	public let preserveAspectRatio: SVGPreserveAspectRatio
+	public let refX: String?
+	public let refY: String?
+	public let attributes: SVGPaintAttributes
+	public let children: [SVGElement]
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio = .default, refX: String? = nil, refY: String? = nil, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.x = x
+		self.y = y
+		self.width = width
+		self.height = height
+		self.viewBox = viewBox
+		self.preserveAspectRatio = preserveAspectRatio
+		self.refX = refX
+		self.refY = refY
 		self.attributes = attributes
 		self.children = children
 		self.language = language

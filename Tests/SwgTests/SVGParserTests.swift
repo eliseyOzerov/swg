@@ -218,6 +218,41 @@ import Testing
 	#expect(loose.id == "loose")
 }
 
+@Test func svgParserStoresSymbolTemplatesOutsideRenderableElements() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100">
+		<symbol id="pin" x="10%" y="20%" width="50%" height="40%" viewBox="0 0 10 20" preserveAspectRatio="xMaxYMin slice" refX="center" refY="18" fill="#336699">
+			<path id="pin-shape" d="M0 0 L10 20"/>
+		</symbol>
+		<path id="visible" d="M1 1 L2 2"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["visible"])
+	#expect(document.defs.symbols.keys.sorted() == ["pin"])
+
+	let symbol = try #require(document.defs.symbols["pin"])
+	#expect(symbol.id == "pin")
+	#expect(symbol.x == 20)
+	#expect(symbol.y == 20)
+	#expect(symbol.width == 100)
+	#expect(symbol.height == 40)
+	#expect(symbol.viewBox == Rect(x: 0, y: 0, width: 10, height: 20))
+	#expect(symbol.preserveAspectRatio == SVGPreserveAspectRatio(align: .xMaxYMin, meetOrSlice: .slice))
+	#expect(symbol.refX == "center")
+	#expect(symbol.refY == "18")
+	#expect(symbol.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .path(let child) = symbol.children.first else {
+		Issue.record("Expected symbol child to be a path")
+		return
+	}
+	#expect(child.id == "pin-shape")
+	#expect(child.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+}
+
 @Test func svgParserUsesFunctionalURLParserForLocalResourceReferences() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
