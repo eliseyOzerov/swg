@@ -1,0 +1,240 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stroke-linecap-round
+  title: Stroke linecap round value
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of `stroke-linecap` when its specified or inherited value is `round`.
+  non_goals:
+    - "`stroke-linecap: butt`, covered by a separate Painting TODO bullet."
+    - "`stroke-linecap: square`, covered by a separate Painting TODO bullet."
+    - Renderer construction of cap shapes.
+    - Zero-length subpath rasterization.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-stroke-linecap-property
+      title: "SVG 2 Painting: Drawing caps at the ends of strokes: the stroke-linecap property"
+      url: https://www.w3.org/TR/SVG/painting.html#LineCaps
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `stroke-linecap` with value grammar `butt | round | square`, initial value `butt`, inheritance yes, and computed value as specified.
+    - SVG 2 describes `round` as extending each end of a stroked subpath by a half circle with diameter equal to the stroke width.
+    - SVG 2 describes a zero-length subpath with `round` as rendering a full circle centered at that subpath point.
+    - SVG presentation attributes participate in styling, so `stroke-linecap` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `stroke-linecap` property on SVG shapes and renderable containers.
+    - Explicit `stroke-linecap: round` declarations and presentation attributes.
+    - Inheritance of `round` from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Invalid `stroke-linecap` values leaving the current inherited or default value unchanged.
+  excludes:
+    - The `butt` and `square` values beyond initial/default and inherited fallback context.
+    - Renderer geometry for line caps.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The parser stores `round` using the package's existing `LineCap.round` case.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+
+terminology:
+  - id: term-stroke-linecap
+    term: stroke-linecap
+    definition: The SVG property that selects the shape drawn at the ends of open stroked subpaths and for zero-length subpaths.
+    source_refs:
+      - svg2-stroke-linecap-property
+  - id: term-round
+    term: round
+    definition: The linecap value where stroke shape extends past each endpoint with a half circle based on stroke width.
+    source_refs:
+      - svg2-stroke-linecap-property
+
+structures:
+  - id: S001
+    name: Stroke linecap parser state
+    kind: structure
+    source_refs:
+      - svg2-stroke-linecap-property
+    fields:
+      - name: strokeLineCap
+        type: LineCap
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is `butt`.
+          - Supported values include `butt`, `round`, and `square`; this work item verifies `round`.
+          - The property is inherited.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-stroke-linecap-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `stroke-linecap` property must accept `round` as a valid specified value.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-linecap-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`stroke-linecap` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-linecap-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "The computed value for `stroke-linecap: round` must remain `round`."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-linecap-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `stroke-linecap` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-linecap-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A round line cap must extend each end of each stroked subpath by a half circle with diameter equal to the stroke width.
+    applies_to:
+      - SVG stroke rendering
+    source_refs:
+      - svg2-stroke-linecap-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the value for renderer consumption; renderer geometry coverage is outside this work item.
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: "With a zero-length subpath, `stroke-linecap: round` must render a full circle centered at that subpath's point."
+    applies_to:
+      - SVG stroke rendering
+    source_refs:
+      - svg2-stroke-linecap-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the value for renderer consumption; renderer geometry coverage is outside this work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `stroke-linecap` value is not `butt`, `round`, or `square`.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-linecap-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `stroke-linecap` declaration must expose `round` when its inherited value is `round`.
+    derived_from:
+      - R002
+      - R003
+    reasoning: Because `stroke-linecap` is inherited and computed as specified, inherited parser state must preserve a `round` value.
+    source_refs:
+      - svg2-stroke-linecap-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may represent SVG `round` with its existing `LineCap.round` case.
+    allowed_by:
+      - The source defines behavior and value semantics, not programming-language enum case names.
+    source_refs:
+      - svg2-stroke-linecap-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`stroke-linecap` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linecap-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linecap-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linecap-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-linecap-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linecap-property
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-linecap-property
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_or_unsupported_input
+    source_refs:
+      - svg2-stroke-linecap-property
+    map_item_refs: []
