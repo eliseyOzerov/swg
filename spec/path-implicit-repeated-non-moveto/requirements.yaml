@@ -1,0 +1,465 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: path-implicit-repeated-non-moveto
+  title: Implicit repeated non-moveto path commands
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 path data behavior for repeated argument groups after non-M
+    drawing commands, where each additional group is processed as another
+    command of the same type.
+  non_goals:
+    - Repeated coordinate pairs after M/m moveto commands.
+    - Compact number tokenization such as adjacent signs or decimal points.
+    - Exponent tokenization.
+    - Arc radius correction, flag-combination geometry, or degenerate arc behavior.
+    - Path data error recovery for incomplete repeated groups.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: path-data-implicit-repeated-non-moveto
+      title: Path Data - implicit repeated commands for non-M commands
+      artifact_path: spec/path-implicit-repeated-non-moveto/requirements.yaml
+  canonical_sources:
+    - id: svg2-path-data-grammar
+      title: SVG 2 Paths - Grammar for path data
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataBNF
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-path-data-lineto
+      title: SVG 2 Paths - Lineto commands
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataLinetoCommands
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-path-data-cubic
+      title: SVG 2 Paths - Cubic Bezier commands
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataCubicBezierCommands
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-path-data-quadratic
+      title: SVG 2 Paths - Quadratic Bezier commands
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataQuadraticBezierCommands
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-path-data-arc
+      title: SVG 2 Paths - Elliptical arc commands
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataEllipticalArcCommands
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Repeated coordinate pairs after L/l lineto.
+    - Repeated coordinates after H/h horizontal lineto.
+    - Repeated coordinates after V/v vertical lineto.
+    - Repeated coordinate-pair triplets after C/c cubic Bezier curveto.
+    - Repeated coordinate-pair doubles after S/s smooth cubic Bezier curveto.
+    - Repeated coordinate-pair doubles after Q/q quadratic Bezier curveto.
+    - Repeated coordinate pairs after T/t smooth quadratic Bezier curveto.
+    - Repeated elliptical-arc argument groups after A/a.
+  excludes:
+    - M/m repeated coordinate-pair behavior.
+    - Z/z closepath, which has no command arguments to repeat.
+    - Numeric tokenizer edge cases that are tracked by separate TODO bullets.
+    - Arc geometry details other than processing repeated argument groups in sequence.
+  assumptions:
+    - >
+      The package stores all parsed path commands as resolved absolute
+      PathCommand values.
+    - >
+      For arcs, the package converts each elliptical arc argument group into one
+      or more cubic Bezier PathCommand values; tests observe each group's final
+      endpoint rather than exact generated cubic control points.
+
+terminology:
+  - id: term-repeated-argument-group
+    term: repeated argument group
+    definition: >
+      An additional grammar production instance following the same command
+      letter and processed as another command of that type.
+    source_refs:
+      - svg2-path-data-grammar
+  - id: term-coordinate-pair-sequence
+    term: coordinate_pair_sequence
+    definition: >
+      A recursive grammar production containing one or more coordinate pairs.
+    source_refs:
+      - svg2-path-data-grammar
+  - id: term-elliptical-arc-argument-sequence
+    term: elliptical_arc_argument_sequence
+    definition: >
+      A recursive grammar production containing one or more elliptical arc
+      argument groups.
+    source_refs:
+      - svg2-path-data-grammar
+
+structures:
+  - id: S001
+    name: Repeating non-M command argument sequences
+    kind: structure
+    source_refs:
+      - svg2-path-data-grammar
+    fields:
+      - name: lineto
+        type: coordinate_pair_sequence
+        cardinality: one-or-more
+        position: after L/l
+        constraints:
+          - Each coordinate pair creates one lineto segment.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-path-data-grammar
+          - svg2-path-data-lineto
+      - name: horizontalLineto
+        type: coordinate_sequence
+        cardinality: one-or-more
+        position: after H/h
+        constraints:
+          - Each coordinate creates one horizontal lineto segment.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-path-data-grammar
+          - svg2-path-data-lineto
+      - name: verticalLineto
+        type: coordinate_sequence
+        cardinality: one-or-more
+        position: after V/v
+        constraints:
+          - Each coordinate creates one vertical lineto segment.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-path-data-grammar
+          - svg2-path-data-lineto
+      - name: cubicCurveto
+        type: curveto_coordinate_sequence
+        cardinality: one-or-more
+        position: after C/c
+        constraints:
+          - Each coordinate-pair triplet creates one cubic Bezier segment.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-path-data-grammar
+          - svg2-path-data-cubic
+      - name: smoothCubicCurveto
+        type: smooth_curveto_coordinate_sequence
+        cardinality: one-or-more
+        position: after S/s
+        constraints:
+          - Each coordinate-pair double creates one smooth cubic Bezier segment.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-path-data-grammar
+          - svg2-path-data-cubic
+      - name: quadraticCurveto
+        type: quadratic_bezier_curveto_coordinate_sequence
+        cardinality: one-or-more
+        position: after Q/q
+        constraints:
+          - Each coordinate-pair double creates one quadratic Bezier segment.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-path-data-grammar
+          - svg2-path-data-quadratic
+      - name: smoothQuadraticCurveto
+        type: coordinate_pair_sequence
+        cardinality: one-or-more
+        position: after T/t
+        constraints:
+          - Each coordinate pair creates one smooth quadratic Bezier segment.
+        requirement_refs:
+          - R007
+        source_refs:
+          - svg2-path-data-grammar
+          - svg2-path-data-quadratic
+      - name: ellipticalArc
+        type: elliptical_arc_argument_sequence
+        cardinality: one-or-more
+        position: after A/a
+        constraints:
+          - Each elliptical arc argument group creates one arc segment before conversion or rendering.
+        requirement_refs:
+          - R008
+        source_refs:
+          - svg2-path-data-grammar
+          - svg2-path-data-arc
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      L/l lineto command data consumes a coordinate-pair sequence, so every
+      coordinate pair in the sequence is processed as a lineto segment.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-lineto
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      H/h horizontal lineto command data consumes a coordinate sequence, so
+      every coordinate in the sequence is processed as a horizontal lineto
+      segment.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-lineto
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      V/v vertical lineto command data consumes a coordinate sequence, so every
+      coordinate in the sequence is processed as a vertical lineto segment.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-lineto
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      C/c cubic Bezier command data consumes a curveto coordinate sequence, so
+      every coordinate-pair triplet is processed as a cubic Bezier segment.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-cubic
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      S/s smooth cubic Bezier command data consumes a smooth-curveto coordinate
+      sequence, so every coordinate-pair double is processed as a smooth cubic
+      Bezier segment.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-cubic
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      Q/q quadratic Bezier command data consumes a quadratic-Bezier curveto
+      coordinate sequence, so every coordinate-pair double is processed as a
+      quadratic Bezier segment.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-quadratic
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      T/t smooth quadratic Bezier command data consumes a coordinate-pair
+      sequence, so every coordinate pair is processed as a smooth quadratic
+      Bezier segment.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-quadratic
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      A/a elliptical arc command data consumes an elliptical-arc argument
+      sequence, so every complete elliptical-arc argument group is processed as
+      an arc segment.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-arc
+    testability: testable
+    notes: []
+  - id: R009
+    normative_strength: MUST
+    kind: state
+    statement: >
+      Repeated non-M argument groups are processed in order, and each generated
+      segment updates the current point before the next repeated group is
+      resolved.
+    applies_to:
+      - path current point
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-lineto
+      - svg2-path-data-cubic
+      - svg2-path-data-quadratic
+      - svg2-path-data-arc
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, repeated non-M argument groups must materialize as
+      additional PathCommand values of the same semantic command family.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+      - R006
+      - R007
+      - R008
+      - R009
+    reasoning: >
+      PathCommand values are the package's inspectable path representation, so
+      repeated grammar groups need to be expanded into separate commands after
+      resolving relative coordinates and smooth-control state.
+    source_refs:
+      - svg2-path-data-grammar
+
+implementation_choices:
+  - id: IC001
+    topic: Arc conversion
+    statement: >
+      This package may convert a single repeated elliptical-arc argument group
+      into one or more cubic PathCommand values; this bullet only requires that
+      each repeated arc group is consumed in sequence and reaches its endpoint.
+    allowed_by:
+      - R008
+      - R009
+    source_refs:
+      - svg2-path-data-arc
+      - svg2-path-data-grammar
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 path coordinate grammar
+    reason: >
+      Repeated non-M command behavior is encoded through recursive command
+      argument sequence productions.
+    source_refs:
+      - svg2-path-data-grammar
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-lineto
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-lineto
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-lineto
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-cubic
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-cubic
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-quadratic
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-quadratic
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-arc
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: R009
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+      - svg2-path-data-lineto
+      - svg2-path-data-cubic
+      - svg2-path-data-quadratic
+      - svg2-path-data-arc
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-implicit-repeated-non-moveto

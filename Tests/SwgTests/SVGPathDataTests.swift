@@ -29,6 +29,20 @@ import Testing
 	])
 }
 
+@Test func svgPathParserTreatsRepeatedLineArgumentsAsImplicitCommands() {
+	let path = SVGPathDataParser.parse("M 0 0 L 10 0 20 10 h 5 5 v 5 -10")
+
+	#expect(path.commands == [
+		.move(to: Point(0, 0)),
+		.line(to: Point(10, 0)),
+		.line(to: Point(20, 10)),
+		.line(to: Point(25, 10)),
+		.line(to: Point(30, 10)),
+		.line(to: Point(30, 15)),
+		.line(to: Point(30, 5)),
+	])
+}
+
 @Test func svgPathParserHandlesSmoothCubicReflection() {
 	let path = SVGPathDataParser.parse("M 0 0 C 10 0 20 10 30 10 S 50 20 60 0")
 
@@ -41,6 +55,24 @@ import Testing
 	#expect(control1 == Point(40, 10))
 	#expect(control2 == Point(50, 20))
 	#expect(end == Point(60, 0))
+}
+
+@Test func svgPathParserTreatsRepeatedBezierArgumentsAsImplicitCommands() {
+	let path = SVGPathDataParser.parse(
+		"M 0 0 C 10 0 20 0 30 0 40 0 50 0 60 0 S 70 0 80 0 90 0 100 0 Q 110 0 120 0 130 0 140 0 T 150 0 160 0"
+	)
+
+	#expect(path.commands == [
+		.move(to: Point(0, 0)),
+		.cubic(to: Point(30, 0), control1: Point(10, 0), control2: Point(20, 0)),
+		.cubic(to: Point(60, 0), control1: Point(40, 0), control2: Point(50, 0)),
+		.cubic(to: Point(80, 0), control1: Point(70, 0), control2: Point(70, 0)),
+		.cubic(to: Point(100, 0), control1: Point(90, 0), control2: Point(90, 0)),
+		.quad(to: Point(120, 0), control: Point(110, 0)),
+		.quad(to: Point(140, 0), control: Point(130, 0)),
+		.quad(to: Point(150, 0), control: Point(150, 0)),
+		.quad(to: Point(160, 0), control: Point(150, 0)),
+	])
 }
 
 @Test func svgPathParserHandlesQuadraticBezierCommands() {
@@ -76,6 +108,23 @@ import Testing
 	}
 
 	#expect(end.distance(to: Point(10, 10)) < 0.000001)
+}
+
+@Test func svgPathParserTreatsRepeatedArcArgumentsAsImplicitCommands() throws {
+	let path = SVGPathDataParser.parse("M 0 0 A 10 10 0 0 1 10 0 10 10 0 0 1 20 0")
+
+	#expect(path.commands.count == 3)
+	guard case .cubic(let firstEnd, _, _) = path.commands[1] else {
+		Issue.record("Expected first arc argument group to become a cubic")
+		return
+	}
+	guard case .cubic(let secondEnd, _, _) = path.commands[2] else {
+		Issue.record("Expected second arc argument group to become a cubic")
+		return
+	}
+
+	#expect(firstEnd.distance(to: Point(10, 0)) < 0.000001)
+	#expect(secondEnd.distance(to: Point(20, 0)) < 0.000001)
 }
 
 @Test func svgPathDataSerializesEditableCommands() {
