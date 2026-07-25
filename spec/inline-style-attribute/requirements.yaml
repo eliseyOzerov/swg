@@ -1,0 +1,366 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: inline-style-attribute
+  title: Inline style attribute
+  domain: SVG 2 / CSS Style Attributes
+  profile: null
+  summary: Capture parser-visible behavior for SVG's inline style attribute as a CSS declaration-list whose declarations apply to the owning element and outrank normal selector rules in the author cascade.
+  non_goals:
+    - Full CSS selector matching beyond the package's currently supported class selector subset.
+    - Full CSS forward-compatible error recovery beyond simple declaration-list parsing.
+    - External style sheets, imports, conditional rules, media queries, and important declarations.
+    - Implementing every SVG property accepted by CSS; this work item verifies the shared inline-style mechanism for properties the parser already supports.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-style-attributes
+      title: "SVG 2 Styling: Element-specific styling: the class and style attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#ClassAndStyleAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-style-attr-syntax
+      title: "CSS Style Attributes: Syntax and Parsing"
+      url: https://www.w3.org/TR/css-style-attr/#syntax
+      version: W3C Recommendation 07 November 2013
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-style-attr-cascade
+      title: "CSS Style Attributes: Cascading and Interpretation"
+      url: https://www.w3.org/TR/css-style-attr/#interpret
+      version: W3C Recommendation 07 November 2013
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 delegates most semantics and behavior of the SVG style attribute to the corresponding HTML attribute and says the value is parsed as a declaration-list.
+    - CSS Style Attributes defines the generic syntax and cascade behavior for document-language style attributes that accept CSS.
+
+scope:
+  includes:
+    - Recognizing `style` as an SVG global styling attribute on parsed SVG elements.
+    - Parsing the attribute value as a semicolon-separated CSS declaration-list for supported properties.
+    - Applying parsed inline declarations to the owning element.
+    - Ensuring inline declarations outrank presentation attributes and supported normal class rules in this package's cascade subset.
+    - Excluding interpreted `style` attributes from preserved unknown attributes.
+  excludes:
+    - CSS `!important` priority.
+    - Relative URL resolution for inline CSS values.
+    - CSS comments, escaped identifiers, nested functions with declaration separators, and full CSS tokenization.
+    - Multiple `style` attributes on one XML element.
+    - Applying inline declarations to descendants except through separately implemented inheritance behavior.
+  assumptions:
+    - Foundation XMLParser supplies a single normalized XML attribute value for `style`.
+    - The parser's supported CSS subset is limited to declarations consumed by `SVGParser.applyPresentationAttributes` and geometry-property parsing.
+    - The checked TODO item is parser-oriented; renderers can consume the parsed attributes later.
+
+terminology:
+  - id: term-style-attribute
+    term: style attribute
+    definition: An element attribute that supplies inline CSS declarations for the element on which the attribute appears.
+    source_refs:
+      - svg2-style-attributes
+      - css-style-attr-syntax
+  - id: term-declaration-list
+    term: declaration-list
+    definition: The CSS syntax accepted as the contents of a style attribute, equivalent to a declaration block without delimiting braces.
+    source_refs:
+      - svg2-style-attributes
+      - css-style-attr-syntax
+  - id: term-presentation-attribute
+    term: presentation attribute
+    definition: An SVG attribute whose name maps to a styling property and whose value is parsed as that property's value rather than as a CSS declaration.
+    source_refs:
+      - svg2-presentation-attributes
+
+structures:
+  - id: S001
+    name: Inline style declaration-list
+    kind: structure
+    source_refs:
+      - css-style-attr-syntax
+    fields:
+      - name: declarations
+        type: CSS declarations
+        cardinality: zero or more
+        position: ordered
+        constraints:
+          - The attribute value matches declaration-list syntax.
+          - Declarations are separated by semicolon syntax in the declaration-list grammar.
+        requirement_refs:
+          - R002
+        source_refs:
+          - css-style-attr-syntax
+      - name: property
+        type: CSS property name
+        cardinality: one per declaration
+        position: before colon
+        constraints:
+          - Only known and supported property names have parser-visible effects in this package milestone.
+        requirement_refs:
+          - R004
+        source_refs:
+          - css-style-attr-cascade
+      - name: value
+        type: CSS property value
+        cardinality: one per declaration
+        position: after colon
+        constraints:
+          - Values must be interpreted as if the declarations were in a matching CSS style rule, aside from cascade differences.
+        requirement_refs:
+          - R004
+        source_refs:
+          - css-style-attr-cascade
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: SVG elements must support the `style` attribute for element-specific styling.
+    applies_to:
+      - SVG elements
+      - SVGParser.parsePaintAttributes
+    source_refs:
+      - svg2-style-attributes
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: syntax
+    statement: The `style` attribute value must be parsed as a CSS declaration-list.
+    applies_to:
+      - SVGParser.parseInlineCSS
+    source_refs:
+      - svg2-style-attributes
+      - css-style-attr-syntax
+    testability: testable
+    notes:
+      - The local parser tests semicolon-separated declarations, whitespace trimming, malformed declaration skipping, and repeated property overwrite behavior.
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Declarations in a `style` attribute apply to the element that owns the attribute.
+    applies_to:
+      - SVGParser.parsePaintAttributes
+      - SVGParser.parseBasicShapeGeometryProperties
+    source_refs:
+      - css-style-attr-cascade
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Aside from cascade differences, supported declarations in a `style` attribute must be interpreted as if they were given in a CSS style rule applying to the same element.
+    applies_to:
+      - SVGParser.applyCSS
+      - SVGParser.applyPresentationAttributes
+    source_refs:
+      - css-style-attr-cascade
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: cascade
+    statement: Inline style declarations must have author origin and specificity higher than any selector.
+    applies_to:
+      - SVGParser.parsePaintAttributes
+      - SVGParser.parseBasicShapeGeometryProperties
+    source_refs:
+      - css-style-attr-cascade
+    testability: testable
+    notes:
+      - Within the package's supported cascade subset, this means inline declarations override normal class selector declarations for the same property.
+  - id: R006
+    normative_strength: MUST
+    kind: cascade
+    statement: Inline style declarations must override conflicting presentation attributes for the same property in the normal author cascade.
+    applies_to:
+      - SVGParser.parsePaintAttributes
+      - SVGParser.parseBasicShapeGeometryProperties
+    source_refs:
+      - svg2-presentation-attributes
+      - css-style-attr-cascade
+    testability: testable
+    notes:
+      - Presentation attributes are author-level declarations with specificity 0, while style attributes have specificity higher than selectors.
+  - id: R007
+    normative_strength: MUST_NOT
+    kind: structure
+    statement: Once interpreted as a supported global styling attribute, `style` must not also be preserved as an unknown attribute.
+    applies_to:
+      - SVGParser.parseUnknownAttributes
+    source_refs:
+      - svg2-style-attributes
+    testability: testable
+    notes:
+      - This is representation-facing and follows from recognizing `style` as an SVG-defined attribute.
+
+algorithms:
+  - id: ALG001
+    name: Local inline style cascade subset
+    kind: algorithm
+    summary: Apply inherited values, then presentation attributes, then supported class rules, then inline style declarations.
+    steps:
+      - Start with inherited parser attributes for inherited properties.
+      - Apply recognized presentation attributes on the current SVG element.
+      - Apply supported class selector declarations that match the element's class tokens.
+      - Parse the `style` attribute as a declaration-list and apply supported declarations last.
+    preconditions:
+      - SVG XML attributes have already been parsed and normalized by the XML layer.
+      - The package is operating within its current limited selector and property support.
+    postconditions:
+      - Inline style values override conflicting presentation attributes and class style rules for supported properties.
+      - The resulting parsed element attributes expose the winning supported values.
+    requirement_refs:
+      - R002
+      - R003
+      - R005
+      - R006
+    source_refs:
+      - svg2-style-attributes
+      - svg2-presentation-attributes
+      - css-style-attr-cascade
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A fragment inside the style declaration-list does not contain a valid property-value declaration.
+    source_behavior: MUST
+    required_behavior: ignore invalid declaration while preserving other supported declarations
+    decision_required: false
+    source_refs:
+      - css-style-attr-syntax
+  - id: I002
+    condition: An inline style declaration names a property outside the package's supported SVG parser subset.
+    source_behavior: UNSPECIFIED
+    required_behavior: no parser-visible effect for this milestone
+    decision_required: false
+    source_refs:
+      - css-style-attr-cascade
+  - id: I003
+    condition: Multiple CSS style attributes appear on one XML element.
+    source_behavior: SHOULD_NOT
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - css-style-attr-cascade
+
+recommendations:
+  - id: N001
+    normative_strength: RECOMMENDED
+    statement: Document languages should not allow multiple CSS style attributes on a single element.
+    source_refs:
+      - css-style-attr-cascade
+  - id: N002
+    normative_strength: RECOMMENDED
+    statement: Authors are suggested to use styling properties, either through inline style properties or style sheets, rather than presentation attributes for SVG styling.
+    source_refs:
+      - svg2-presentation-attributes
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A supported inline `style` declaration must be applied after presentation attributes and supported class selector rules in this parser's local cascade subset.
+    derived_from:
+      - R005
+      - R006
+    reasoning: SVG presentation attributes participate at author level with specificity 0, normal class selector rules have selector specificity, and style attributes have specificity higher than any selector.
+    source_refs:
+      - svg2-presentation-attributes
+      - css-style-attr-cascade
+
+implementation_choices:
+  - id: IC001
+    topic: CSS declaration-list parser completeness
+    statement: This milestone may use the package's existing simple declaration parser rather than a full CSS tokenizer, while tests cover the supported subset.
+    allowed_by:
+      - Current package scope
+    source_refs:
+      - css-style-attr-syntax
+  - id: IC002
+    topic: Supported property subset
+    statement: This milestone verifies the style attribute mechanism through supported paint and geometry declarations rather than implementing every SVG-required CSS property.
+    allowed_by:
+      - User-directed bullet-by-bullet implementation workflow
+    source_refs:
+      - svg2-style-attributes
+
+ambiguities:
+  - id: A001
+    question: Should the package expose ignored inline declarations or parser diagnostics in a future strict mode?
+    impact: Full CSS forward-compatible parsing can distinguish invalid syntax, unknown properties, unsupported known properties, and invalid values; the current parser silently ignores unsupported fragments.
+    options:
+      - Keep tolerant parser behavior only.
+      - Add diagnostics without changing tolerant parsing.
+      - Add a strict parsing mode.
+    source_refs:
+      - css-style-attr-syntax
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 presentation attributes
+    reason: Needed to determine the cascade relationship between inline style declarations and presentation attributes.
+    source_refs:
+      - svg2-presentation-attributes
+  - id: DEP002
+    kind: source-section
+    title: CSS Style Attributes
+    reason: Defines declaration-list syntax and cascade behavior for CSS style attributes.
+    source_refs:
+      - css-style-attr-syntax
+      - css-style-attr-cascade
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-style-attributes
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-style-attributes
+      - css-style-attr-syntax
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-style-attr-cascade
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-style-attr-cascade
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-style-attr-cascade
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-presentation-attributes
+      - css-style-attr-cascade
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-style-attributes
+    map_item_refs: []

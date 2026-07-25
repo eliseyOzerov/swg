@@ -252,6 +252,34 @@ import Testing
 	#expect(styled.unknownAttributes["stroke-width"] == nil)
 }
 
+@Test func svgParserAppliesInlineStyleAttributeAsDeclarationList() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="black" stroke-width="1">
+		<style>.accent { fill: red; stroke-width: 3; opacity: 0.25; stroke-linecap: butt; }</style>
+		<path
+			id="styled"
+			class="accent"
+			d="M0 0 L10 10"
+			fill="blue"
+			stroke-width="2"
+			style=" fill: blue; stroke-width: 9; opacity: 0.75; stroke-linecap: square; ignored ; fill: #336699; "
+		/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .path(let path) = document.elements.first else {
+		Issue.record("Expected styled path")
+		return
+	}
+
+	#expect(path.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(path.attributes.strokeWidth == 9)
+	#expect(path.attributes.opacity == 0.75)
+	#expect(path.attributes.strokeLineCap == .square)
+	#expect(path.unknownAttributes["style"] == nil)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

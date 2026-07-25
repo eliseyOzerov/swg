@@ -91,7 +91,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Styling and Cascade
 
 - [x] Presentation attributes.
-- [ ] Inline `style` attribute.
+- [x] Inline `style` attribute.
 - [x] `<style>` element.
 - [ ] Inheritance.
 - [ ] `inherit`.
