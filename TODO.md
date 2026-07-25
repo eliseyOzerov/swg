@@ -100,7 +100,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Painting
 
-- [ ] `fill`.
+- [x] `fill`.
 - [ ] `fill-opacity`.
 - [ ] `fill-rule: nonzero`.
 - [ ] `fill-rule: evenodd`.

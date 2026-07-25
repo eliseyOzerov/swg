@@ -1,0 +1,236 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fill
+  title: Fill paint property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of the SVG `fill` property as the paint used for graphical element interiors.
+  non_goals:
+    - "`fill-opacity`, covered by a separate Painting TODO bullet."
+    - "`fill-rule` winding behavior, covered by separate Painting TODO bullets."
+    - Complete `<paint>` grammar coverage beyond the already checked `<paint>` data type bullet.
+    - Rendering-time rasterization of filled interiors, text glyphs, or open subpaths.
+    - Paint server resolution for gradients, radial gradients, and patterns beyond preserving parsed paint references.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-paint
+      title: "SVG 2 Painting: Specifying paint"
+      url: https://www.w3.org/TR/SVG/painting.html#SpecifyingPaint
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-fill-property
+      title: "SVG 2 Painting: Specifying fill paint: the fill property"
+      url: https://www.w3.org/TR/SVG/painting.html#FillProperty
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `fill` as a CSS property whose value is `<paint>`, initial value is black, and inheritance is yes.
+    - Presentation attributes named `fill` participate in the CSS cascade for SVG namespace elements.
+
+scope:
+  includes:
+    - Parser output for the supported `fill` property on SVG shapes and renderable containers.
+    - Initial `fill` value of black.
+    - Inheritance of `fill` from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Supported `<paint>` values represented by `SVGPaint`.
+  excludes:
+    - Computing the exact painted interior geometry.
+    - Applying `fill` to text glyph rendering.
+    - Resolving paint server URLs to concrete gradients or patterns.
+    - Unsupported CSS selector specificity and external style sheets.
+  assumptions:
+    - The parser represents fill paint symbolically in `SVGPaintAttributes.fill`.
+    - Existing `<paint>` data type tests define the supported paint grammar subset for this bullet.
+    - Rendering adapters will later consume the parsed `fill` value when producing CGPath or SwiftUI output.
+
+terminology:
+  - id: term-fill
+    term: fill
+    definition: The painting operation that paints the interior of a shape or text glyph.
+    source_refs:
+      - svg2-paint
+      - svg2-fill-property
+  - id: term-fill-property
+    term: fill property
+    definition: The SVG/CSS property that specifies the paint used to render the interior of a graphical element.
+    source_refs:
+      - svg2-fill-property
+  - id: term-paint
+    term: paint
+    definition: A value that can represent no paint, a solid color, a paint server URL with optional fallback, or context paint.
+    source_refs:
+      - svg2-paint
+
+structures:
+  - id: S001
+    name: Fill parser state
+    kind: structure
+    source_refs:
+      - svg2-fill-property
+    fields:
+      - name: fill
+        type: SVGPaint
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is black.
+          - Property is inherited.
+          - Value grammar is the supported `<paint>` subset.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-fill-property
+          - svg2-paint
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser-visible `fill` property must accept supported `<paint>` values.
+    applies_to:
+      - fill
+    source_refs:
+      - svg2-fill-property
+      - svg2-paint
+    testability: testable
+    notes:
+      - Complete color and paint server feature coverage remains split across separate TODO bullets.
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: An element with no cascaded or inherited `fill` declaration must use black as the initial fill paint.
+    applies_to:
+      - fill
+    source_refs:
+      - svg2-fill-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: The `fill` property must inherit from the parent element when no winning declaration sets it on the child.
+    applies_to:
+      - fill
+    source_refs:
+      - svg2-fill-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: ordering
+    statement: Supported `fill` declarations must participate in the parser's supported cascade subset for presentation attributes, class style rules, and inline style declarations.
+    applies_to:
+      - fill presentation attributes
+      - fill declarations in style rules
+      - fill declarations in inline style attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-fill-property
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `fill` value uses a valid SVG paint feature outside the package's current supported `<paint>` subset.
+    source_behavior: MUST
+    required_behavior: Leave the existing fill value unchanged until that paint feature has its own supported parser representation and test coverage.
+    decision_required: false
+    source_refs:
+      - svg2-paint
+      - svg2-fill-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must prove initial black fill, inherited fill, explicit `none`, and cascade override behavior for `fill`.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+    reasoning: These cases cover `fill` as a property distinct from the broader `<paint>` data type and neighboring opacity/rule bullets.
+    source_refs:
+      - svg2-fill-property
+      - svg2-styling-presentation-attributes
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-visible representation
+    statement: The package may expose `fill` as `SVGPaintAttributes.fill` instead of resolving it immediately to platform drawing state.
+    allowed_by:
+      - Current parser architecture
+      - Renderer integration boundary
+    source_refs:
+      - svg2-fill-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG paint value grammar
+    reason: The `fill` property uses `<paint>` as its value type.
+    source_refs:
+      - svg2-paint
+  - id: DEP002
+    kind: source-section
+    title: SVG presentation attributes
+    reason: The `fill` presentation attribute participates in CSS cascade behavior.
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-fill-property
+      - svg2-paint
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-fill-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-fill-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-fill-property
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-fill-property
+      - svg2-styling-presentation-attributes
+    map_item_refs: []

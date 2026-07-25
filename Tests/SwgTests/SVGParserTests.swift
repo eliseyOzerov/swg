@@ -304,6 +304,44 @@ import Testing
 	#expect(path.attributes.opacity == 0.5)
 }
 
+@Test func svgParserAppliesFillPaintInitialInheritanceAndCascade() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>.accent { fill: #336699; }</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" fill="red">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="none" d="M0 0 L10 10" fill="none"/>
+			<path id="classed" class="accent" d="M0 0 L10 10"/>
+			<path id="inline" class="accent" d="M0 0 L10 10" style="fill: blue"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.fill == .color(.black))
+	#expect(paths["inherited"]?.attributes.fill == .color(.red))
+	#expect(paths["none"]?.attributes.fill == SVGPaint.none)
+	#expect(paths["classed"]?.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(paths["inline"]?.attributes.fill == .color(.blue))
+}
+
 @Test func svgParserInheritsOnlyInheritedPresentationProperties() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
