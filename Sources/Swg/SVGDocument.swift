@@ -2,13 +2,15 @@ import Foundation
 
 /// A parsed SVG document with a view box, element tree, and definitions registry.
 public struct SVGDocument: Equatable, Sendable {
+	public var id: String?
 	public var viewBox: Rect
 	public var elements: [SVGElement]
 	public var defs: SVGDefs
 	public var language: String?
 	public var unknownAttributes: [String: String]
 
-	public init(viewBox: Rect, elements: [SVGElement], defs: SVGDefs = SVGDefs(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String? = nil, viewBox: Rect, elements: [SVGElement], defs: SVGDefs = SVGDefs(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
 		self.viewBox = viewBox
 		self.elements = elements
 		self.defs = defs

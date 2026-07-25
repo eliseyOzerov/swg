@@ -129,6 +129,36 @@ import Testing
 	#expect(text.spans[2].language == nil)
 }
 
+@Test func svgParserPreservesSVGIDAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" id="root-icon" viewBox="0 0 20 20">
+		<g id="layer-1">
+			<path id="mark-1" d="M0 0 L10 10"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.id == "root-icon")
+	#expect(document.unknownAttributes["id"] == nil)
+	#expect(document.elementIDs == ["layer-1", "mark-1"])
+
+	guard case .group(let group) = document.elements.first else {
+		Issue.record("Expected root element to be a group")
+		return
+	}
+	#expect(group.id == "layer-1")
+	#expect(group.unknownAttributes["id"] == nil)
+
+	guard case .path(let path) = group.children.first else {
+		Issue.record("Expected child element to be a path")
+		return
+	}
+	#expect(path.id == "mark-1")
+	#expect(path.unknownAttributes["id"] == nil)
+}
+
 @Test func svgParserDecodesXMLPredefinedEntitiesAndCharacterReferences() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

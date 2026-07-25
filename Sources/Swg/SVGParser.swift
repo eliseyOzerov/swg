@@ -23,6 +23,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	]
 
 	private var viewBox: Rect = .zero
+	private var rootID: String?
 	private var rootWidth: Double?
 	private var rootHeight: Double?
 	private var rootLanguage: String?
@@ -75,7 +76,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		} else {
 			resolvedViewBox = Rect(x: 0, y: 0, width: 100, height: 100)
 		}
-		return SVGDocument(viewBox: resolvedViewBox, elements: rootElements, defs: defs, language: rootLanguage, unknownAttributes: rootUnknownAttributes)
+		return SVGDocument(id: rootID, viewBox: resolvedViewBox, elements: rootElements, defs: defs, language: rootLanguage, unknownAttributes: rootUnknownAttributes)
 	}
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
@@ -231,6 +232,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func reset() {
 		viewBox = .zero
+		rootID = nil
 		rootWidth = nil
 		rootHeight = nil
 		rootLanguage = nil
@@ -674,6 +676,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseSVGRoot(_ attributes: [String: String]) {
+		rootID = attributes["id"]
 		if let vb = attributes["viewBox"] {
 			let parts = vb.split(whereSeparator: { $0 == " " || $0 == "," }).compactMap { Double($0) }
 			if parts.count == 4 {

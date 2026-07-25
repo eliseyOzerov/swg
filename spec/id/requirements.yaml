@@ -1,0 +1,128 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: id
+  title: SVG id attribute parsing
+  domain: SVG 2
+  profile: null
+  summary: Preserve SVG id attributes as element identity metadata, including the root svg element.
+  non_goals:
+    - Validate XML Name syntax for id values.
+    - Reject duplicate, empty, or whitespace-containing id values.
+    - Resolve URL fragment references by id.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-id
+      title: SVG 2 Document Structure, Attributes common to all elements id
+      url: https://www.w3.org/TR/SVG/struct.html#IDAttribute
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - id as a core SVG attribute available on SVG elements.
+    - Root svg id metadata.
+    - Parsed child element id metadata.
+    - Excluding interpreted id attributes from unknown attribute preservation.
+  excludes:
+    - Enforcing id uniqueness across the node tree.
+    - XML validity checks for id syntax.
+    - Fragment reference lookup by id.
+  assumptions:
+    - Existing generated IDs for elements without explicit id attributes remain a library-level convenience and are not treated as SVG-authored IDs.
+
+terminology:
+  - id: term-id
+    term: id
+    definition: A core SVG attribute that reflects the element's ID and identifies a node within the SVG node tree.
+    source_refs:
+      - svg2-id
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The id attribute must be treated as a core SVG attribute that can be specified on any SVG element.
+    applies_to:
+      - SVG elements
+    source_refs:
+      - svg2-id
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The id attribute must reflect the element's ID.
+    applies_to:
+      - SVG elements
+    source_refs:
+      - svg2-id
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: conformance
+    statement: A valid id value must be unique within the node tree, must not be empty, and must not contain whitespace.
+    applies_to:
+      - SVG documents
+    source_refs:
+      - svg2-id
+    testability: reviewable
+    notes:
+      - This parser bullet preserves IDs; validity enforcement can be added separately if strict validation mode is introduced.
+  - id: R004
+    normative_strength: SHOULD
+    kind: behavior
+    statement: User agents should process id values in SVG files irrespective of XML validity.
+    applies_to:
+      - SVG user agents
+    source_refs:
+      - svg2-id
+    testability: reviewable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Duplicate, empty, whitespace-containing, or XML-invalid id value.
+    source_behavior: invalid document content
+    required_behavior: preserve and process the supplied id value in tolerant parser mode
+    decision_required: false
+    source_refs:
+      - svg2-id
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Missing id attributes
+    statement: Elements without explicit id attributes may retain generated internal IDs for current library compatibility.
+    allowed_by:
+      - Existing swg API shape
+    source_refs:
+      - svg2-id
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-id
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-id
+    map_item_refs: []
