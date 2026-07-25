@@ -72,9 +72,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Coordinate Systems and Transforms
 
-- [x] User coordinate system.
-- [x] Viewport coordinate system.
-- [x] `viewBox` to viewport transform.
 - [x] `preserveAspectRatio` `none`.
 - [x] `preserveAspectRatio` meet.
 - [x] `preserveAspectRatio` slice.
@@ -90,12 +87,8 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Styling and Cascade
 
-- [x] Presentation attributes.
 - [x] Inline `style` attribute.
 - [x] `<style>` element.
-- [x] Inheritance.
-- [x] `inherit`.
-- [x] `currentColor`.
 - [x] `<style>` `media`.
 
 ## Painting
@@ -113,7 +106,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `stroke-linejoin: miter`.
 - [x] `stroke-linejoin: round`.
 - [x] `stroke-linejoin: bevel`.
-- [ ] `stroke-miterlimit`.
+- [x] `stroke-miterlimit`.
 - [ ] `stroke-dasharray`.
 - [ ] `stroke-dashoffset`.
 - [ ] `paint-order`.

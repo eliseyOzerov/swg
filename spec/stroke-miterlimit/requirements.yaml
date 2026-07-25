@@ -1,0 +1,248 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stroke-miterlimit
+  title: Stroke miterlimit property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of `stroke-miterlimit`, including initial value, inheritance, valid non-negative numbers, and invalid negative values.
+  non_goals:
+    - Renderer computation of miter length.
+    - Renderer conversion of miter joins to bevel joins when the limit is exceeded.
+    - The `miter-clip` and `arcs` line join values.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-stroke-miterlimit-property
+      title: "SVG 2 Painting: Controlling line joins: the stroke-linejoin and stroke-miterlimit properties"
+      url: https://www.w3.org/TR/SVG/painting.html#StrokeMiterlimitProperty
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `stroke-miterlimit` with value grammar `<number>`, initial value `4`, inheritance yes, percentages not applicable, and computed value as specified.
+    - SVG 2 defines the value as the limit on miter, miter-clip, or arcs join extent as a multiple of `stroke-width`.
+    - SVG 2 states that negative `stroke-miterlimit` values must be treated as illegal values.
+    - SVG 2 explicitly notes that earlier errors for values between 0 and 1 were not well implemented; this work item treats non-negative fractional numbers as valid.
+    - SVG presentation attributes participate in styling, so `stroke-miterlimit` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `stroke-miterlimit` property on SVG shapes and renderable containers.
+    - Initial `stroke-miterlimit` value of `4`.
+    - Explicit non-negative numeric `stroke-miterlimit` declarations and presentation attributes.
+    - Inheritance from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Negative or malformed `stroke-miterlimit` values leaving the current inherited or default value unchanged.
+  excludes:
+    - Renderer behavior when miter length exceeds the limit.
+    - Path geometry and miter length calculations.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The parser stores `stroke-miterlimit` as a numeric value in the package's existing style state.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+
+terminology:
+  - id: term-stroke-miterlimit
+    term: stroke-miterlimit
+    definition: The SVG property that limits the extent of miter, miter-clip, or arcs joins as a multiple of stroke width.
+    source_refs:
+      - svg2-stroke-miterlimit-property
+
+structures:
+  - id: S001
+    name: Stroke miterlimit parser state
+    kind: structure
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    fields:
+      - name: strokeMiterLimit
+        type: number
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is `4`.
+          - Valid parser-visible values are non-negative numbers.
+          - The property is inherited.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-stroke-miterlimit-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `stroke-miterlimit` property must accept non-negative numbers as valid specified values.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `stroke-miterlimit` value must be `4`.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`stroke-miterlimit` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "The computed value for `stroke-miterlimit` must remain the specified number."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `stroke-miterlimit` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-miterlimit-property
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: During rendering, `stroke-miterlimit` must limit the extent of miter, miter-clip, or arcs line joins as a multiple of `stroke-width`.
+    applies_to:
+      - SVG stroke rendering
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the value for renderer consumption; renderer geometry coverage is outside this work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `stroke-miterlimit` value is negative.
+    source_behavior: REQUIRED
+    required_behavior: The value is illegal and must leave the current inherited or default parser-visible value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-miterlimit-property
+  - id: I002
+    condition: A `stroke-miterlimit` value is not a number.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-miterlimit-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `stroke-miterlimit` declaration must expose the inherited numeric value from its parent.
+    derived_from:
+      - R003
+      - R004
+    reasoning: Because `stroke-miterlimit` is inherited and computed as specified, inherited parser state must preserve the numeric value.
+    source_refs:
+      - svg2-stroke-miterlimit-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may represent SVG `stroke-miterlimit` with its existing numeric style field.
+    allowed_by:
+      - The source defines behavior and value semantics, not programming-language storage details.
+    source_refs:
+      - svg2-stroke-miterlimit-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`stroke-miterlimit` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-miterlimit-property
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_or_unsupported_input
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    map_item_refs: []
+  - item_id: I002
+    item_type: invalid_or_unsupported_input
+    source_refs:
+      - svg2-stroke-miterlimit-property
+    map_item_refs: []

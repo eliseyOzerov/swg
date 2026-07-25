@@ -708,6 +708,53 @@ import Testing
 	#expect(paths["invalid"]?.attributes.strokeLineJoin == .round)
 }
 
+@Test func svgParserAppliesStrokeMiterLimitInitialInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.tight { stroke-miterlimit: 0.5; }
+			.negative { stroke-miterlimit: -1; }
+		</style>
+		<path id="initial" d="M0 0 L10 10 L10 0"/>
+		<g id="parent" stroke-miterlimit="7">
+			<path id="inherited" d="M0 0 L10 10 L10 0"/>
+			<path id="attribute" d="M0 0 L10 10 L10 0" stroke-miterlimit="9"/>
+			<path id="class-rule" class="tight" d="M0 0 L10 10 L10 0"/>
+			<path id="inline" class="tight" d="M0 0 L10 10 L10 0" style="stroke-miterlimit: 3"/>
+			<path id="negative-attribute" d="M0 0 L10 10 L10 0" stroke-miterlimit="-2"/>
+			<path id="negative-class" class="negative" d="M0 0 L10 10 L10 0"/>
+			<path id="invalid" d="M0 0 L10 10 L10 0" stroke-miterlimit="bogus"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.strokeMiterLimit == 4)
+	#expect(paths["inherited"]?.attributes.strokeMiterLimit == 7)
+	#expect(paths["attribute"]?.attributes.strokeMiterLimit == 9)
+	#expect(paths["class-rule"]?.attributes.strokeMiterLimit == 0.5)
+	#expect(paths["inline"]?.attributes.strokeMiterLimit == 3)
+	#expect(paths["negative-attribute"]?.attributes.strokeMiterLimit == 7)
+	#expect(paths["negative-class"]?.attributes.strokeMiterLimit == 7)
+	#expect(paths["invalid"]?.attributes.strokeMiterLimit == 7)
+}
+
 @Test func svgParserAppliesFillOpacityInitialInheritancePercentagesAndClamping() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

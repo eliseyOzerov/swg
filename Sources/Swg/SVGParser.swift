@@ -1208,7 +1208,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let value = attributes["stroke-miterlimit"] {
 			if isInheritKeyword(value) {
 				result.strokeMiterLimit = inherited.strokeMiterLimit
-			} else if let number = parseNumber(value) {
+			} else if let number = parseNumber(value), number >= 0 {
 				result.strokeMiterLimit = number
 			}
 		}
