@@ -4,14 +4,16 @@ import Foundation
 public struct SVGDocument: Equatable, Sendable {
 	public var id: String?
 	public var viewBox: Rect
+	public var preserveAspectRatio: SVGPreserveAspectRatio
 	public var elements: [SVGElement]
 	public var defs: SVGDefs
 	public var language: String?
 	public var unknownAttributes: [String: String]
 
-	public init(id: String? = nil, viewBox: Rect, elements: [SVGElement], defs: SVGDefs = SVGDefs(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String? = nil, viewBox: Rect, preserveAspectRatio: SVGPreserveAspectRatio = .default, elements: [SVGElement], defs: SVGDefs = SVGDefs(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.viewBox = viewBox
+		self.preserveAspectRatio = preserveAspectRatio
 		self.elements = elements
 		self.defs = defs
 		self.language = language
@@ -237,23 +239,58 @@ public struct SVGViewportData: Equatable, Sendable {
 	public let width: Double
 	public let height: Double
 	public let viewBox: Rect?
+	public let preserveAspectRatio: SVGPreserveAspectRatio
 	public let attributes: SVGPaintAttributes
 	public let children: [SVGElement]
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio = .default, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.x = x
 		self.y = y
 		self.width = width
 		self.height = height
 		self.viewBox = viewBox
+		self.preserveAspectRatio = preserveAspectRatio
 		self.attributes = attributes
 		self.children = children
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
+}
+
+/// How an SVG `viewBox` is aligned within its viewport.
+public struct SVGPreserveAspectRatio: Equatable, Sendable {
+	public var align: SVGPreserveAspectRatioAlign
+	public var meetOrSlice: SVGMeetOrSlice?
+
+	public static let `default` = SVGPreserveAspectRatio(align: .xMidYMid, meetOrSlice: .meet)
+
+	public init(align: SVGPreserveAspectRatioAlign = .xMidYMid, meetOrSlice: SVGMeetOrSlice? = .meet) {
+		self.align = align
+		self.meetOrSlice = align == .none ? nil : meetOrSlice ?? .meet
+	}
+}
+
+/// Alignment keywords supported by SVG `preserveAspectRatio`.
+public enum SVGPreserveAspectRatioAlign: Equatable, Hashable, Sendable {
+	case none
+	case xMinYMin
+	case xMidYMin
+	case xMaxYMin
+	case xMinYMid
+	case xMidYMid
+	case xMaxYMid
+	case xMinYMax
+	case xMidYMax
+	case xMaxYMax
+}
+
+/// Uniform scaling mode used by SVG `preserveAspectRatio`.
+public enum SVGMeetOrSlice: Equatable, Hashable, Sendable {
+	case meet
+	case slice
 }
 
 /// Data for an unknown SVG element preserved as a renderable container.

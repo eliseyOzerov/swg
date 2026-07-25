@@ -23,6 +23,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	]
 
 	private var viewBox: Rect = .zero
+	private var rootPreserveAspectRatio: SVGPreserveAspectRatio = .default
 	private var rootID: String?
 	private var rootWidth: Double?
 	private var rootHeight: Double?
@@ -77,7 +78,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		} else {
 			resolvedViewBox = Rect(x: 0, y: 0, width: 100, height: 100)
 		}
-		return SVGDocument(id: rootID, viewBox: resolvedViewBox, elements: rootElements, defs: defs, language: rootLanguage, unknownAttributes: rootUnknownAttributes)
+		return SVGDocument(id: rootID, viewBox: resolvedViewBox, preserveAspectRatio: rootPreserveAspectRatio, elements: rootElements, defs: defs, language: rootLanguage, unknownAttributes: rootUnknownAttributes)
 	}
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
@@ -243,6 +244,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func reset() {
 		viewBox = .zero
+		rootPreserveAspectRatio = .default
 		rootID = nil
 		rootWidth = nil
 		rootHeight = nil
@@ -346,12 +348,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				y: parseSVGPosition(attributes["y"], percentageBasis: .vertical, context: viewportContext),
 				width: width,
 				height: height,
-				viewBox: attributes["viewBox"].flatMap(parseViewBox)
+				viewBox: attributes["viewBox"].flatMap(parseViewBox),
+				preserveAspectRatio: parsePreserveAspectRatio(attributes["preserveAspectRatio"])
 			),
 			id: id,
 			attributes: attrs,
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "viewBox"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "viewBox", "preserveAspectRatio"])
 		)
 		if inDefs {
 			defsElementStack.append(builder)
@@ -716,13 +719,53 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let vb = attributes["viewBox"], let parsedViewBox = parseViewBox(vb) {
 			viewBox = parsedViewBox
 		}
+		rootPreserveAspectRatio = parsePreserveAspectRatio(attributes["preserveAspectRatio"])
 		let viewportContext = currentViewportContext
 		rootWidth = parseSVGSize(attributes["width"], percentageBasis: .horizontal, context: viewportContext)
 		rootHeight = parseSVGSize(attributes["height"], percentageBasis: .vertical, context: viewportContext)
 		rootLanguage = currentLanguage
 		rootPaintAttributes = parsePaintAttributes(attributes)
-		rootUnknownAttributes = parseUnknownAttributes(attributes, known: ["x", "y", "viewBox", "width", "height"])
+		rootUnknownAttributes = parseUnknownAttributes(attributes, known: ["x", "y", "viewBox", "preserveAspectRatio", "width", "height"])
 		pushViewportContext(width: rootWidth ?? viewportContext.viewportWidth, height: rootHeight ?? viewportContext.viewportHeight, base: viewportContext)
+	}
+
+	private func parsePreserveAspectRatio(_ value: String?) -> SVGPreserveAspectRatio {
+		guard let value else { return .default }
+		let tokens = value.split(whereSeparator: { $0.isWhitespace }).map(String.init)
+		guard tokens.count == 1 || tokens.count == 2 else { return .default }
+		guard let align = parsePreserveAspectRatioAlign(tokens[0]) else { return .default }
+		if align == .none {
+			return SVGPreserveAspectRatio(align: .none, meetOrSlice: nil)
+		}
+		if tokens.count == 2 {
+			guard let meetOrSlice = parseMeetOrSlice(tokens[1]) else { return .default }
+			return SVGPreserveAspectRatio(align: align, meetOrSlice: meetOrSlice)
+		}
+		return SVGPreserveAspectRatio(align: align, meetOrSlice: .meet)
+	}
+
+	private func parsePreserveAspectRatioAlign(_ value: String) -> SVGPreserveAspectRatioAlign? {
+		switch value {
+		case "none": SVGPreserveAspectRatioAlign.none
+		case "xMinYMin": .xMinYMin
+		case "xMidYMin": .xMidYMin
+		case "xMaxYMin": .xMaxYMin
+		case "xMinYMid": .xMinYMid
+		case "xMidYMid": .xMidYMid
+		case "xMaxYMid": .xMaxYMid
+		case "xMinYMax": .xMinYMax
+		case "xMidYMax": .xMidYMax
+		case "xMaxYMax": .xMaxYMax
+		default: nil
+		}
+	}
+
+	private func parseMeetOrSlice(_ value: String) -> SVGMeetOrSlice? {
+		switch value {
+		case "meet": .meet
+		case "slice": .slice
+		default: nil
+		}
 	}
 
 	private func parseViewBox(_ value: String) -> Rect? {
@@ -1001,7 +1044,7 @@ private extension SVGElement {
 private final class SVGElementBuilder {
 	enum Kind {
 		case group
-		case svg(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?)
+		case svg(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio)
 		case unknown(name: String, namespaceURI: String?)
 	}
 
@@ -1024,8 +1067,8 @@ private final class SVGElementBuilder {
 		switch kind {
 		case .group:
 			.group(SVGGroupData(id: id, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
-		case .svg(let x, let y, let width, let height, let viewBox):
-			.svg(SVGViewportData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
+		case .svg(let x, let y, let width, let height, let viewBox, let preserveAspectRatio):
+			.svg(SVGViewportData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .unknown(let name, let namespaceURI):
 			.unknown(SVGUnknownElementData(id: id, name: name, namespaceURI: namespaceURI, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		}

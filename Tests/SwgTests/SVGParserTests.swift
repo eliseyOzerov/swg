@@ -154,6 +154,33 @@ import Testing
 	#expect(omitted.height == 80)
 }
 
+@Test func svgParserParsesSVGPreserveAspectRatioValues() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50" preserveAspectRatio="none slice">
+		<svg id="slice" width="40" height="20" viewBox="0 0 10 10" preserveAspectRatio="xMaxYMin slice"/>
+		<svg id="defaulted" width="40" height="20" viewBox="0 0 10 10"/>
+		<svg id="invalid" width="40" height="20" viewBox="0 0 10 10" preserveAspectRatio="xMiddleYMiddle crop"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	#expect(document.preserveAspectRatio == SVGPreserveAspectRatio(align: .none, meetOrSlice: nil))
+
+	let viewports = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGViewportData)? in
+		if case .svg(let viewport) = element {
+			return (viewport.id, viewport)
+		}
+		return nil
+	})
+	let slice = try #require(viewports["slice"])
+	let defaulted = try #require(viewports["defaulted"])
+	let invalid = try #require(viewports["invalid"])
+
+	#expect(slice.preserveAspectRatio == SVGPreserveAspectRatio(align: .xMaxYMin, meetOrSlice: .slice))
+	#expect(defaulted.preserveAspectRatio == .default)
+	#expect(invalid.preserveAspectRatio == .default)
+}
+
 @Test func svgParserUsesFunctionalURLParserForLocalResourceReferences() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

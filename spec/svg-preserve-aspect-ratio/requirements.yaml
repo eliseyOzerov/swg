@@ -1,0 +1,268 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: svg-preserve-aspect-ratio
+  title: svg preserveAspectRatio attribute
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture parser-visible SVG 2 behavior for the svg element's
+    preserveAspectRatio attribute and its defaults.
+  non_goals:
+    - Computing or applying the equivalent viewBox transform.
+    - Validating rendering output for none, meet, or slice.
+    - preserveAspectRatio on marker, pattern, symbol, or view.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-svg-preserve-aspect-ratio
+      title: Document and Container Elements - svg preserveAspectRatio
+      artifact_path: spec/svg-preserve-aspect-ratio/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-svg
+      title: SVG 2 Document Structure - The svg element
+      url: https://www.w3.org/TR/SVG2/struct.html#SVGElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-coords-preserve-aspect-ratio
+      title: SVG 2 Coordinate Systems - The preserveAspectRatio attribute
+      url: https://www.w3.org/TR/SVG2/coords.html#PreserveAspectRatioAttribute
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-coords-viewport-transform
+      title: SVG 2 Coordinate Systems - Computing the equivalent transform of an SVG viewport
+      url: https://www.w3.org/TR/SVG2/coords.html#ComputingAViewportsTransform
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - >
+      SVG 2 defines preserveAspectRatio as an attribute on svg and uses its
+      align and meetOrSlice values when computing the equivalent viewport
+      transform.
+
+scope:
+  includes:
+    - Parsing preserveAspectRatio on outermost svg elements.
+    - Parsing preserveAspectRatio on embedded svg elements.
+    - Recognizing valid align keywords and optional meet/slice keywords.
+    - Applying the SVG 2 default align and meetOrSlice values when omitted.
+  excludes:
+    - Applying transforms to paths or descendants.
+    - Distinguishing CSS property cascade from XML presentation attributes.
+    - Other element types that also use preserveAspectRatio.
+  assumptions:
+    - >
+      Parser support may normalize omitted meetOrSlice to meet because the
+      viewport transform algorithm uses meet when the value is missing.
+    - >
+      Parser support may normalize meetOrSlice to absent when align is none
+      because meet and slice are ignored for non-uniform scaling.
+
+terminology:
+  - id: term-preserve-aspect-ratio
+    term: preserveAspectRatio
+    definition: >
+      An SVG attribute that controls whether a viewBox is scaled uniformly and
+      how it is aligned inside the SVG viewport.
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+  - id: term-align
+    term: align
+    definition: >
+      The first preserveAspectRatio component; it is none or one of the xMin,
+      xMid, xMax combined with YMin, YMid, or YMax alignment keywords.
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+  - id: term-meet-or-slice
+    term: meetOrSlice
+    definition: >
+      The optional second preserveAspectRatio component; meet preserves the
+      entire viewBox within the viewport and slice covers the viewport.
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+
+structures:
+  - id: S001
+    name: preserveAspectRatio value
+    kind: structure
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+    fields:
+      - name: align
+        type: keyword
+        cardinality: required-or-defaulted
+        position: first
+        constraints:
+          - Default is xMidYMid when preserveAspectRatio is not defined.
+          - none permits non-uniform scaling.
+          - xMinYMin, xMidYMin, xMaxYMin, xMinYMid, xMidYMid, xMaxYMid, xMinYMax, xMidYMax, and xMaxYMax force uniform scaling.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-coords-preserve-aspect-ratio
+          - svg2-coords-viewport-transform
+      - name: meetOrSlice
+        type: keyword
+        cardinality: optional-or-defaulted
+        position: second
+        constraints:
+          - Default is meet when preserveAspectRatio is not defined or the component is missing.
+          - If present, it must be separated from align by one or more spaces.
+          - Valid values are meet and slice.
+        requirement_refs:
+          - R001
+          - R004
+        source_refs:
+          - svg2-coords-preserve-aspect-ratio
+          - svg2-coords-viewport-transform
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      The svg element supports the preserveAspectRatio attribute together with
+      viewBox.
+    applies_to:
+      - svg element
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-preserve-aspect-ratio
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      If preserveAspectRatio is omitted, the align value used for viewport
+      transform behavior is xMidYMid.
+    applies_to:
+      - svg element
+    source_refs:
+      - svg2-coords-viewport-transform
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      The align component must distinguish none from the nine uniform-scaling
+      alignment keywords.
+    applies_to:
+      - preserveAspectRatio value
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      If meetOrSlice is omitted or preserveAspectRatio is omitted, the value
+      used for viewport transform behavior is meet; if present it must be meet
+      or slice.
+    applies_to:
+      - preserveAspectRatio value
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+      - svg2-coords-viewport-transform
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: preserveAspectRatio contains an unrecognized align or meetOrSlice keyword
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      A parser that preserves svg viewport metadata must retain parsed
+      preserveAspectRatio values on both outermost and embedded svg elements so
+      later coordinate-system code can compute the equivalent viewport transform.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+    reasoning: >
+      The viewport transform algorithm depends on the element's
+      preserveAspectRatio value, so losing it during parsing would make later
+      conforming transform behavior impossible.
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+      - svg2-coords-viewport-transform
+
+implementation_choices:
+  - id: IC001
+    topic: Invalid values
+    statement: >
+      Until full attribute error handling exists, invalid preserveAspectRatio
+      strings may be treated as omitted and therefore use the default value.
+    allowed_by:
+      - I001
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 viewBox attribute
+    reason: >
+      preserveAspectRatio affects the mapping of a viewBox rectangle to an SVG
+      viewport.
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+      - svg2-coords-viewport-transform
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-svg
+      - svg2-coords-preserve-aspect-ratio
+    map_item_refs:
+      - document-container-elements-svg-preserve-aspect-ratio
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-coords-viewport-transform
+    map_item_refs:
+      - document-container-elements-svg-preserve-aspect-ratio
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+    map_item_refs:
+      - document-container-elements-svg-preserve-aspect-ratio
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-coords-preserve-aspect-ratio
+      - svg2-coords-viewport-transform
+    map_item_refs:
+      - document-container-elements-svg-preserve-aspect-ratio

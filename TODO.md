@@ -31,7 +31,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<svg>` nested viewport behavior.
 - [x] `<svg>` `x`, `y`, `width`, `height`.
 - [x] `<svg>` `viewBox`.
-- [ ] `<svg>` `preserveAspectRatio`.
+- [x] `<svg>` `preserveAspectRatio`.
 - [x] `<g>`.
 - [ ] `<defs>`.
 - [ ] `<symbol>`.
