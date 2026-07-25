@@ -137,6 +137,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "view":
 			parseView(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .skipped
+		case "a":
+			parseLinkStart(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .linkContainer
 		case "style":
 			inStyleElement = true
 			styleText = ""
@@ -227,6 +230,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			finalizeSymbolElement()
 			popViewportContext()
 		case "switch":
+			finalizeContainerElement()
+		case "a":
 			finalizeContainerElement()
 		case "style":
 			styleText += characterBuffer
@@ -405,6 +410,35 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
+	private func parseLinkStart(_ attributes: [String: String]) {
+		let attrs = parsePaintAttributes(attributes)
+		let id = resolveID(attributes["id"], elementName: "A")
+		let builder = SVGElementBuilder(
+			kind: .link(
+				href: hasOpenLinkAncestor ? nil : parseRawHref(attributes),
+				target: attributes["target"] ?? "_self",
+				download: attributes["download"],
+				ping: attributes["ping"],
+				rel: attributes["rel"],
+				hreflang: attributes["hreflang"],
+				type: attributes["type"],
+				referrerPolicy: attributes["referrerpolicy"],
+				xlinkTitle: xlinkAttribute("title", in: attributes)
+			),
+			id: id,
+			attributes: attrs,
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "target", "download", "ping", "rel", "hreflang", "type", "referrerpolicy", "xlink:title"])
+		)
+		if !symbolElementStack.isEmpty {
+			symbolElementStack.append(builder)
+		} else if inDefs {
+			defsElementStack.append(builder)
+		} else if !inClipPath && !inMask {
+			elementStack.append(builder)
+		}
+	}
+
 	private func parseView(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "View")
 		defs.views[id] = SVGViewData(
@@ -513,6 +547,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseHref(_ attributes: [String: String]) -> String? {
 		guard let raw = attributes["href"] ?? xlinkAttribute("href", in: attributes), let reference = SVGURLParser.parse(raw) else { return nil }
 		return reference.localFragmentID ?? reference.rawValue
+	}
+
+	private func parseRawHref(_ attributes: [String: String]) -> String? {
+		guard let raw = attributes["href"] ?? xlinkAttribute("href", in: attributes), let reference = SVGURLParser.parse(raw) else { return nil }
+		return reference.rawValue
 	}
 
 	private func parseUse(_ attributes: [String: String]) {
@@ -772,6 +811,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private var currentOpenContainerBuilder: SVGElementBuilder? {
 		symbolElementStack.last ?? defsElementStack.last ?? elementStack.last
+	}
+
+	private var hasOpenLinkAncestor: Bool {
+		symbolElementStack.contains { $0.isLink } || defsElementStack.contains { $0.isLink } || elementStack.contains { $0.isLink }
 	}
 
 	private func conditionalAttributesPass(_ attributes: [String: String]) -> Bool {
@@ -1173,6 +1216,7 @@ private enum SVGParsedElementRole {
 	case normal
 	case svgContainer
 	case switchContainer
+	case linkContainer
 	case unknownContainer
 	case skipped
 }
@@ -1207,6 +1251,7 @@ private extension SVGElement {
 		case .polyline(let data): data.id
 		case .group(let data): data.id
 		case .switch(let data): data.id
+		case .link(let data): data.id
 		case .svg(let data): data.id
 		case .unknown(let data): data.id
 		case .use(let data): data.id
@@ -1221,6 +1266,7 @@ private final class SVGElementBuilder {
 	enum Kind {
 		case group
 		case `switch`
+		case link(href: String?, target: String, download: String?, ping: String?, rel: String?, hreflang: String?, type: String?, referrerPolicy: String?, xlinkTitle: String?)
 		case svg(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio)
 		case symbol(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio, refX: String?, refY: String?)
 		case unknown(name: String, namespaceURI: String?)
@@ -1248,6 +1294,13 @@ private final class SVGElementBuilder {
 		return false
 	}
 
+	var isLink: Bool {
+		if case .link = kind {
+			return true
+		}
+		return false
+	}
+
 	init(kind: Kind, id: String, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
 		self.kind = kind
 		self.id = id
@@ -1262,6 +1315,8 @@ private final class SVGElementBuilder {
 			.group(SVGGroupData(id: id, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .switch:
 			.switch(SVGSwitchData(id: id, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
+		case .link(let href, let target, let download, let ping, let rel, let hreflang, let type, let referrerPolicy, let xlinkTitle):
+			.link(SVGLinkData(id: id, href: href, target: target, download: download, ping: ping, rel: rel, hreflang: hreflang, type: type, referrerPolicy: referrerPolicy, xlinkTitle: xlinkTitle, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .svg(let x, let y, let width, let height, let viewBox, let preserveAspectRatio):
 			.svg(SVGViewportData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .symbol:
@@ -1275,7 +1330,7 @@ private final class SVGElementBuilder {
 		switch kind {
 		case .symbol(let x, let y, let width, let height, let viewBox, let preserveAspectRatio, let refX, let refY):
 			SVGSymbolData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, refX: refX, refY: refY, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes)
-		case .group, .switch, .svg, .unknown:
+		case .group, .switch, .link, .svg, .unknown:
 			SVGSymbolData(id: id, x: 0, y: 0, width: 0, height: 0, viewBox: nil, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes)
 		}
 	}

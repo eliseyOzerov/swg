@@ -463,6 +463,77 @@ import Testing
 	#expect(plain.unknownAttributes == ["data-empty": "yes"])
 }
 
+@Test func svgParserPreservesAnchorLinksAsRenderableContainers() throws {
+	let svg = #"""
+	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 20 20" lang="en">
+		<a id="docs" href="icons.svg?name=A&amp;mode=1#icon" xlink:href="#fallback" target="_blank" download="icon.svg" ping="https://example.com/ping" rel="external help" hreflang="en" type="image/svg+xml" referrerpolicy="no-referrer" xlink:title="Docs" fill="#336699" data-note="kept">
+			<path id="linked-path" d="M0 0 L1 1"/>
+			<a id="nested" href="https://example.com/nested">
+				<path id="nested-path" d="M1 1 L2 2"/>
+			</a>
+		</a>
+		<a id="legacy" xlink:href="#legacy-target">
+			<path id="legacy-path" d="M2 2 L3 3"/>
+		</a>
+		<a id="placeholder">
+			<path id="placeholder-path" d="M3 3 L4 4"/>
+		</a>
+	</svg>
+	"""#
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["docs", "linked-path", "nested", "nested-path", "legacy", "legacy-path", "placeholder", "placeholder-path"])
+
+	guard case .link(let docs) = document.elements.first else {
+		Issue.record("Expected first root element to be an anchor link")
+		return
+	}
+	#expect(docs.id == "docs")
+	#expect(docs.href == "icons.svg?name=A&mode=1#icon")
+	#expect(docs.target == "_blank")
+	#expect(docs.download == "icon.svg")
+	#expect(docs.ping == "https://example.com/ping")
+	#expect(docs.rel == "external help")
+	#expect(docs.hreflang == "en")
+	#expect(docs.type == "image/svg+xml")
+	#expect(docs.referrerPolicy == "no-referrer")
+	#expect(docs.xlinkTitle == "Docs")
+	#expect(docs.language == "en")
+	#expect(docs.unknownAttributes == ["data-note": "kept"])
+	#expect(docs.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(docs.children.count == 2)
+
+	guard case .path(let linkedPath) = docs.children.first else {
+		Issue.record("Expected anchor child to be a path")
+		return
+	}
+	#expect(linkedPath.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .link(let nested) = docs.children.dropFirst().first else {
+		Issue.record("Expected nested anchor to be preserved as a link container")
+		return
+	}
+	#expect(nested.id == "nested")
+	#expect(nested.href == nil)
+	#expect(nested.target == "_self")
+	#expect(nested.children.count == 1)
+
+	guard case .link(let legacy) = document.elements.dropFirst().first else {
+		Issue.record("Expected second root element to be a legacy xlink anchor")
+		return
+	}
+	#expect(legacy.href == "#legacy-target")
+
+	guard case .link(let placeholder) = document.elements.dropFirst(2).first else {
+		Issue.record("Expected third root element to be an inactive anchor")
+		return
+	}
+	#expect(placeholder.href == nil)
+	#expect(placeholder.target == "_self")
+	#expect(placeholder.children.count == 1)
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

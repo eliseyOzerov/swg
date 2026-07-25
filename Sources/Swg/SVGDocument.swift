@@ -68,6 +68,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 	case polyline(SVGPolygonData)
 	case group(SVGGroupData)
 	case `switch`(SVGSwitchData)
+	case link(SVGLinkData)
 	case svg(SVGViewportData)
 	case unknown(SVGUnknownElementData)
 	case use(SVGUseData)
@@ -85,6 +86,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 		case .polyline(let data): [data.id]
 		case .group(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .switch(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
+		case .link(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .svg(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .unknown(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .use(let data): [data.id]
@@ -249,6 +251,41 @@ public struct SVGSwitchData: Equatable, Sendable {
 
 	public init(id: String, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
+		self.attributes = attributes
+		self.children = children
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<a>` hyperlink container element.
+public struct SVGLinkData: Equatable, Sendable {
+	public let id: String
+	public let href: String?
+	public let target: String
+	public let download: String?
+	public let ping: String?
+	public let rel: String?
+	public let hreflang: String?
+	public let type: String?
+	public let referrerPolicy: String?
+	public let xlinkTitle: String?
+	public let attributes: SVGPaintAttributes
+	public let children: [SVGElement]
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, href: String? = nil, target: String = "_self", download: String? = nil, ping: String? = nil, rel: String? = nil, hreflang: String? = nil, type: String? = nil, referrerPolicy: String? = nil, xlinkTitle: String? = nil, attributes: SVGPaintAttributes, children: [SVGElement], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.href = href
+		self.target = target
+		self.download = download
+		self.ping = ping
+		self.rel = rel
+		self.hreflang = hreflang
+		self.type = type
+		self.referrerPolicy = referrerPolicy
+		self.xlinkTitle = xlinkTitle
 		self.attributes = attributes
 		self.children = children
 		self.language = language

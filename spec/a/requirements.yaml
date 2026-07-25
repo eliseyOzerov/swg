@@ -1,0 +1,382 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: a
+  title: a element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the a element as a renderable
+    hyperlink container that can preserve its link destination, target, link
+    metadata, paint attributes, and child graphics.
+  non_goals:
+    - Fetching, downloading, navigating, or activating links.
+    - Hit-testing, focus handling, keyboard activation, or browsing context security.
+    - Full HTML hyperlink processing for rel, ping, referrerpolicy, or download.
+    - Text content extraction for the DOM text IDL attribute.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-a
+      title: Document and Container Elements - a
+      artifact_path: spec/a/requirements.yaml
+  canonical_sources:
+    - id: svg2-linking-a
+      title: SVG 2 Linking - Links out of SVG content, the a element
+      url: https://www.w3.org/TR/SVG2/linking.html#AElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-linking-url-ref
+      title: SVG 2 Linking - URL reference attributes
+      url: https://www.w3.org/TR/SVG2/linking.html#linkRefAttrs
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - Recognizing a as a renderable container element.
+    - Preserving child renderable elements under a.
+    - Preserving href, xlink:href fallback, and href precedence.
+    - Preserving target and link metadata attributes.
+    - Preserving inactive placeholder links when href and xlink:href are absent.
+    - Preserving paint attributes and language inheritance on a.
+  excludes:
+    - Link activation and remote resource fetching.
+    - Browsing context selection and security restrictions.
+    - Pointer event hit region calculation.
+    - Keyboard focusability and DOM interface behavior.
+    - Full validation of target XML names and HTML-defined link metadata values.
+  assumptions:
+    - >
+      A parser-oriented implementation may represent an inactive a element with
+      no resolved href while preserving its children and attributes.
+    - >
+      Nested a elements are syntactically invalid by content model; for
+      robustness, if encountered they can be preserved as inactive link
+      containers rather than discarded.
+
+terminology:
+  - id: term-a
+    term: a
+    definition: >
+      The SVG hyperlink element, categorized as both a container element and a
+      renderable element.
+    source_refs:
+      - svg2-linking-a
+  - id: term-inactive-placeholder
+    term: inactive placeholder
+    definition: >
+      An a element without href or xlink:href that does not form an active link.
+    source_refs:
+      - svg2-linking-a
+  - id: term-target
+    term: target
+    definition: >
+      The browsing context name or keyword used when a link is activated.
+    source_refs:
+      - svg2-linking-a
+
+structures:
+  - id: S001
+    name: hyperlink container
+    kind: structure
+    source_refs:
+      - svg2-linking-a
+    fields:
+      - name: href
+        type: URL reference
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - An a element forms a link when href or xlink:href is present.
+          - href takes precedence over deprecated xlink:href when both are present.
+          - Without href or xlink:href, a is an inactive placeholder.
+        requirement_refs:
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-linking-a
+          - svg2-linking-url-ref
+      - name: target
+        type: string
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Initial value is _self.
+          - Values include _self, _parent, _top, _blank, or an XML Name.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-linking-a
+      - name: download
+        type: string
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - If non-empty, represents a suggested file name.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-linking-a
+      - name: ping
+        type: string
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - A space-separated list of non-empty URL tokens.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-linking-a
+      - name: rel
+        type: string
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - A space-separated list of keyword tokens.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-linking-a
+      - name: hreflang
+        type: string
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - A BCP 47 language tag string.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-linking-a
+      - name: type
+        type: string
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - A MIME type string.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-linking-a
+      - name: referrerpolicy
+        type: string
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - A referrer policy string.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-linking-a
+      - name: children
+        type: svg-element-list
+        cardinality: zero-or-more
+        position: content
+        constraints:
+          - a is a container element.
+          - Content follows the parent's content model, except another a element is excluded.
+        requirement_refs:
+          - R001
+          - R007
+        source_refs:
+          - svg2-linking-a
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: An a element must be treated as an SVG renderable container element.
+    applies_to:
+      - a element
+    source_refs:
+      - svg2-linking-a
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      An a element forms an active link if it has an href or xlink:href
+      attribute.
+    applies_to:
+      - a element
+    source_refs:
+      - svg2-linking-a
+      - svg2-linking-url-ref
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      An a element without href and xlink:href must be represented as an
+      inactive placeholder rather than discarded.
+    applies_to:
+      - a element
+    source_refs:
+      - svg2-linking-a
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      href must be used in preference to deprecated xlink:href when both are
+      provided; xlink:href is used as a fallback when href is absent.
+    applies_to:
+      - a href parsing
+    source_refs:
+      - svg2-linking-url-ref
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: value
+    statement: >
+      target has an initial value of _self and may contain _self, _parent, _top,
+      _blank, or an XML Name.
+    applies_to:
+      - a target
+    source_refs:
+      - svg2-linking-a
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      a supports the link metadata attributes download, ping, rel, hreflang,
+      type, and referrerpolicy.
+    applies_to:
+      - a element
+    source_refs:
+      - svg2-linking-a
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST_NOT
+    kind: structure
+    statement: >
+      The content model of a excludes another a element.
+    applies_to:
+      - a descendants
+    source_refs:
+      - svg2-linking-a
+    testability: reviewable
+    notes:
+      - Robust parser handling of invalid nested a input is an implementation choice.
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Nested a element inside an a element.
+    source_behavior: MUST_NOT
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-linking-a
+  - id: I002
+    condition: Invalid target XML Name.
+    source_behavior: SHOULD_NOT
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-linking-a
+
+recommendations:
+  - id: N001
+    normative_strength: SHOULD
+    statement: >
+      target names should not start with an underscore unless they are one of
+      the defined keywords.
+    source_refs:
+      - svg2-linking-a
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: nested links
+    statement: >
+      Preserve invalid nested a elements as inactive renderable containers so
+      their graphics remain available while avoiding nested active hyperlinks.
+    allowed_by:
+      - R001
+      - R007
+      - I001
+    source_refs:
+      - svg2-linking-a
+  - id: IC002
+    topic: URL storage
+    statement: >
+      Store the parsed href URL reference as a string and leave URL fetching or
+      resolution to later rendering/linking stages.
+    allowed_by:
+      - R002
+    source_refs:
+      - svg2-linking-a
+      - svg2-linking-url-ref
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: URL reference attributes
+    reason: Defines href and deprecated xlink:href precedence.
+    source_refs:
+      - svg2-linking-url-ref
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-linking-a
+    map_item_refs:
+      - document-container-elements-a
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-linking-a
+      - svg2-linking-url-ref
+    map_item_refs:
+      - document-container-elements-a
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-linking-a
+    map_item_refs:
+      - document-container-elements-a
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-linking-url-ref
+    map_item_refs:
+      - document-container-elements-a
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-linking-a
+    map_item_refs:
+      - document-container-elements-a
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-linking-a
+    map_item_refs:
+      - document-container-elements-a
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-linking-a
+    map_item_refs:
+      - document-container-elements-a
