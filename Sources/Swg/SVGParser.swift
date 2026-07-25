@@ -1217,8 +1217,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let value = attributes["stroke-opacity"] {
 			if isInheritKeyword(value) {
 				result.strokeOpacity = inherited.strokeOpacity
-			} else if let number = parseNumber(value) {
-				result.strokeOpacity = number
+			} else if let alpha = parseAlphaValue(value) {
+				result.strokeOpacity = alpha
 			}
 		}
 		if let value = attributes["opacity"] {

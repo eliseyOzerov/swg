@@ -392,6 +392,52 @@ import Testing
 	#expect(paths["invalid"]?.attributes.stroke == .color(.red))
 }
 
+@Test func svgParserAppliesStrokeOpacityInitialInheritancePercentagesAndClamping() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.soft { stroke-opacity: 50%; }
+			.high { stroke-opacity: 2; }
+			.low { stroke-opacity: -25%; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" stroke-opacity="0.25">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="percentage" class="soft" d="M0 0 L10 10"/>
+			<path id="high" class="high" d="M0 0 L10 10"/>
+			<path id="low" class="low" d="M0 0 L10 10"/>
+			<path id="inline" class="soft" d="M0 0 L10 10" style="stroke-opacity: 75%"/>
+			<path id="invalid" d="M0 0 L10 10" stroke-opacity="bad"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.strokeOpacity == 1)
+	#expect(paths["inherited"]?.attributes.strokeOpacity == 0.25)
+	#expect(paths["percentage"]?.attributes.strokeOpacity == 0.5)
+	#expect(paths["high"]?.attributes.strokeOpacity == 1)
+	#expect(paths["low"]?.attributes.strokeOpacity == 0)
+	#expect(paths["inline"]?.attributes.strokeOpacity == 0.75)
+	#expect(paths["invalid"]?.attributes.strokeOpacity == 0.25)
+}
+
 @Test func svgParserAppliesFillOpacityInitialInheritancePercentagesAndClamping() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

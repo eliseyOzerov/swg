@@ -1,0 +1,278 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stroke-opacity
+  title: Stroke paint opacity property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of `stroke-opacity` as the alpha applied to stroke painting operations.
+  non_goals:
+    - The `opacity` group opacity property.
+    - The `fill-opacity` property, covered by a separate Painting TODO bullet.
+    - Rendering-time compositing of stroked geometry.
+    - Complete CSS math or calc() support for alpha values.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-stroke-opacity-property
+      title: "SVG 2 Painting: Stroke paint opacity: the stroke-opacity property"
+      url: https://www.w3.org/TR/SVG/painting.html#StrokeOpacity
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `stroke-opacity` with value `<alpha-value>`, initial value 1, inheritance yes, and computed value clamped to [0,1].
+    - SVG 2 describes both number and percentage forms for stroke opacity values.
+    - SVG presentation attributes participate in styling, so `stroke-opacity` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `stroke-opacity` property on SVG shapes and renderable containers.
+    - Initial `stroke-opacity` value of 1.
+    - Inheritance of `stroke-opacity` from parent elements.
+    - Number alpha values.
+    - Percentage alpha values mapped to the 0...1 range.
+    - Clamping parsed values outside 0...1.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Invalid `stroke-opacity` values leaving the current inherited or default value unchanged.
+  excludes:
+    - Renderer compositing and actual alpha blending.
+    - CSS calc(), variables, or math functions.
+    - The `opacity` group property.
+  assumptions:
+    - The parser stores the computed-enough alpha as a Double in `SVGPaintAttributes.strokeOpacity`.
+    - Invalid values leave the current inherited or default parser-visible value unchanged.
+
+terminology:
+  - id: term-stroke-opacity
+    term: stroke-opacity
+    definition: The property that specifies the opacity of the painting operation used to stroke an object.
+    source_refs:
+      - svg2-stroke-opacity-property
+  - id: term-alpha-value
+    term: alpha-value
+    definition: A number or percentage alpha value where 0 is fully transparent and 1 is fully opaque.
+    source_refs:
+      - svg2-stroke-opacity-property
+
+structures:
+  - id: S001
+    name: Stroke opacity parser state
+    kind: structure
+    source_refs:
+      - svg2-stroke-opacity-property
+    fields:
+      - name: strokeOpacity
+        type: Double
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is 1.
+          - Parsed computed value is clamped to the inclusive range 0...1.
+          - The property is inherited.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+          - R005
+        source_refs:
+          - svg2-stroke-opacity-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `stroke-opacity` property must accept `<alpha-value>`.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-opacity-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `stroke-opacity` value must be 1.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-opacity-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`stroke-opacity` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-opacity-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: A numeric `stroke-opacity` value must represent opacity on the 0 to 1 scale.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-opacity-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: range
+    statement: Values outside the 0 to 1 range must be clamped into that range.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-opacity-property
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: Percentage `stroke-opacity` values must be interpreted as percentages of the 0 to 1 opacity range.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-opacity-property
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `stroke-opacity` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-opacity-property
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST
+    kind: behavior
+    statement: The current object's stroke painting operation must use the current `stroke-opacity` value.
+    applies_to:
+      - SVG stroke painting
+    source_refs:
+      - svg2-stroke-opacity-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the value for renderer consumption; renderer coverage is outside this work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `stroke-opacity` value is malformed or unsupported by the parser.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-opacity-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `stroke-opacity` declaration must expose the inherited parent stroke opacity.
+    derived_from:
+      - R003
+    reasoning: Because `stroke-opacity` is inherited, inherited parser state must preserve the parent's supported alpha value.
+    source_refs:
+      - svg2-stroke-opacity-property
+  - id: D002
+    normative_strength: MUST
+    statement: A `stroke-opacity` percentage below 0% must compute to 0 and above 100% must compute to 1.
+    derived_from:
+      - R005
+      - R006
+    reasoning: Percentages map to the 0 to 1 alpha range, and values outside that range are clamped.
+    source_refs:
+      - svg2-stroke-opacity-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may expose clamped `stroke-opacity` as a Double on `SVGPaintAttributes` without performing renderer compositing.
+    allowed_by:
+      - The source defines computed value and painting behavior, not parser storage shape.
+    source_refs:
+      - svg2-stroke-opacity-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`stroke-opacity` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-opacity-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-opacity-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-opacity-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-opacity-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-opacity-property
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-opacity-property
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-opacity-property
+    map_item_refs: []
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-opacity-property
+    map_item_refs: []
