@@ -534,6 +534,40 @@ import Testing
 	#expect(placeholder.children.count == 1)
 }
 
+@Test func svgParserPreservesTitleElementsAsNonRenderedMetadata() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
+		<title id="root-title">Root English</title>
+		<title id="root-nl" lang="nl">Wortel Nederlands</title>
+		<g id="icon">
+			<title id="icon-gb" lang="en-gb">Favourite</title>
+			<title id="icon-us" lang="en-US">Favorite</title>
+			<path id="mark" d="M0 0 L1 1">
+				<title id="mark-symbol" lang="">★</title>
+			</path>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser(languagePreferences: ["en-US"]).parse(svg))
+
+	#expect(document.elementIDs == ["icon", "mark"])
+	#expect(document.rootTitles.map(\.id) == ["root-title", "root-nl"])
+	#expect(document.rootTitles.map(\.text) == ["Root English", "Wortel Nederlands"])
+	#expect(document.rootTitles.map(\.language) == ["en", "nl"])
+	#expect(document.selectedTitle?.text == "Root English")
+
+	let iconTitles = try #require(document.elementTitles["icon"])
+	#expect(iconTitles.map(\.id) == ["icon-gb", "icon-us"])
+	#expect(iconTitles.map(\.language) == ["en-gb", "en-US"])
+	#expect(document.selectedElementTitles["icon"]?.text == "Favorite")
+
+	let markTitles = try #require(document.elementTitles["mark"])
+	#expect(markTitles.map(\.text) == ["★"])
+	#expect(markTitles.map(\.language) == [""])
+	#expect(document.selectedElementTitles["mark"]?.text == "★")
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

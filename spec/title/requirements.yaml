@@ -1,0 +1,322 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: title
+  title: title element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the title element as
+    never-rendered descriptive text that supplies a short text alternative for
+    its parent element.
+  non_goals:
+    - Exposing values through platform accessibility APIs.
+    - Tooltip presentation or browser tab presentation.
+    - Full SVG Accessibility API Mappings name computation.
+    - Preserving markup structure inside title text.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-title
+      title: Document and Container Elements - title
+      artifact_path: spec/title/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-desc-title
+      title: SVG 2 Document Structure - The desc and title elements
+      url: https://www.w3.org/TR/SVG2/struct.html#DescriptionAndTitleElements
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-struct-title
+      title: SVG 2 Document Structure - The title element
+      url: https://www.w3.org/TR/SVG2/struct.html#TitleElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - Recognizing title as an SVG descriptive element.
+    - Preserving title text content as plain text metadata.
+    - Associating each title with its direct parent element.
+    - Keeping title out of the renderable element tree.
+    - Preserving title language metadata from lang and xml:lang.
+    - Selecting the title whose language best matches parser language preferences.
+  excludes:
+    - Platform accessibility API integration.
+    - Tooltip rendering.
+    - DOM interface conformance.
+    - Markup-preserving title content.
+    - Complete BCP 47 language matching beyond conservative prefix handling.
+  assumptions:
+    - >
+      A parser-oriented implementation may store title records separately from
+      the renderable SVG element tree, keyed by parent element identity.
+    - >
+      Plain text content is sufficient for this bullet because SVG 2 only
+      requires plain text content to be exposed to assistive technologies.
+
+terminology:
+  - id: term-descriptive-element
+    term: descriptive element
+    definition: >
+      An SVG element that provides supplementary descriptive information about
+      its parent, including desc, metadata, and title.
+    source_refs:
+      - svg2-struct-desc-title
+  - id: term-title
+    term: title
+    definition: >
+      A never-rendered descriptive element that represents a short text
+      alternative for its parent element.
+    source_refs:
+      - svg2-struct-title
+
+structures:
+  - id: S001
+    name: title text alternative
+    kind: structure
+    source_refs:
+      - svg2-struct-title
+    fields:
+      - name: text
+        type: string
+        cardinality: one
+        position: text-content
+        constraints:
+          - Title content is text for the parent element.
+          - Markup inside title contributes plain text for this work item.
+        requirement_refs:
+          - R002
+          - R007
+        source_refs:
+          - svg2-struct-desc-title
+          - svg2-struct-title
+      - name: language
+        type: language-tag-or-empty
+        cardinality: zero-or-one
+        position: inherited-or-explicit-attribute
+        constraints:
+          - Multiple sibling title elements must have different languages.
+          - Empty-string language is a lowest-priority match for any user.
+        requirement_refs:
+          - R004
+          - R005
+        source_refs:
+          - svg2-struct-desc-title
+      - name: parent
+        type: svg-element-reference
+        cardinality: one
+        position: parent-link
+        constraints:
+          - Any container or graphics element can have zero or more title children.
+        requirement_refs:
+          - R001
+          - R003
+        source_refs:
+          - svg2-struct-desc-title
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: >
+      Any SVG container or graphics element may have zero or more title elements
+      as children.
+    applies_to:
+      - title parent elements
+    source_refs:
+      - svg2-struct-desc-title
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      A title element represents a short text alternative for its parent element.
+    applies_to:
+      - title element
+    source_refs:
+      - svg2-struct-title
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: >
+      Title elements must not be visually rendered as part of the graphics.
+    applies_to:
+      - title element
+    source_refs:
+      - svg2-struct-desc-title
+      - svg2-struct-title
+    testability: testable
+    notes:
+      - SVG 2 specifies that the user agent stylesheet forces display:none for title.
+  - id: R004
+    normative_strength: MUST
+    kind: language
+    statement: >
+      Multiple sibling title elements must have different languages as defined
+      by lang or xml:lang on the title or an ancestor.
+    applies_to:
+      - sibling title elements
+    source_refs:
+      - svg2-struct-desc-title
+    testability: reviewable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: selection
+    statement: >
+      A user agent must select the title element whose language best matches
+      user language preferences; if multiple equally valid matches exist, the
+      first match should be used.
+    applies_to:
+      - sibling title elements
+    source_refs:
+      - svg2-struct-desc-title
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: selection
+    statement: >
+      If no matching title exists, the first title element must be selected;
+      a title with an empty-string language tag is a lowest-priority match for
+      any user.
+    applies_to:
+      - sibling title elements
+    source_refs:
+      - svg2-struct-desc-title
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: content
+    statement: >
+      Only the plain text content of title elements is required to be exposed to
+      assistive technologies.
+    applies_to:
+      - title content
+    source_refs:
+      - svg2-struct-desc-title
+    testability: testable
+    notes: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Empty or whitespace-only title text.
+    source_behavior: MUST_NOT
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-struct-desc-title
+
+recommendations:
+  - id: N001
+    normative_strength: SHOULD
+    statement: Authors should provide a title child element to the root svg element within a stand-alone SVG document.
+    source_refs:
+      - svg2-struct-title
+  - id: N002
+    normative_strength: SHOULD
+    statement: Interactive user agents should make plain title text available in response to user interaction.
+    source_refs:
+      - svg2-struct-title
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: storage
+    statement: >
+      Store title records outside the renderable element tree, with root-level
+      titles separated from element-keyed title lists.
+    allowed_by:
+      - R002
+      - R003
+    source_refs:
+      - svg2-struct-desc-title
+      - svg2-struct-title
+  - id: IC002
+    topic: plain text extraction
+    statement: >
+      Normalize title character data as plain text and flatten descendant markup
+      into its character content.
+    allowed_by:
+      - R007
+    source_refs:
+      - svg2-struct-desc-title
+
+ambiguities:
+  - id: A001
+    question: How exactly should best-match language negotiation rank all BCP 47 subtags?
+    impact: >
+      SVG 2 requires best matching but delegates detailed language preferences to
+      the user agent; this parser uses conservative exact and prefix matching.
+    options:
+      - Exact-match first, then prefix-match, then empty-language fallback, then first title.
+      - Integrate a complete BCP 47 language negotiation algorithm later.
+    source_refs:
+      - svg2-struct-desc-title
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: lang and xml:lang attributes
+    reason: Title language selection depends on inherited or explicit language metadata.
+    source_refs:
+      - svg2-struct-desc-title
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-desc-title
+    map_item_refs:
+      - document-container-elements-title
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-struct-title
+    map_item_refs:
+      - document-container-elements-title
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-struct-desc-title
+      - svg2-struct-title
+    map_item_refs:
+      - document-container-elements-title
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-struct-desc-title
+    map_item_refs:
+      - document-container-elements-title
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-struct-desc-title
+    map_item_refs:
+      - document-container-elements-title
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-struct-desc-title
+    map_item_refs:
+      - document-container-elements-title
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-struct-desc-title
+    map_item_refs:
+      - document-container-elements-title

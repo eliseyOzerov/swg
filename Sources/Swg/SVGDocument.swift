@@ -9,8 +9,12 @@ public struct SVGDocument: Equatable, Sendable {
 	public var defs: SVGDefs
 	public var language: String?
 	public var unknownAttributes: [String: String]
+	public var rootTitles: [SVGTitleData]
+	public var elementTitles: [String: [SVGTitleData]]
+	public var selectedTitle: SVGTitleData?
+	public var selectedElementTitles: [String: SVGTitleData]
 
-	public init(id: String? = nil, viewBox: Rect, preserveAspectRatio: SVGPreserveAspectRatio = .default, elements: [SVGElement], defs: SVGDefs = SVGDefs(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String? = nil, viewBox: Rect, preserveAspectRatio: SVGPreserveAspectRatio = .default, elements: [SVGElement], defs: SVGDefs = SVGDefs(), language: String? = nil, unknownAttributes: [String: String] = [:], rootTitles: [SVGTitleData] = [], elementTitles: [String: [SVGTitleData]] = [:], selectedTitle: SVGTitleData? = nil, selectedElementTitles: [String: SVGTitleData] = [:]) {
 		self.id = id
 		self.viewBox = viewBox
 		self.preserveAspectRatio = preserveAspectRatio
@@ -18,10 +22,29 @@ public struct SVGDocument: Equatable, Sendable {
 		self.defs = defs
 		self.language = language
 		self.unknownAttributes = unknownAttributes
+		self.rootTitles = rootTitles
+		self.elementTitles = elementTitles
+		self.selectedTitle = selectedTitle
+		self.selectedElementTitles = selectedElementTitles
 	}
 
 	public var elementIDs: [String] {
 		elements.flatMap { $0.collectIDs() }
+	}
+}
+
+/// Plain text metadata from an SVG `<title>` descriptive element.
+public struct SVGTitleData: Equatable, Sendable {
+	public let id: String
+	public let text: String
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, text: String, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.text = text
+		self.language = language
+		self.unknownAttributes = unknownAttributes
 	}
 }
 

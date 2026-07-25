@@ -58,6 +58,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var styleText = ""
 	private var styleSheet: [String: [String: String]] = [:]
 	private var characterBuffer = ""
+	private var currentTitle: SVGTitleBuilder?
+	private var rootTitles: [SVGTitleData] = []
+	private var elementTitles: [String: [SVGTitleData]] = [:]
 	private var namespaceStack: [SVGNamespaceContext] = [.empty]
 	private var languageStack: [String?] = [nil]
 	private var viewportContextStack: [SVGLengthContext] = [.default]
@@ -88,11 +91,23 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		} else {
 			resolvedViewBox = Rect(x: 0, y: 0, width: 100, height: 100)
 		}
-		return SVGDocument(id: rootID, viewBox: resolvedViewBox, preserveAspectRatio: rootPreserveAspectRatio, elements: rootElements, defs: defs, language: rootLanguage, unknownAttributes: rootUnknownAttributes)
+		return SVGDocument(
+			id: rootID,
+			viewBox: resolvedViewBox,
+			preserveAspectRatio: rootPreserveAspectRatio,
+			elements: rootElements,
+			defs: defs,
+			language: rootLanguage,
+			unknownAttributes: rootUnknownAttributes,
+			rootTitles: rootTitles,
+			elementTitles: elementTitles,
+			selectedTitle: selectTitle(rootTitles),
+			selectedElementTitles: elementTitles.compactMapValues(selectTitle)
+		)
 	}
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
-		if !inText {
+		if !inText && currentTitle == nil {
 			characterBuffer = ""
 		}
 
@@ -105,6 +120,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let expandedName = namespaceContext.expandedElementName(for: elementName)
 		let parsedElement = SVGParsedElement(localName: expandedName.localName, namespaceURI: expandedName.namespaceURI)
 		parsedElementStack.append(parsedElement)
+		if currentTitle != nil {
+			parsedElementStack[parsedElementStack.count - 1].role = .titleContent
+			return
+		}
 		guard parsedElement.isSVGElement else { return }
 		let elementName = parsedElement.localName
 		if parsedElement.hasSkippedAncestor(in: parsedElementStack.dropLast()) {
@@ -126,6 +145,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				parsedElementStack[parsedElementStack.count - 1].role = .svgContainer
 			} else {
 				parseSVGRoot(attributes)
+				parsedElementStack[parsedElementStack.count - 1].role = .svgRoot
 			}
 		case "defs":
 			inDefs = true
@@ -140,6 +160,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "a":
 			parseLinkStart(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .linkContainer
+		case "title":
+			parseTitleStart(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .title
 		case "style":
 			inStyleElement = true
 			styleText = ""
@@ -181,6 +204,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "g":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Group")
+			setCurrentParsedElementID(id)
 			let builder = SVGElementBuilder(kind: .group, id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
 			if !symbolElementStack.isEmpty {
 				symbolElementStack.append(builder)
@@ -209,7 +233,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if !languageStack.isEmpty { languageStack.removeLast() }
 		}
 		guard let parsedElement, parsedElement.isSVGElement else {
-			characterBuffer = ""
+			if currentTitle == nil {
+				characterBuffer = ""
+			}
+			return
+		}
+		if parsedElement.role == .titleContent {
 			return
 		}
 		if parsedElement.role == .skipped {
@@ -233,6 +262,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			finalizeContainerElement()
 		case "a":
 			finalizeContainerElement()
+		case "title":
+			finalizeTitle()
 		case "style":
 			styleText += characterBuffer
 			characterBuffer = ""
@@ -321,6 +352,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		styleText = ""
 		styleSheet = [:]
 		characterBuffer = ""
+		currentTitle = nil
+		rootTitles = []
+		elementTitles = [:]
 		namespaceStack = [.empty]
 		languageStack = [nil]
 		viewportContextStack = [.default]
@@ -333,37 +367,44 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if let d = attributes["d"] {
 				let attrs = parsePaintAttributes(attributes)
 				let id = resolveID(attributes["id"], elementName: "Path")
+				setCurrentParsedElementID(id)
 				appendElement(.path(SVGPathData(id: id, d: d, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["d"]))))
 			}
 			return true
 		case "rect":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Rect")
+			setCurrentParsedElementID(id)
 			appendElement(.rect(SVGRectData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "rx", "ry"]))))
 			return true
 		case "circle":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Circle")
+			setCurrentParsedElementID(id)
 			appendElement(.circle(SVGCircleData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), r: double(attributes["r"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "r"]))))
 			return true
 		case "ellipse":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Ellipse")
+			setCurrentParsedElementID(id)
 			appendElement(.ellipse(SVGEllipseData(id: id, cx: double(attributes["cx"]), cy: double(attributes["cy"]), rx: double(attributes["rx"]), ry: double(attributes["ry"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["cx", "cy", "rx", "ry"]))))
 			return true
 		case "line":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Line")
+			setCurrentParsedElementID(id)
 			appendElement(.line(SVGLineData(id: id, x1: double(attributes["x1"]), y1: double(attributes["y1"]), x2: double(attributes["x2"]), y2: double(attributes["y2"]), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["x1", "y1", "x2", "y2"]))))
 			return true
 		case "polygon":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Polygon")
+			setCurrentParsedElementID(id)
 			appendElement(.polygon(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["points"]))))
 			return true
 		case "polyline":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Polyline")
+			setCurrentParsedElementID(id)
 			appendElement(.polyline(SVGPolygonData(id: id, points: parsePoints(attributes["points"] ?? ""), attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["points"]))))
 			return true
 		default:
@@ -374,6 +415,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseSymbolStart(_ attributes: [String: String]) {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: "Symbol")
+		setCurrentParsedElementID(id)
 		let viewportContext = currentViewportContext
 		let width = parseSVGSize(attributes["width"], percentageBasis: .horizontal, context: viewportContext)
 		let height = parseSVGSize(attributes["height"], percentageBasis: .vertical, context: viewportContext)
@@ -400,6 +442,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseSwitchStart(_ attributes: [String: String]) {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: "Switch")
+		setCurrentParsedElementID(id)
 		let builder = SVGElementBuilder(kind: .switch, id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
 		if !symbolElementStack.isEmpty {
 			symbolElementStack.append(builder)
@@ -413,6 +456,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseLinkStart(_ attributes: [String: String]) {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: "A")
+		setCurrentParsedElementID(id)
 		let builder = SVGElementBuilder(
 			kind: .link(
 				href: hasOpenLinkAncestor ? nil : parseRawHref(attributes),
@@ -441,6 +485,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseView(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "View")
+		setCurrentParsedElementID(id)
 		defs.views[id] = SVGViewData(
 			id: id,
 			viewBox: attributes["viewBox"].flatMap(parseViewBox),
@@ -454,6 +499,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseUnknownElementStart(_ elementName: String, namespaceURI: String?, attributes: [String: String]) {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: elementName)
+		setCurrentParsedElementID(id)
 		let builder = SVGElementBuilder(kind: .unknown(name: elementName, namespaceURI: namespaceURI), id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
 		if !symbolElementStack.isEmpty {
 			symbolElementStack.append(builder)
@@ -467,6 +513,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseNestedSVGStart(_ attributes: [String: String]) {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: "SVG")
+		setCurrentParsedElementID(id)
 		let viewportContext = currentViewportContext
 		let width = parseSVGSize(attributes["width"], percentageBasis: .horizontal, context: viewportContext)
 		let height = parseSVGSize(attributes["height"], percentageBasis: .vertical, context: viewportContext)
@@ -556,6 +603,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseUse(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "Use")
+		setCurrentParsedElementID(id)
 		let href = parseHref(attributes) ?? ""
 		let viewportContext = currentViewportContext
 		appendElement(.use(SVGUseData(
@@ -573,6 +621,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseImage(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "Image")
+		setCurrentParsedElementID(id)
 		let href = (attributes["href"] ?? xlinkAttribute("href", in: attributes)).flatMap { SVGURLParser.parse($0)?.rawValue } ?? ""
 		appendElement(.image(SVGImageData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), href: href, attributes: parsePaintAttributes(attributes), language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y", "width", "height"]))))
 	}
@@ -585,8 +634,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		inText = true
 		xmlSpaceStack = [parseXMLSpace(attributes["xml:space"], inherited: .default)]
 		let attrs = parsePaintAttributes(attributes)
+		let id = resolveID(attributes["id"], elementName: "Text")
+		setCurrentParsedElementID(id)
 		textBuilder = SVGTextBuilder(
-			id: resolveID(attributes["id"], elementName: "Text"),
+			id: id,
 			x: double(attributes["x"]),
 			y: double(attributes["y"]),
 			fontSize: double(attributes["font-size"]),
@@ -597,6 +648,33 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			language: currentLanguage,
 			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "font-size", "font-family", "font-weight", "text-anchor"])
 		)
+	}
+
+	private func parseTitleStart(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "Title")
+		setCurrentParsedElementID(id)
+		let parent = currentDescriptiveParent()
+		currentTitle = SVGTitleBuilder(
+			id: id,
+			parentID: parent.id,
+			isRootTitle: parent.isRoot,
+			language: parseDescriptiveLanguage(attributes),
+			unknownAttributes: parseUnknownAttributes(attributes, known: []),
+			xmlSpaceMode: parseXMLSpace(attributes["xml:space"], inherited: .default)
+		)
+	}
+
+	private func finalizeTitle() {
+		guard let currentTitle else { return }
+		let text = normalizeTextWhitespace(characterBuffer, mode: currentTitle.xmlSpaceMode)
+		let title = SVGTitleData(id: currentTitle.id, text: text, language: currentTitle.language, unknownAttributes: currentTitle.unknownAttributes)
+		if currentTitle.isRootTitle {
+			rootTitles.append(title)
+		} else if let parentID = currentTitle.parentID {
+			elementTitles[parentID, default: []].append(title)
+		}
+		self.currentTitle = nil
+		characterBuffer = ""
 	}
 
 	private func parseTSpanStart(_ attributes: [String: String]) {
@@ -667,6 +745,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			return inherited
 		}
 		return rawValue.isEmpty ? nil : rawValue
+	}
+
+	private func parseDescriptiveLanguage(_ attributes: [String: String]) -> String? {
+		if let rawValue = attributes["xml:lang"] ?? attributes["lang"] {
+			return rawValue
+		}
+		return currentLanguage
 	}
 
 	private func parseXMLSpace(_ value: String?, inherited: SVGXMLSpaceMode) -> SVGXMLSpaceMode {
@@ -813,6 +898,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		symbolElementStack.last ?? defsElementStack.last ?? elementStack.last
 	}
 
+	private func currentDescriptiveParent() -> (isRoot: Bool, id: String?) {
+		guard parsedElementStack.count > 1 else { return (false, nil) }
+		let parent = parsedElementStack[parsedElementStack.count - 2]
+		return (parent.role == .svgRoot, parent.id)
+	}
+
+	private func setCurrentParsedElementID(_ id: String?) {
+		guard !parsedElementStack.isEmpty else { return }
+		parsedElementStack[parsedElementStack.count - 1].id = id
+	}
+
 	private var hasOpenLinkAncestor: Bool {
 		symbolElementStack.contains { $0.isLink } || defsElementStack.contains { $0.isLink } || elementStack.contains { $0.isLink }
 	}
@@ -905,6 +1001,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseSVGRoot(_ attributes: [String: String]) {
 		rootID = attributes["id"]
+		setCurrentParsedElementID(rootID)
 		if let vb = attributes["viewBox"], let parsedViewBox = parseViewBox(vb) {
 			viewBox = parsedViewBox
 		}
@@ -1156,6 +1253,27 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseNumber(_ value: String) -> Double? {
 		SVGNumberParser.parse(value)
 	}
+
+	private func selectTitle(_ titles: [SVGTitleData]) -> SVGTitleData? {
+		guard !titles.isEmpty else { return nil }
+		for preference in languagePreferences {
+			if let exactMatch = titles.first(where: { $0.language?.lowercased() == preference }) {
+				return exactMatch
+			}
+			if let prefixMatch = titles.first(where: { titleLanguageMatches($0.language, preference: preference) }) {
+				return prefixMatch
+			}
+		}
+		if let emptyLanguageMatch = titles.first(where: { $0.language == "" }) {
+			return emptyLanguageMatch
+		}
+		return titles.first
+	}
+
+	private func titleLanguageMatches(_ language: String?, preference: String) -> Bool {
+		guard let language = language?.lowercased(), !language.isEmpty else { return false }
+		return language.hasPrefix("\(preference)-") || preference.hasPrefix("\(language)-")
+	}
 }
 
 private struct SVGNamespaceContext {
@@ -1197,6 +1315,7 @@ private struct SVGParsedElement {
 	var localName: String
 	var namespaceURI: String?
 	var role: SVGParsedElementRole = .normal
+	var id: String?
 
 	var isSVGElement: Bool {
 		guard let namespaceURI else { return true }
@@ -1214,9 +1333,12 @@ private struct SVGParsedElement {
 
 private enum SVGParsedElementRole {
 	case normal
+	case svgRoot
 	case svgContainer
 	case switchContainer
 	case linkContainer
+	case title
+	case titleContent
 	case unknownContainer
 	case skipped
 }
@@ -1361,5 +1483,24 @@ private final class SVGTextBuilder {
 		self.attributes = attributes
 		self.language = language
 		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Mutable builder used during SVG title parsing.
+private final class SVGTitleBuilder {
+	let id: String
+	let parentID: String?
+	let isRootTitle: Bool
+	let language: String?
+	let unknownAttributes: [String: String]
+	let xmlSpaceMode: SVGXMLSpaceMode
+
+	init(id: String, parentID: String?, isRootTitle: Bool, language: String?, unknownAttributes: [String: String], xmlSpaceMode: SVGXMLSpaceMode) {
+		self.id = id
+		self.parentID = parentID
+		self.isRootTitle = isRootTitle
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+		self.xmlSpaceMode = xmlSpaceMode
 	}
 }
