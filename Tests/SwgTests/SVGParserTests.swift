@@ -280,6 +280,30 @@ import Testing
 	#expect(path.unknownAttributes["style"] == nil)
 }
 
+@Test func svgParserAppliesStyleElementsOnlyForMatchingMedia() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>.base { stroke-width: 2; }</style>
+		<style media="screen">.media { fill: #336699; }</style>
+		<style media="print">.media { fill: red; stroke-width: 9; }</style>
+		<style media="print, screen">.listed { stroke: blue; }</style>
+		<style media="all">.all { opacity: 0.5; }</style>
+		<path id="styled" class="base media listed all" d="M0 0 L10 10" fill="black"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .path(let path) = document.elements.first else {
+		Issue.record("Expected styled path")
+		return
+	}
+
+	#expect(path.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(path.attributes.strokeWidth == 2)
+	#expect(path.attributes.stroke == .color(.blue))
+	#expect(path.attributes.opacity == 0.5)
+}
+
 @Test func svgParserInheritsOnlyInheritedPresentationProperties() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

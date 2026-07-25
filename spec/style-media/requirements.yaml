@@ -1,0 +1,318 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: style-media
+  title: style element media attribute
+  domain: SVG 2 / CSS Media Queries
+  profile: null
+  summary: Capture parser-visible handling of the SVG `<style>` element's `media` attribute so embedded style sheets only apply when their media query list matches the parser's supported media context.
+  non_goals:
+    - Full CSS media query feature evaluation.
+    - CSS `@media`, `@import`, and `@charset` rules inside style sheet text.
+    - Alternate style sheet title selection.
+    - Dynamic re-evaluation when the user environment changes.
+    - Full CSS selector support beyond the package's existing class selector subset.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-style-element
+      title: "SVG 2 Styling: Inline style sheets: the style element"
+      url: https://www.w3.org/TR/SVG/styling.html#StyleElement
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: mediaqueries4-media-queries
+      title: "Media Queries Level 4: Media Queries"
+      url: https://www.w3.org/TR/mediaqueries-4/#media-queries
+      version: W3C Candidate Recommendation Draft 19 February 2026
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: mediaqueries4-media-types
+      title: "Media Queries Level 4: Media Types"
+      url: https://www.w3.org/TR/mediaqueries-4/#media-types
+      version: W3C Candidate Recommendation Draft 19 February 2026
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 aligns its `style` element attributes with HTML and gives `media` an initial value of `all`.
+    - SVG 2 says a `media` value is parsed as a media query list and must match for the style sheet to apply.
+    - This package milestone implements media type matching for static SVG parsing, not feature queries.
+
+scope:
+  includes:
+    - Applying style elements with no `media` attribute.
+    - Applying style elements whose media list matches `all` or the parser's supported `screen` context.
+    - Ignoring style elements whose media list contains only non-matching media types such as `print`.
+    - Treating comma-separated media lists as matching if any supported item matches.
+    - Keeping existing class selector parsing and cascade behavior for style sheets that pass media filtering.
+  excludes:
+    - Parenthesized feature queries such as `(color)` or `(min-width: 10px)`.
+    - Boolean media query composition with `and`, `or`, `not`, and `only`.
+    - Runtime environment changes and user-configurable media contexts.
+    - CSS `@media` rules inside style text.
+  assumptions:
+    - The parser's static output is intended for screen-like rendering unless a future API exposes media selection.
+    - Unsupported media query syntax is treated as non-matching for this milestone.
+    - An omitted `media` attribute is equivalent to the spec's unconditional application behavior.
+
+terminology:
+  - id: term-style-element
+    term: style element
+    definition: An SVG never-rendered element whose character data embeds a style sheet directly in SVG content.
+    source_refs:
+      - svg2-style-element
+  - id: term-media-attribute
+    term: media attribute
+    definition: The `style` element attribute whose value is parsed as a media query list and controls whether that style sheet applies.
+    source_refs:
+      - svg2-style-element
+  - id: term-media-query
+    term: media query
+    definition: A logical expression that is true when the optional media type matches the user agent's media type and any media condition is true.
+    source_refs:
+      - mediaqueries4-media-queries
+
+structures:
+  - id: S001
+    name: Supported media context
+    kind: structure
+    source_refs:
+      - mediaqueries4-media-types
+    fields:
+      - name: all
+        type: media-type
+        cardinality: one
+        position: null
+        constraints:
+          - Always matches supported parser output.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-style-element
+          - mediaqueries4-media-types
+      - name: screen
+        type: media-type
+        cardinality: one
+        position: null
+        constraints:
+          - Matches the package's current static rendering context.
+        requirement_refs:
+          - R003
+        source_refs:
+          - mediaqueries4-media-types
+      - name: print
+        type: media-type
+        cardinality: one
+        position: null
+        constraints:
+          - Does not match the package's current static screen rendering context.
+        requirement_refs:
+          - R004
+        source_refs:
+          - mediaqueries4-media-types
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: A `<style>` element without a `media` attribute must apply its style sheet unconditionally.
+    applies_to:
+      - style
+    source_refs:
+      - svg2-style-element
+    testability: testable
+    notes:
+      - SVG 2 gives `media` an initial value of `all` and also states that if not specified the style sheet applies unconditionally.
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A `<style media="all">` style sheet must apply in the supported parser context.
+    applies_to:
+      - style
+      - media
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-types
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: A `<style media="screen">` style sheet must apply in this package's current screen-like static rendering context.
+    applies_to:
+      - style
+      - media
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-types
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: A `<style>` style sheet whose `media` value does not match the supported parser context must not affect parsed element attributes.
+    applies_to:
+      - style
+      - media
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-queries
+    testability: testable
+    notes:
+      - For this milestone, `print` alone is a concrete non-matching media type.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A comma-separated media query list must apply if any supported item in the list matches the parser context.
+    applies_to:
+      - media query list
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-queries
+    testability: testable
+    notes:
+      - This captures media-list OR behavior for supported simple media types.
+
+algorithms:
+  - id: ALG001
+    name: Supported style media filtering
+    kind: algorithm
+    summary: Decide whether to parse and apply an SVG `<style>` element's text based on its media attribute.
+    steps:
+      - If the `media` attribute is absent, apply the style sheet.
+      - Split a present media value on commas to form candidate media queries.
+      - Trim and lowercase each candidate.
+      - Apply the style sheet if any candidate is `all` or `screen`.
+      - Ignore the style sheet if every candidate is empty, unsupported, or a non-matching media type.
+    preconditions:
+      - The element is an SVG `style` element.
+      - The parser is using its current static screen-like media context.
+    postconditions:
+      - Only media-matching style sheets contribute class rules to the parser's supported style sheet map.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-queries
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: The `media` value contains parenthesized media features or boolean operators.
+    source_behavior: MUST
+    required_behavior: Full source behavior requires media query evaluation, but this milestone may treat unsupported query syntax as non-matching.
+    decision_required: false
+    source_refs:
+      - mediaqueries4-media-queries
+  - id: I002
+    condition: The `media` attribute is present but empty or whitespace-only.
+    source_behavior: UNSPECIFIED
+    required_behavior: Treat as non-matching until a fuller CSS media query parser exists.
+    decision_required: false
+    source_refs:
+      - svg2-style-element
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must prove that matching `all` or `screen` style sheets apply and non-matching `print` style sheets do not override them.
+    derived_from:
+      - R002
+      - R003
+      - R004
+    reasoning: The existing parser applied all style sheets unconditionally; the regression risk is a non-matching media style overriding a matching style.
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-queries
+
+implementation_choices:
+  - id: IC001
+    topic: Media context API
+    statement: The package may hard-code a screen-like media context until a public parser option is introduced.
+    allowed_by:
+      - Current parser API
+      - Static SVG parsing scope
+    source_refs:
+      - mediaqueries4-media-queries
+  - id: IC002
+    topic: Unsupported media query syntax
+    statement: The package may leave feature queries and boolean query composition unsupported for this bullet, as long as those style sheets do not apply accidentally.
+    allowed_by:
+      - User-directed bullet-by-bullet implementation workflow
+    source_refs:
+      - mediaqueries4-media-queries
+
+ambiguities:
+  - id: A001
+    question: Should a future parser initializer allow callers to select a media context such as `print`?
+    impact: A configurable context would be necessary for print-targeted SVG conversion, but is not required for the current screen-style parser output.
+    options:
+      - Keep the current implicit screen context.
+      - Add parser configuration for media type and feature values.
+    source_refs:
+      - mediaqueries4-media-queries
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG style element
+    reason: Defines the SVG `style` element and its `media` attribute behavior.
+    source_refs:
+      - svg2-style-element
+  - id: DEP002
+    kind: source-section
+    title: CSS media queries
+    reason: Defines media query truth and media type matching.
+    source_refs:
+      - mediaqueries4-media-queries
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-style-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-types
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-types
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-queries
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-queries
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-style-element
+      - mediaqueries4-media-queries
+    map_item_refs: []

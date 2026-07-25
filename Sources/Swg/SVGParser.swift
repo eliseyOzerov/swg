@@ -60,6 +60,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var inStyleElement = false
 	private var styleText = ""
 	private var styleSheet: [String: [String: String]] = [:]
+	private var styleMediaApplies = true
 	private var characterBuffer = ""
 	private var currentTitle: SVGTitleBuilder?
 	private var rootTitles: [SVGTitleData] = []
@@ -195,6 +196,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			parsedElementStack[parsedElementStack.count - 1].role = .metadata
 		case "style":
 			inStyleElement = true
+			styleMediaApplies = styleMediaMatches(attributes["media"])
 			styleText = ""
 		case "linearGradient":
 			parseLinearGradientStart(attributes)
@@ -307,8 +309,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "style":
 			styleText += characterBuffer
 			characterBuffer = ""
-			parseStyleSheet(styleText)
+			if styleMediaApplies {
+				parseStyleSheet(styleText)
+			}
 			inStyleElement = false
+			styleMediaApplies = true
 		case "linearGradient":
 			if var gradient = currentLinearGradient {
 				gradient.stops = currentGradientStops
@@ -391,6 +396,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		inStyleElement = false
 		styleText = ""
 		styleSheet = [:]
+		styleMediaApplies = true
 		characterBuffer = ""
 		currentTitle = nil
 		rootTitles = []
@@ -972,6 +978,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			let className = nsCSS.substring(with: match.range(at: 1))
 			let body = nsCSS.substring(with: match.range(at: 2))
 			styleSheet[className] = parseInlineCSS(body)
+		}
+	}
+
+	private func styleMediaMatches(_ media: String?) -> Bool {
+		guard let media else { return true }
+		let queries = media.split(separator: ",")
+		guard !queries.isEmpty else { return false }
+		return queries.contains { query in
+			switch String(query).trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+			case "all", "screen": true
+			default: false
+			}
 		}
 	}
 

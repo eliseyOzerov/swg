@@ -96,7 +96,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] Inheritance.
 - [x] `inherit`.
 - [x] `currentColor`.
-- [ ] `<style>` `media`.
+- [x] `<style>` `media`.
 
 ## Painting
 
