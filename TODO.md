@@ -107,7 +107,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `stroke`.
 - [x] `stroke-width`.
 - [x] `stroke-opacity`.
-- [ ] `stroke-linecap: butt`.
+- [x] `stroke-linecap: butt`.
 - [ ] `stroke-linecap: round`.
 - [ ] `stroke-linecap: square`.
 - [ ] `stroke-linejoin: miter`.

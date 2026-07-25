@@ -1192,7 +1192,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			}
 		}
 		if let cap = attributes["stroke-linecap"] {
-			result.strokeLineCap = isInheritKeyword(cap) ? inherited.strokeLineCap : parseLineCap(cap)
+			if isInheritKeyword(cap) {
+				result.strokeLineCap = inherited.strokeLineCap
+			} else if let lineCap = parseLineCap(cap) {
+				result.strokeLineCap = lineCap
+			}
 		}
 		if let join = attributes["stroke-linejoin"] {
 			result.strokeLineJoin = isInheritKeyword(join) ? inherited.strokeLineJoin : parseLineJoin(join)
@@ -1542,11 +1546,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
-	private func parseLineCap(_ value: String) -> LineCap {
-		switch value {
-		case "round": .round
-		case "square": .square
-		default: .butt
+	private func parseLineCap(_ value: String) -> LineCap? {
+		switch value.trimmingCharacters(in: .whitespacesAndNewlines) {
+		case "butt":
+			return .butt
+		case "round":
+			return .round
+		case "square":
+			return .square
+		default:
+			return nil
 		}
 	}
 
