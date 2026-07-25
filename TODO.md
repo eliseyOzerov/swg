@@ -4,12 +4,8 @@ This checklist is test-gated: only mark an item `- [x]` when there is at least o
 
 References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (https://www.w3.org/TR/SVG/eltindex.html), attribute index (https://www.w3.org/TR/SVG/attindex.html), property index (https://www.w3.org/TR/SVG/propidx.html).
 
-## Core Parsing Infrastructure
+## Document Structure and Global Attributes
 
-- [x] XML namespaces, including default SVG namespace and `xlink`.
-- [x] XML entity handling.
-- [x] XML comments and processing instructions.
-- [x] Whitespace normalization rules.
 - [x] `xml:space`.
 - [x] `lang` and `xml:lang`.
 - [x] `id`.
@@ -298,6 +294,6 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [ ] Event attributes.
 - [ ] Pointer-events property.
 - [ ] Cursor property.
-- [ ] Focus and tab index attributes.
+- [ ] `tabindex`.
 - [ ] Accessibility ARIA attributes.
 - [ ] `role`.
