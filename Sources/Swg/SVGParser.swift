@@ -19,7 +19,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let globalAttributeNames: Set<String> = [
 		"class", "clip-path", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
-		"stroke-width", "style", "transform", "visibility"
+		"stroke-width", "style", "transform", "visibility", "xml:space"
 	]
 
 	private var viewBox: Rect = .zero
@@ -46,6 +46,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var inText = false
 	private var textBuilder: SVGTextBuilder?
 	private var currentSpanAttrs: SVGPaintAttributes?
+	private var xmlSpaceStack: [SVGXMLSpaceMode] = [.default]
 	private var inStyleElement = false
 	private var styleText = ""
 	private var styleSheet: [String: [String: String]] = [:]
@@ -76,7 +77,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
-		characterBuffer = ""
+		if !inText {
+			characterBuffer = ""
+		}
 
 		var namespaceContext = namespaceStack.last ?? .empty
 		namespaceContext.applyDeclarations(from: attributes)
@@ -246,6 +249,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		inText = false
 		textBuilder = nil
 		currentSpanAttrs = nil
+		xmlSpaceStack = [.default]
 		inStyleElement = false
 		styleText = ""
 		styleSheet = [:]
@@ -380,6 +384,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseTextStart(_ attributes: [String: String]) {
 		inText = true
+		xmlSpaceStack = [parseXMLSpace(attributes["xml:space"], inherited: .default)]
 		let attrs = parsePaintAttributes(attributes)
 		textBuilder = SVGTextBuilder(
 			id: resolveID(attributes["id"], elementName: "Text"),
@@ -395,24 +400,29 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseTSpanStart(_ attributes: [String: String]) {
-		let buffered = normalizeDefaultTextWhitespace(characterBuffer)
+		let buffered = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
 		if !buffered.isEmpty, let textBuilder {
 			textBuilder.spans.append(SVGTextSpan(text: buffered, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil))
 		}
 		characterBuffer = ""
+		xmlSpaceStack.append(parseXMLSpace(attributes["xml:space"], inherited: currentXMLSpaceMode))
 		currentSpanAttrs = parsePaintAttributes(attributes)
 	}
 
 	private func finalizeTSpan() {
-		let text = normalizeDefaultTextWhitespace(characterBuffer)
+		let text = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
+		let attributes = currentSpanAttrs
 		characterBuffer = ""
-		guard !text.isEmpty, let textBuilder else { return }
-		textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: currentSpanAttrs))
 		currentSpanAttrs = nil
+		if xmlSpaceStack.count > 1 {
+			xmlSpaceStack.removeLast()
+		}
+		guard !text.isEmpty, let textBuilder else { return }
+		textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: attributes))
 	}
 
 	private func finalizeText() {
-		let text = normalizeDefaultTextWhitespace(characterBuffer)
+		let text = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
 		if !text.isEmpty, let textBuilder {
 			textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil))
 		}
@@ -435,6 +445,31 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 		textBuilder = nil
 		inText = false
+		xmlSpaceStack = [.default]
+	}
+
+	private var currentXMLSpaceMode: SVGXMLSpaceMode {
+		xmlSpaceStack.last ?? .default
+	}
+
+	private func parseXMLSpace(_ value: String?, inherited: SVGXMLSpaceMode) -> SVGXMLSpaceMode {
+		switch value {
+		case "default":
+			.default
+		case "preserve":
+			.preserve
+		default:
+			inherited
+		}
+	}
+
+	private func normalizeTextWhitespace(_ value: String, mode: SVGXMLSpaceMode) -> String {
+		switch mode {
+		case .default:
+			normalizeDefaultTextWhitespace(value)
+		case .preserve:
+			normalizePreservedTextWhitespace(value)
+		}
 	}
 
 	private func normalizeDefaultTextWhitespace(_ value: String) -> String {
@@ -465,6 +500,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			result.removeLast()
 		}
 		return result
+	}
+
+	private func normalizePreservedTextWhitespace(_ value: String) -> String {
+		String(value.map { character -> Character in
+			switch character {
+			case "\n", "\r", "\t", "\u{000C}":
+				" "
+			default:
+				character
+			}
+		})
 	}
 
 	private func parseTextAnchor(_ value: String?) -> SVGTextAnchor {
@@ -786,6 +832,11 @@ private struct SVGParsedElement {
 private enum SVGParsedElementRole {
 	case normal
 	case unknownContainer
+}
+
+private enum SVGXMLSpaceMode {
+	case `default`
+	case preserve
 }
 
 private func splitQualifiedName(_ qualifiedName: String) -> (prefix: String?, localName: String) {

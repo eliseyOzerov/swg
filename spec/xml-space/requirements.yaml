@@ -1,0 +1,161 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: xml-space
+  title: SVG text xml:space handling
+  domain: SVG 2
+  profile: null
+  summary: Apply the legacy SVG xml:space whitespace handling rules to text character data, including inheritance into text child elements.
+  non_goals:
+    - Implement CSS white-space property handling.
+    - Implement duplicate white-space directive precedence when CSS white-space is present.
+    - Implement full glyph positioning, text layout, or wrapping behavior.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-legacy-xml-space
+      title: SVG 2 Text, Legacy white-space handling xml:space
+      url: https://www.w3.org/TR/SVG/text.html#LegacyXMLSpace
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - xml:space values default and preserve.
+    - xml:space inheritance from text to child text content elements.
+    - Child text content element overrides for xml:space.
+    - Post-XML-parser whitespace processing for character data.
+  excludes:
+    - CSS white-space parsing and cascade precedence.
+    - Character position attributes beyond using the normalized text string as parser output.
+    - Rendering differences between blank glyphs and visible glyphs.
+  assumptions:
+    - The XML parser has already normalized XML line-end representations before character data is processed.
+
+terminology:
+  - id: term-xml-space
+    term: xml:space
+    definition: An inheritable XML attribute used by legacy SVG content to select default or preserved whitespace handling for text character data.
+    source_refs:
+      - svg2-legacy-xml-space
+  - id: term-text-character-data
+    term: Text character data
+    definition: Character data within a text element or one of its child text content elements after XML parsing.
+    source_refs:
+      - svg2-legacy-xml-space
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: SVG text character data must support xml:space with the values default and preserve.
+    applies_to:
+      - text
+      - child text content elements
+    source_refs:
+      - svg2-legacy-xml-space
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: inheritance
+    statement: xml:space must be inherited, and an xml:space value on a child of text must apply to that child element's text content.
+    applies_to:
+      - text child elements
+    source_refs:
+      - svg2-legacy-xml-space
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: xml:space default must remove newline characters, convert tabs to spaces, strip leading and trailing spaces, and collapse contiguous spaces.
+    applies_to:
+      - text character data
+    source_refs:
+      - svg2-legacy-xml-space
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: xml:space preserve must convert newline and tab characters to spaces while preserving leading, trailing, and repeated spaces.
+    applies_to:
+      - text character data
+    source_refs:
+      - svg2-legacy-xml-space
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: ordering
+    statement: Character-position-based SVG text features use character positions after the xml:space whitespace handling rules have been applied.
+    applies_to:
+      - x
+      - y
+      - dx
+      - dy
+      - rotate
+    source_refs:
+      - svg2-legacy-xml-space
+    testability: reviewable
+    notes:
+      - This parser bullet proves the normalized text strings; positioning attributes are covered by later text bullets.
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations:
+  - id: N001
+    normative_strength: SHOULD_NOT
+    statement: New SVG content should not use xml:space and should use the white-space property instead.
+    source_refs:
+      - svg2-legacy-xml-space
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: CSS white-space precedence
+    statement: When CSS white-space and xml:space are both present, SVG 2 says xml:space is ignored; this is deferred until CSS white-space support exists.
+    allowed_by:
+      - TODO.md ordering
+    source_refs:
+      - svg2-legacy-xml-space
+ambiguities: []
+dependencies: []
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-legacy-xml-space
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-legacy-xml-space
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-legacy-xml-space
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-legacy-xml-space
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-legacy-xml-space
+    map_item_refs: []

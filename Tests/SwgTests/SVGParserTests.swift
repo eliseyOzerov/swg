@@ -234,3 +234,37 @@ import Testing
 	}
 	#expect(text.spans.first?.text == "Alpha Beta Gamma")
 }
+
+@Test func svgParserPreservesXMLSpacePreserveTextWhitespace() throws {
+	let svg = #"""
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<text id="label" x="1" y="2" xml:space="preserve">  Alpha&#10;&#9;Beta  </text>
+	</svg>
+	"""#
+
+	let document = try #require(SVGParser().parse(svg))
+
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected text element")
+		return
+	}
+	#expect(text.spans.first?.text == "  Alpha  Beta  ")
+	#expect(text.unknownAttributes["xml:space"] == nil)
+}
+
+@Test func svgParserAppliesInheritedAndOverriddenXMLSpaceToTSpans() throws {
+	let svg = #"""
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<text id="label" x="1" y="2" xml:space="preserve"> A<tspan>  B&#9;C  </tspan><tspan xml:space="default">  D&#9; E  </tspan> F </text>
+	</svg>
+	"""#
+
+	let document = try #require(SVGParser().parse(svg))
+
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected text element")
+		return
+	}
+	#expect(text.spans.map(\.text) == [" A", "  B C  ", "D E", " F "])
+	#expect(text.spans.flatMap(\.unknownAttributes.keys).contains("xml:space") == false)
+}

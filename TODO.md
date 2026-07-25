@@ -10,7 +10,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] XML entity handling.
 - [x] XML comments and processing instructions.
 - [x] Whitespace normalization rules.
-- [ ] `xml:space`.
+- [x] `xml:space`.
 - [ ] `lang` and `xml:lang`.
 - [ ] `id`.
 
