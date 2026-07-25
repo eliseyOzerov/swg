@@ -17,6 +17,8 @@ public struct SVGDocument: Equatable, Sendable {
 	public var elementDescriptions: [String: [SVGDescriptionData]]
 	public var selectedDescription: SVGDescriptionData?
 	public var selectedElementDescriptions: [String: SVGDescriptionData]
+	public var rootMetadata: [SVGMetadataData]
+	public var elementMetadata: [String: [SVGMetadataData]]
 
 	public init(
 		id: String? = nil,
@@ -33,7 +35,9 @@ public struct SVGDocument: Equatable, Sendable {
 		rootDescriptions: [SVGDescriptionData] = [],
 		elementDescriptions: [String: [SVGDescriptionData]] = [:],
 		selectedDescription: SVGDescriptionData? = nil,
-		selectedElementDescriptions: [String: SVGDescriptionData] = [:]
+		selectedElementDescriptions: [String: SVGDescriptionData] = [:],
+		rootMetadata: [SVGMetadataData] = [],
+		elementMetadata: [String: [SVGMetadataData]] = [:]
 	) {
 		self.id = id
 		self.viewBox = viewBox
@@ -50,6 +54,8 @@ public struct SVGDocument: Equatable, Sendable {
 		self.elementDescriptions = elementDescriptions
 		self.selectedDescription = selectedDescription
 		self.selectedElementDescriptions = selectedElementDescriptions
+		self.rootMetadata = rootMetadata
+		self.elementMetadata = elementMetadata
 	}
 
 	public var elementIDs: [String] {
@@ -84,6 +90,58 @@ public struct SVGDescriptionData: Equatable, Sendable {
 		self.text = text
 		self.language = language
 		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Metadata payload from an SVG `<metadata>` descriptive element.
+public struct SVGMetadataData: Equatable, Sendable {
+	public let id: String
+	public let language: String?
+	public let unknownAttributes: [String: String]
+	public let children: [SVGMetadataNode]
+
+	public init(id: String, language: String? = nil, unknownAttributes: [String: String] = [:], children: [SVGMetadataNode] = []) {
+		self.id = id
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+		self.children = children
+	}
+}
+
+/// A text or element node preserved from an SVG `<metadata>` subtree.
+public indirect enum SVGMetadataNode: Equatable, Sendable {
+	case text(String)
+	case element(SVGMetadataElementData)
+
+	public var text: String? {
+		if case .text(let value) = self {
+			return value
+		}
+		return nil
+	}
+
+	public var element: SVGMetadataElementData? {
+		if case .element(let value) = self {
+			return value
+		}
+		return nil
+	}
+}
+
+/// An XML element preserved inside SVG metadata.
+public struct SVGMetadataElementData: Equatable, Sendable {
+	public let name: String
+	public let localName: String
+	public let namespaceURI: String?
+	public let attributes: [String: String]
+	public let children: [SVGMetadataNode]
+
+	public init(name: String, localName: String, namespaceURI: String? = nil, attributes: [String: String] = [:], children: [SVGMetadataNode] = []) {
+		self.name = name
+		self.localName = localName
+		self.namespaceURI = namespaceURI
+		self.attributes = attributes
+		self.children = children
 	}
 }
 

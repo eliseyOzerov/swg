@@ -602,6 +602,61 @@ import Testing
 	#expect(document.selectedElementDescriptions["bar"]?.text == "Bar shape description")
 }
 
+@Test func svgParserPreservesMetadataElementsAsNonRenderedMetadata() throws {
+	let svg = #"""
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
+		<metadata id="root-metadata" data-origin="root">
+			<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+				<rdf:Description rdf:about="">
+					<dc:title>Root dataset</dc:title>
+				</rdf:Description>
+			</rdf:RDF>
+		</metadata>
+		<g id="icon">
+			<metadata id="icon-metadata" xml:lang="fr">
+				<custom:entry xmlns:custom="https://example.com/custom" custom:key="usage">Decorative</custom:entry>
+			</metadata>
+			<path id="mark" d="M0 0 L1 1"/>
+		</g>
+	</svg>
+	"""#
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["icon", "mark"])
+	#expect(document.rootMetadata.count == 1)
+
+	let rootMetadata = try #require(document.rootMetadata.first)
+	#expect(rootMetadata.id == "root-metadata")
+	#expect(rootMetadata.language == "en")
+	#expect(rootMetadata.unknownAttributes == ["data-origin": "root"])
+
+	let rdf = try #require(rootMetadata.children.compactMap(\.element).first)
+	#expect(rdf.name == "rdf:RDF")
+	#expect(rdf.localName == "RDF")
+	#expect(rdf.namespaceURI == "http://www.w3.org/1999/02/22-rdf-syntax-ns#")
+
+	let description = try #require(rdf.children.compactMap(\.element).first)
+	#expect(description.name == "rdf:Description")
+	#expect(description.attributes["rdf:about"] == "")
+
+	let title = try #require(description.children.compactMap(\.element).first)
+	#expect(title.name == "dc:title")
+	#expect(title.namespaceURI == "http://purl.org/dc/elements/1.1/")
+	#expect(title.children.compactMap(\.text) == ["Root dataset"])
+
+	let iconMetadata = try #require(document.elementMetadata["icon"]?.first)
+	#expect(iconMetadata.id == "icon-metadata")
+	#expect(iconMetadata.language == "fr")
+
+	let entry = try #require(iconMetadata.children.compactMap(\.element).first)
+	#expect(entry.name == "custom:entry")
+	#expect(entry.localName == "entry")
+	#expect(entry.namespaceURI == "https://example.com/custom")
+	#expect(entry.attributes["custom:key"] == "usage")
+	#expect(entry.children.compactMap(\.text) == ["Decorative"])
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">

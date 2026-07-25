@@ -64,6 +64,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var currentDescription: SVGDescriptionBuilder?
 	private var rootDescriptions: [SVGDescriptionData] = []
 	private var elementDescriptions: [String: [SVGDescriptionData]] = [:]
+	private var currentMetadata: SVGMetadataBuilder?
+	private var rootMetadata: [SVGMetadataData] = []
+	private var elementMetadata: [String: [SVGMetadataData]] = [:]
 	private var namespaceStack: [SVGNamespaceContext] = [.empty]
 	private var languageStack: [String?] = [nil]
 	private var viewportContextStack: [SVGLengthContext] = [.default]
@@ -109,12 +112,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			rootDescriptions: rootDescriptions,
 			elementDescriptions: elementDescriptions,
 			selectedDescription: selectDescription(rootDescriptions),
-			selectedElementDescriptions: elementDescriptions.compactMapValues(selectDescription)
+			selectedElementDescriptions: elementDescriptions.compactMapValues(selectDescription),
+			rootMetadata: rootMetadata,
+			elementMetadata: elementMetadata
 		)
 	}
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
-		if !inText && currentTitle == nil && currentDescription == nil {
+		if !inText && currentTitle == nil && currentDescription == nil && currentMetadata == nil {
 			characterBuffer = ""
 		}
 
@@ -133,6 +138,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 		if currentDescription != nil {
 			parsedElementStack[parsedElementStack.count - 1].role = .descriptionContent
+			return
+		}
+		if currentMetadata != nil {
+			appendMetadataElement(parsedElement: parsedElement, qualifiedName: elementName, attributes: attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .metadataContent
 			return
 		}
 		guard parsedElement.isSVGElement else { return }
@@ -177,6 +187,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "desc":
 			parseDescriptionStart(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .description
+		case "metadata":
+			parseMetadataStart(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .metadata
 		case "style":
 			inStyleElement = true
 			styleText = ""
@@ -247,12 +260,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if !languageStack.isEmpty { languageStack.removeLast() }
 		}
 		guard let parsedElement, parsedElement.isSVGElement else {
-			if currentTitle == nil && currentDescription == nil {
+			if currentMetadata != nil, let parsedElement {
+				finalizeMetadataElement(parsedElement: parsedElement)
+			} else if currentTitle == nil && currentDescription == nil {
 				characterBuffer = ""
 			}
 			return
 		}
 		if parsedElement.role == .titleContent || parsedElement.role == .descriptionContent {
+			return
+		}
+		if parsedElement.role == .metadataContent {
+			finalizeMetadataElement(parsedElement: parsedElement)
 			return
 		}
 		if parsedElement.role == .skipped {
@@ -280,6 +299,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			finalizeTitle()
 		case "desc":
 			finalizeDescription()
+		case "metadata":
+			finalizeMetadata()
 		case "style":
 			styleText += characterBuffer
 			characterBuffer = ""
@@ -374,6 +395,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		currentDescription = nil
 		rootDescriptions = []
 		elementDescriptions = [:]
+		currentMetadata = nil
+		rootMetadata = []
+		elementMetadata = [:]
 		namespaceStack = [.empty]
 		languageStack = [nil]
 		viewportContextStack = [.default]
@@ -720,6 +744,67 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			elementDescriptions[parentID, default: []].append(description)
 		}
 		self.currentDescription = nil
+		characterBuffer = ""
+	}
+
+	private func parseMetadataStart(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "Metadata")
+		setCurrentParsedElementID(id)
+		let parent = currentDescriptiveParent()
+		currentMetadata = SVGMetadataBuilder(
+			id: id,
+			parentID: parent.id,
+			isRootMetadata: parent.isRoot,
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: [])
+		)
+	}
+
+	private func appendMetadataElement(parsedElement: SVGParsedElement, qualifiedName: String, attributes: [String: String]) {
+		appendMetadataTextFromBuffer()
+		let builder = SVGMetadataElementBuilder(
+			name: qualifiedName,
+			localName: parsedElement.localName,
+			namespaceURI: parsedElement.namespaceURI,
+			attributes: attributes.filter { name, _ in !name.isNamespaceDeclaration }
+		)
+		currentMetadata?.elementStack.append(builder)
+	}
+
+	private func finalizeMetadataElement(parsedElement: SVGParsedElement) {
+		appendMetadataTextFromBuffer()
+		guard let currentMetadata, !currentMetadata.elementStack.isEmpty else { return }
+		let builder = currentMetadata.elementStack.removeLast()
+		let node = SVGMetadataNode.element(builder.build())
+		if let parent = currentMetadata.elementStack.last {
+			parent.children.append(node)
+		} else {
+			currentMetadata.children.append(node)
+		}
+	}
+
+	private func appendMetadataTextFromBuffer() {
+		let text = normalizeDefaultTextWhitespace(characterBuffer)
+		characterBuffer = ""
+		guard !text.isEmpty, let currentMetadata else { return }
+		let node = SVGMetadataNode.text(text)
+		if let parent = currentMetadata.elementStack.last {
+			parent.children.append(node)
+		} else {
+			currentMetadata.children.append(node)
+		}
+	}
+
+	private func finalizeMetadata() {
+		appendMetadataTextFromBuffer()
+		guard let currentMetadata else { return }
+		let metadata = SVGMetadataData(id: currentMetadata.id, language: currentMetadata.language, unknownAttributes: currentMetadata.unknownAttributes, children: currentMetadata.children)
+		if currentMetadata.isRootMetadata {
+			rootMetadata.append(metadata)
+		} else if let parentID = currentMetadata.parentID {
+			elementMetadata[parentID, default: []].append(metadata)
+		}
+		self.currentMetadata = nil
 		characterBuffer = ""
 	}
 
@@ -1403,6 +1488,8 @@ private enum SVGParsedElementRole {
 	case titleContent
 	case description
 	case descriptionContent
+	case metadata
+	case metadataContent
 	case unknownContainer
 	case skipped
 }
@@ -1585,5 +1672,44 @@ private final class SVGDescriptionBuilder {
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 		self.xmlSpaceMode = xmlSpaceMode
+	}
+}
+
+/// Mutable builder used during SVG metadata parsing.
+private final class SVGMetadataBuilder {
+	let id: String
+	let parentID: String?
+	let isRootMetadata: Bool
+	let language: String?
+	let unknownAttributes: [String: String]
+	var children: [SVGMetadataNode] = []
+	var elementStack: [SVGMetadataElementBuilder] = []
+
+	init(id: String, parentID: String?, isRootMetadata: Bool, language: String?, unknownAttributes: [String: String]) {
+		self.id = id
+		self.parentID = parentID
+		self.isRootMetadata = isRootMetadata
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Mutable builder used during metadata XML subtree parsing.
+private final class SVGMetadataElementBuilder {
+	let name: String
+	let localName: String
+	let namespaceURI: String?
+	let attributes: [String: String]
+	var children: [SVGMetadataNode] = []
+
+	init(name: String, localName: String, namespaceURI: String?, attributes: [String: String]) {
+		self.name = name
+		self.localName = localName
+		self.namespaceURI = namespaceURI
+		self.attributes = attributes
+	}
+
+	func build() -> SVGMetadataElementData {
+		SVGMetadataElementData(name: name, localName: localName, namespaceURI: namespaceURI, attributes: attributes, children: children)
 	}
 }

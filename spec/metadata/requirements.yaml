@@ -1,0 +1,268 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: metadata
+  title: metadata element
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 parser-visible behavior for the metadata element as a
+    never-rendered descriptive element that carries arbitrary metadata content,
+    commonly from non-SVG XML namespaces.
+  non_goals:
+    - Interpreting any particular metadata vocabulary such as RDF or Dublin Core.
+    - Validating foreign XML namespace schemas.
+    - Rendering metadata content.
+    - DOM interface conformance.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-metadata
+      title: Document and Container Elements - metadata
+      artifact_path: spec/metadata/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-desc-title
+      title: SVG 2 Document Structure - The desc and title elements
+      url: https://www.w3.org/TR/SVG2/struct.html#DescriptionAndTitleElements
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-struct-metadata
+      title: SVG 2 Document Structure - The metadata element
+      url: https://www.w3.org/TR/SVG2/struct.html#MetadataElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - >
+      SVG 2 removes the earlier recommendation to structure metadata elements
+      in any particular vocabulary-specific way.
+
+scope:
+  includes:
+    - Recognizing metadata as an SVG descriptive element.
+    - Keeping metadata out of the renderable element tree.
+    - Preserving metadata content as elements and character data.
+    - Preserving foreign element namespace identity where available.
+    - Preserving metadata language metadata from lang and xml:lang.
+    - Associating each metadata element with its direct parent element.
+  excludes:
+    - Platform accessibility API integration.
+    - Metadata vocabulary interpretation.
+    - Schema validation for foreign XML namespaces.
+    - Complete DOM fidelity such as comments and processing instructions inside metadata.
+  assumptions:
+    - >
+      A parser-oriented implementation may store metadata records separately
+      from the renderable SVG element tree, keyed by parent element identity.
+    - >
+      Preserving element names, namespace URIs, attributes, and text children is
+      sufficient for this bullet because SVG 2 does not mandate a specific
+      metadata vocabulary.
+
+terminology:
+  - id: term-descriptive-element
+    term: descriptive element
+    definition: >
+      An SVG element that provides supplementary descriptive information about
+      its parent, including desc, metadata, and title.
+    source_refs:
+      - svg2-struct-desc-title
+  - id: term-metadata
+    term: metadata
+    definition: >
+      A never-rendered descriptive element used to include metadata with SVG
+      content.
+    source_refs:
+      - svg2-struct-metadata
+  - id: term-foreign-namespace-content
+    term: foreign namespace content
+    definition: >
+      Metadata payload elements from XML namespaces other than SVG, expressed
+      according to Namespaces in XML.
+    source_refs:
+      - svg2-struct-metadata
+
+structures:
+  - id: S001
+    name: metadata record
+    kind: structure
+    source_refs:
+      - svg2-struct-metadata
+    fields:
+      - name: content
+        type: element-or-character-data-list
+        cardinality: zero-or-more
+        position: child-content
+        constraints:
+          - Metadata content may contain any elements or character data.
+          - Metadata payload elements should be from other XML namespaces.
+        requirement_refs:
+          - R002
+          - R004
+        source_refs:
+          - svg2-struct-metadata
+      - name: language
+        type: language-tag-or-empty
+        cardinality: zero-or-one
+        position: inherited-or-explicit-attribute
+        constraints:
+          - The metadata element accepts SVG core attributes, including lang.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-struct-metadata
+      - name: parent
+        type: svg-element-reference
+        cardinality: one
+        position: parent-link
+        constraints:
+          - Metadata is a descriptive element for its parent SVG element.
+        requirement_refs:
+          - R001
+          - R003
+        source_refs:
+          - svg2-struct-desc-title
+          - svg2-struct-metadata
+
+requirements:
+  - id: R001
+    normative_strength: SHOULD
+    kind: structure
+    statement: >
+      Metadata included with SVG content should be specified within metadata
+      elements.
+    applies_to:
+      - SVG metadata
+    source_refs:
+      - svg2-struct-metadata
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: SHOULD
+    kind: content
+    statement: >
+      The contents of metadata elements should be elements from other XML
+      namespaces, expressed according to Namespaces in XML.
+    applies_to:
+      - metadata content
+    source_refs:
+      - svg2-struct-metadata
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: >
+      Metadata elements must not be visually rendered as part of the graphics.
+    applies_to:
+      - metadata element
+    source_refs:
+      - svg2-struct-metadata
+    testability: testable
+    notes:
+      - SVG 2 categorizes metadata as a never-rendered element.
+  - id: R004
+    normative_strength: MUST
+    kind: content
+    statement: >
+      Metadata elements may contain any elements or character data.
+    applies_to:
+      - metadata content
+    source_refs:
+      - svg2-struct-metadata
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: attributes
+    statement: >
+      Metadata elements accept SVG core attributes, including id, lang,
+      xml:space, class, and style.
+    applies_to:
+      - metadata element
+    source_refs:
+      - svg2-struct-metadata
+    testability: testable
+    notes: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations:
+  - id: N001
+    normative_strength: DESCRIPTIVE
+    statement: >
+      SVG 2 does not recommend structuring metadata elements in any particular
+      vocabulary-specific way.
+    source_refs:
+      - svg2-struct-metadata
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Metadata payload representation
+    statement: >
+      The source requires metadata content to be accepted but leaves parser API
+      representation open.
+    allowed_by:
+      - R004
+    source_refs:
+      - svg2-struct-metadata
+
+ambiguities:
+  - id: A001
+    question: >
+      Should metadata comments and processing instructions be preserved for full
+      XML fidelity?
+    impact: >
+      The current parser ignores comments and processing instructions elsewhere;
+      metadata consumers may eventually need exact XML round-tripping.
+    options:
+      - Preserve only elements, attributes, namespaces, and character data.
+      - Preserve all XML nodes inside metadata.
+      - Preserve the original raw XML string.
+    source_refs:
+      - svg2-struct-metadata
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: Namespaces in XML
+    reason: >
+      SVG 2 recommends metadata payload elements from other XML namespaces.
+    source_refs:
+      - svg2-struct-metadata
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-metadata
+    map_item_refs:
+      - document-container-elements-metadata
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-struct-metadata
+    map_item_refs:
+      - document-container-elements-metadata
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-struct-metadata
+    map_item_refs:
+      - document-container-elements-metadata
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-struct-metadata
+    map_item_refs:
+      - document-container-elements-metadata
