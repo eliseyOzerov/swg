@@ -573,6 +573,51 @@ import Testing
 	#expect(paths["invalid"]?.attributes.strokeLineCap == .round)
 }
 
+@Test func svgParserAppliesMiterStrokeLineJoinInitialInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.sharp { stroke-linejoin: miter; }
+			.other { stroke-linejoin: round; }
+		</style>
+		<path id="initial" d="M0 0 L10 10 L10 0"/>
+		<g id="miter-parent" stroke-linejoin="miter">
+			<path id="inherited" d="M0 0 L10 10 L10 0"/>
+		</g>
+		<g id="bevel-parent" stroke-linejoin="bevel">
+			<path id="attribute" d="M0 0 L10 10 L10 0" stroke-linejoin="miter"/>
+			<path id="class-rule" class="sharp" d="M0 0 L10 10 L10 0"/>
+			<path id="inline" class="other" d="M0 0 L10 10 L10 0" style="stroke-linejoin: miter"/>
+			<path id="invalid" d="M0 0 L10 10 L10 0" stroke-linejoin="bogus"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.strokeLineJoin == .miter)
+	#expect(paths["inherited"]?.attributes.strokeLineJoin == .miter)
+	#expect(paths["attribute"]?.attributes.strokeLineJoin == .miter)
+	#expect(paths["class-rule"]?.attributes.strokeLineJoin == .miter)
+	#expect(paths["inline"]?.attributes.strokeLineJoin == .miter)
+	#expect(paths["invalid"]?.attributes.strokeLineJoin == .bevel)
+}
+
 @Test func svgParserAppliesFillOpacityInitialInheritancePercentagesAndClamping() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

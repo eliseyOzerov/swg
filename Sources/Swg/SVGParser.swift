@@ -1199,7 +1199,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			}
 		}
 		if let join = attributes["stroke-linejoin"] {
-			result.strokeLineJoin = isInheritKeyword(join) ? inherited.strokeLineJoin : parseLineJoin(join)
+			if isInheritKeyword(join) {
+				result.strokeLineJoin = inherited.strokeLineJoin
+			} else if let lineJoin = parseLineJoin(join) {
+				result.strokeLineJoin = lineJoin
+			}
 		}
 		if let value = attributes["stroke-miterlimit"] {
 			if isInheritKeyword(value) {
@@ -1559,11 +1563,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
-	private func parseLineJoin(_ value: String) -> LineJoin {
-		switch value {
-		case "round": .round
-		case "bevel": .bevel
-		default: .miter
+	private func parseLineJoin(_ value: String) -> LineJoin? {
+		switch value.trimmingCharacters(in: .whitespacesAndNewlines) {
+		case "miter":
+			return .miter
+		case "round":
+			return .round
+		case "bevel":
+			return .bevel
+		default:
+			return nil
 		}
 	}
 
