@@ -69,7 +69,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `Z` / `z` closepath.
 - [x] Implicit repeated commands after `M`.
 - [x] Implicit repeated commands for non-`M` commands.
-- [ ] Compact number tokenization such as `M10-20`.
+- [x] Compact number tokenization such as `M10-20`.
 - [ ] Exponent tokenization.
 - [ ] Arc large-arc and sweep flag combinations.
 - [ ] Arc radius correction.

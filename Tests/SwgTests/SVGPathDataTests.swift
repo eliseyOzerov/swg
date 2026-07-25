@@ -29,6 +29,17 @@ import Testing
 	])
 }
 
+@Test func svgPathParserTokenizesCompactNumberBoundaries() {
+	let path = SVGPathDataParser.parse("M10-20L30.5.5h-5+10")
+
+	#expect(path.commands == [
+		.move(to: Point(10, -20)),
+		.line(to: Point(30.5, 0.5)),
+		.line(to: Point(25.5, 0.5)),
+		.line(to: Point(35.5, 0.5)),
+	])
+}
+
 @Test func svgPathParserTreatsRepeatedLineArgumentsAsImplicitCommands() {
 	let path = SVGPathDataParser.parse("M 0 0 L 10 0 20 10 h 5 5 v 5 -10")
 

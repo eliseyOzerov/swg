@@ -1,0 +1,219 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: path-compact-number-tokenization
+  title: Compact path number tokenization
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 path data tokenization behavior where adjacent coordinates
+    can be separated by grammar boundaries such as a sign or second decimal
+    point instead of explicit whitespace or commas.
+  non_goals:
+    - Exponent notation tokenization.
+    - Full path data error recovery.
+    - Repeated command semantics beyond proving compact tokens feed normal path parsing.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: path-data-compact-number-tokenization
+      title: Path Data - compact number tokenization
+      artifact_path: spec/path-compact-number-tokenization/requirements.yaml
+  canonical_sources:
+    - id: svg2-path-data-grammar
+      title: SVG 2 Paths - Grammar for path data
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataBNF
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Parsing command letters adjacent to number tokens.
+    - Splitting a number token before a sign that cannot continue the current coordinate.
+    - Splitting a number token before a second decimal point that cannot continue the current coordinate.
+    - Feeding compactly tokenized numbers into normal path command parsing.
+  excludes:
+    - Scientific notation and exponent sign handling.
+    - Malformed number recovery outside the grammar consumption boundary examples.
+    - Reporting or surfacing tokenizer errors.
+  assumptions:
+    - >
+      The package exposes compact tokenizer behavior through parsed PathCommand
+      values rather than through a public token stream.
+
+terminology:
+  - id: term-compact-number
+    term: compact number
+    definition: >
+      A number in path data whose end is implied by grammar constraints rather
+      than by whitespace or comma separators.
+    source_refs:
+      - svg2-path-data-grammar
+  - id: term-maximal-consumption
+    term: maximal EBNF consumption
+    definition: >
+      The rule that a grammar production consumes as much input as possible and
+      stops at the first character that no longer satisfies that production.
+    source_refs:
+      - svg2-path-data-grammar
+
+structures:
+  - id: S001
+    name: Compact coordinate token boundaries
+    kind: structure
+    source_refs:
+      - svg2-path-data-grammar
+    fields:
+      - name: signBoundary
+        type: coordinate-boundary
+        cardinality: optional
+        position: between coordinates
+        constraints:
+          - A minus or plus sign starts the next coordinate when it cannot follow the current numeric production.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-path-data-grammar
+      - name: decimalBoundary
+        type: coordinate-boundary
+        cardinality: optional
+        position: between coordinates
+        constraints:
+          - A second decimal point starts the next coordinate when the current numeric production already contains a decimal point.
+        requirement_refs:
+          - R001
+          - R003
+        source_refs:
+          - svg2-path-data-grammar
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      Path data EBNF processing consumes as much of a production as possible and
+      stops when the next character cannot satisfy that production.
+    applies_to:
+      - path data tokenizer
+    source_refs:
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: tokenization
+    statement: >
+      In compact coordinate data such as M100-200, the sign before the second
+      value is treated as the start of the next coordinate rather than as part
+      of the preceding coordinate.
+    applies_to:
+      - path data tokenizer
+    source_refs:
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: tokenization
+    statement: >
+      In compact coordinate data such as M0.6.5, the second decimal point is
+      treated as the start of the next coordinate rather than as part of the
+      preceding coordinate.
+    applies_to:
+      - path data tokenizer
+    source_refs:
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: integration
+    statement: >
+      Command letters adjacent to compact coordinate values still introduce the
+      appropriate path command and do not require whitespace or comma separators.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, compact number tokenization must produce the same
+      resolved PathCommand values as equivalent path data with explicit
+      separators.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+    reasoning: >
+      The tokenizer is internal, so conformance is observed through equivalent
+      parsed path command output.
+    source_refs:
+      - svg2-path-data-grammar
+
+implementation_choices: []
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 path data grammar
+    reason: >
+      Compact number boundaries are defined by the path data EBNF and its
+      maximal-consumption processing note.
+    source_refs:
+      - svg2-path-data-grammar
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-compact-number-tokenization
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-compact-number-tokenization
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-compact-number-tokenization
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-compact-number-tokenization
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-compact-number-tokenization
