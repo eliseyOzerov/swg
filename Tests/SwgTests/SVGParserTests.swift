@@ -120,6 +120,40 @@ import Testing
 	#expect(sibling.attributes.fill == .color(.red))
 }
 
+@Test func svgParserResolvesSVGGeometryAttributesAgainstCurrentViewport() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="200" height="80" viewBox="0 0 400 160">
+		<svg id="percent" x="10%" y="25%" width="50%" height="75%"/>
+		<svg id="auto" x="5" y="6" width="auto" height="auto"/>
+		<svg id="omitted"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let viewports = Dictionary(uniqueKeysWithValues: document.elements.compactMap { element -> (String, SVGViewportData)? in
+		if case .svg(let viewport) = element {
+			return (viewport.id, viewport)
+		}
+		return nil
+	})
+	let percent = try #require(viewports["percent"])
+	let auto = try #require(viewports["auto"])
+	let omitted = try #require(viewports["omitted"])
+
+	#expect(percent.x == 20)
+	#expect(percent.y == 20)
+	#expect(percent.width == 100)
+	#expect(percent.height == 60)
+	#expect(auto.x == 5)
+	#expect(auto.y == 6)
+	#expect(auto.width == 200)
+	#expect(auto.height == 80)
+	#expect(omitted.x == 0)
+	#expect(omitted.y == 0)
+	#expect(omitted.width == 200)
+	#expect(omitted.height == 80)
+}
+
 @Test func svgParserUsesFunctionalURLParserForLocalResourceReferences() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

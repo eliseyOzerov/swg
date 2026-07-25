@@ -55,6 +55,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var characterBuffer = ""
 	private var namespaceStack: [SVGNamespaceContext] = [.empty]
 	private var languageStack: [String?] = [nil]
+	private var viewportContextStack: [SVGLengthContext] = [.default]
 	private var parsedElementStack: [SVGParsedElement] = []
 
 	public func parse(_ string: String) -> SVGDocument? {
@@ -183,6 +184,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if parsedElement.role == .svgContainer {
 				finalizeContainerElement()
 			}
+			popViewportContext()
 		case "defs":
 			inDefs = false
 		case "style":
@@ -273,6 +275,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		characterBuffer = ""
 		namespaceStack = [.empty]
 		languageStack = [nil]
+		viewportContextStack = [.default]
 		parsedElementStack = []
 	}
 
@@ -334,12 +337,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseNestedSVGStart(_ attributes: [String: String]) {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: "SVG")
+		let viewportContext = currentViewportContext
+		let width = parseSVGSize(attributes["width"], percentageBasis: .horizontal, context: viewportContext)
+		let height = parseSVGSize(attributes["height"], percentageBasis: .vertical, context: viewportContext)
 		let builder = SVGElementBuilder(
 			kind: .svg(
-				x: double(attributes["x"]),
-				y: double(attributes["y"]),
-				width: double(attributes["width"]),
-				height: double(attributes["height"]),
+				x: parseSVGPosition(attributes["x"], percentageBasis: .horizontal, context: viewportContext),
+				y: parseSVGPosition(attributes["y"], percentageBasis: .vertical, context: viewportContext),
+				width: width,
+				height: height,
 				viewBox: attributes["viewBox"].flatMap(parseViewBox)
 			),
 			id: id,
@@ -352,6 +358,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		} else if !inClipPath && !inMask {
 			elementStack.append(builder)
 		}
+		pushViewportContext(width: width, height: height, base: viewportContext)
 	}
 
 	private func parseLinearGradientStart(_ attributes: [String: String]) {
@@ -709,11 +716,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let vb = attributes["viewBox"], let parsedViewBox = parseViewBox(vb) {
 			viewBox = parsedViewBox
 		}
-		rootWidth = attributes["width"].flatMap { parseDimension($0, percentageBasis: .horizontal) }
-		rootHeight = attributes["height"].flatMap { parseDimension($0, percentageBasis: .vertical) }
+		let viewportContext = currentViewportContext
+		rootWidth = parseSVGSize(attributes["width"], percentageBasis: .horizontal, context: viewportContext)
+		rootHeight = parseSVGSize(attributes["height"], percentageBasis: .vertical, context: viewportContext)
 		rootLanguage = currentLanguage
 		rootPaintAttributes = parsePaintAttributes(attributes)
-		rootUnknownAttributes = parseUnknownAttributes(attributes, known: ["viewBox", "width", "height"])
+		rootUnknownAttributes = parseUnknownAttributes(attributes, known: ["x", "y", "viewBox", "width", "height"])
+		pushViewportContext(width: rootWidth ?? viewportContext.viewportWidth, height: rootHeight ?? viewportContext.viewportHeight, base: viewportContext)
 	}
 
 	private func parseViewBox(_ value: String) -> Rect? {
@@ -722,8 +731,37 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return Rect(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
 	}
 
-	private func parseDimension(_ value: String, percentageBasis: SVGLengthPercentageBasis = .normalizedDiagonal) -> Double? {
-		SVGLengthParser.parse(value, percentageBasis: percentageBasis)
+	private var currentViewportContext: SVGLengthContext {
+		viewportContextStack.last ?? .default
+	}
+
+	private func parseSVGPosition(_ value: String?, percentageBasis: SVGLengthPercentageBasis, context: SVGLengthContext) -> Double {
+		guard let value, let length = parseDimension(value, context: context, percentageBasis: percentageBasis) else { return 0 }
+		return length
+	}
+
+	private func parseSVGSize(_ value: String?, percentageBasis: SVGLengthPercentageBasis, context: SVGLengthContext) -> Double {
+		guard let value else {
+			return percentageBasis.referenceDistance(in: context)
+		}
+		if value.trimmingCharacters(in: .whitespacesAndNewlines) == "auto" {
+			return percentageBasis.referenceDistance(in: context)
+		}
+		return parseDimension(value, context: context, percentageBasis: percentageBasis) ?? percentageBasis.referenceDistance(in: context)
+	}
+
+	private func parseDimension(_ value: String, context: SVGLengthContext = .default, percentageBasis: SVGLengthPercentageBasis = .normalizedDiagonal) -> Double? {
+		SVGLengthParser.parse(value, context: context, percentageBasis: percentageBasis)
+	}
+
+	private func pushViewportContext(width: Double, height: Double, base: SVGLengthContext) {
+		viewportContextStack.append(SVGLengthContext(fontSize: base.fontSize, rootFontSize: base.rootFontSize, viewportWidth: width, viewportHeight: height, xHeight: base.xHeight, zeroAdvance: base.zeroAdvance, isUprightText: base.isUprightText))
+	}
+
+	private func popViewportContext() {
+		if viewportContextStack.count > 1 {
+			viewportContextStack.removeLast()
+		}
 	}
 
 	private func resolveID(_ explicit: String?, elementName: String) -> String {

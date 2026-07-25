@@ -29,7 +29,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Document and Container Elements
 
 - [x] `<svg>` nested viewport behavior.
-- [ ] `<svg>` `x`, `y`, `width`, `height`.
+- [x] `<svg>` `x`, `y`, `width`, `height`.
 - [x] `<svg>` `viewBox`.
 - [ ] `<svg>` `preserveAspectRatio`.
 - [x] `<g>`.

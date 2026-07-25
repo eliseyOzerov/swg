@@ -1,0 +1,268 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: svg-geometry-attributes
+  title: svg x y width height attributes
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 behavior for the svg element's x, y, width, and height
+    geometry properties as parser-visible viewport metadata.
+  non_goals:
+    - Full CSS cascade for geometry properties.
+    - min-width, max-width, min-height, or max-height constraint handling.
+    - Rendering, clipping, or equivalent transform application.
+
+source_context:
+  spec_map: spec/map.yaml
+  map_items:
+    - id: document-container-elements-svg-geometry
+      title: Document and Container Elements - svg x y width height
+      artifact_path: spec/svg-geometry-attributes/requirements.yaml
+  canonical_sources:
+    - id: svg2-struct-svg
+      title: SVG 2 Document Structure - The svg element
+      url: https://www.w3.org/TR/SVG2/struct.html#SVGElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-geometry-properties
+      title: SVG 2 Geometry Properties
+      url: https://www.w3.org/TR/SVG2/geometry.html
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+
+scope:
+  includes:
+    - x and y on embedded svg elements.
+    - width and height on outermost and embedded svg elements.
+    - Length-percentage parsing for svg geometry attributes.
+    - The auto-as-100-percent rule for svg width and height.
+  excludes:
+    - CSS property cascade for geometry properties.
+    - Descendant geometry percentage resolution.
+    - Rendering behavior for zero or negative dimensions.
+  assumptions:
+    - >
+      The parser stores used numeric geometry values in user units for supported
+      syntax, preserving rendering-specific validation for later bullets.
+
+terminology:
+  - id: term-geometry-property
+    term: geometry property
+    definition: >
+      An SVG-defined property describing element position or dimensions, including
+      x, y, width, and height for svg elements.
+    source_refs:
+      - svg2-geometry-properties
+  - id: term-current-viewport
+    term: current SVG viewport
+    definition: >
+      The viewport whose dimensions are used to resolve percentage geometry
+      values for the element being parsed.
+    source_refs:
+      - svg2-geometry-properties
+
+structures:
+  - id: S001
+    name: svg geometry attributes
+    kind: structure
+    source_refs:
+      - svg2-struct-svg
+      - svg2-geometry-properties
+    fields:
+      - name: x
+        type: length-percentage
+        cardinality: optional
+        position: horizontal-position
+        constraints:
+          - Initial value is 0.
+          - Applies to svg.
+          - Percentages refer to the size of the current SVG viewport.
+          - On an outermost svg element, x has no effect.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-struct-svg
+          - svg2-geometry-properties
+      - name: y
+        type: length-percentage
+        cardinality: optional
+        position: vertical-position
+        constraints:
+          - Initial value is 0.
+          - Applies to svg.
+          - Percentages refer to the size of the current SVG viewport.
+          - On an outermost svg element, y has no effect.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-struct-svg
+          - svg2-geometry-properties
+      - name: width
+        type: length-percentage-or-auto
+        cardinality: optional
+        position: horizontal-size
+        constraints:
+          - Applies to svg.
+          - Percentages refer to the size of the current SVG viewport.
+          - A computed value of auto on svg is treated as 100%.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg2-struct-svg
+          - svg2-geometry-properties
+      - name: height
+        type: length-percentage-or-auto
+        cardinality: optional
+        position: vertical-size
+        constraints:
+          - Applies to svg.
+          - Percentages refer to the size of the current SVG viewport.
+          - A computed value of auto on svg is treated as 100%.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg2-struct-svg
+          - svg2-geometry-properties
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      For an embedded svg element, x and y specify the top-left corner of the
+      rectangular region into which the element is placed.
+    applies_to:
+      - embedded svg element
+    source_refs:
+      - svg2-struct-svg
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      The x and y geometry properties have initial value 0, apply to svg, and
+      resolve percentages against the current SVG viewport.
+    applies_to:
+      - svg element
+    source_refs:
+      - svg2-geometry-properties
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      For an outermost svg element, width and height specify intrinsic document
+      fragment size; for an embedded svg element, width and height specify the
+      size of the rectangular placement region.
+    applies_to:
+      - outermost svg element
+      - embedded svg element
+    source_refs:
+      - svg2-struct-svg
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: >
+      On svg elements, width and height with computed value auto are treated as
+      100%.
+    applies_to:
+      - svg element
+    source_refs:
+      - svg2-struct-svg
+      - svg2-geometry-properties
+    testability: testable
+    notes:
+      - The omitted presentation attribute uses the initial computed value.
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      A parser that stores numeric svg viewport metadata must resolve embedded
+      svg x and width percentages against the current viewport width and y and
+      height percentages against the current viewport height.
+    derived_from:
+      - R001
+      - R002
+      - R003
+    reasoning: >
+      The spec assigns x/width to horizontal placement and sizing, y/height to
+      vertical placement and sizing, and says percentages use the current SVG
+      viewport.
+    source_refs:
+      - svg2-struct-svg
+      - svg2-geometry-properties
+
+implementation_choices:
+  - id: IC001
+    topic: Unsupported CSS geometry cascade
+    statement: >
+      This milestone may parse presentation attributes directly and defer CSS
+      geometry-property cascade to the styling/cascade bullets.
+    allowed_by:
+      - R001
+      - R003
+    source_refs:
+      - svg2-geometry-properties
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 basic data types
+    reason: >
+      x, y, width, and height use length-percentage value syntax, which depends
+      on the parser's existing length and percentage support.
+    source_refs:
+      - svg2-geometry-properties
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-struct-svg
+    map_item_refs:
+      - document-container-elements-svg-geometry
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-geometry-properties
+    map_item_refs:
+      - document-container-elements-svg-geometry
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-struct-svg
+    map_item_refs:
+      - document-container-elements-svg-geometry
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-struct-svg
+      - svg2-geometry-properties
+    map_item_refs:
+      - document-container-elements-svg-geometry
