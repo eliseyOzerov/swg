@@ -13,8 +13,28 @@ public struct SVGDocument: Equatable, Sendable {
 	public var elementTitles: [String: [SVGTitleData]]
 	public var selectedTitle: SVGTitleData?
 	public var selectedElementTitles: [String: SVGTitleData]
+	public var rootDescriptions: [SVGDescriptionData]
+	public var elementDescriptions: [String: [SVGDescriptionData]]
+	public var selectedDescription: SVGDescriptionData?
+	public var selectedElementDescriptions: [String: SVGDescriptionData]
 
-	public init(id: String? = nil, viewBox: Rect, preserveAspectRatio: SVGPreserveAspectRatio = .default, elements: [SVGElement], defs: SVGDefs = SVGDefs(), language: String? = nil, unknownAttributes: [String: String] = [:], rootTitles: [SVGTitleData] = [], elementTitles: [String: [SVGTitleData]] = [:], selectedTitle: SVGTitleData? = nil, selectedElementTitles: [String: SVGTitleData] = [:]) {
+	public init(
+		id: String? = nil,
+		viewBox: Rect,
+		preserveAspectRatio: SVGPreserveAspectRatio = .default,
+		elements: [SVGElement],
+		defs: SVGDefs = SVGDefs(),
+		language: String? = nil,
+		unknownAttributes: [String: String] = [:],
+		rootTitles: [SVGTitleData] = [],
+		elementTitles: [String: [SVGTitleData]] = [:],
+		selectedTitle: SVGTitleData? = nil,
+		selectedElementTitles: [String: SVGTitleData] = [:],
+		rootDescriptions: [SVGDescriptionData] = [],
+		elementDescriptions: [String: [SVGDescriptionData]] = [:],
+		selectedDescription: SVGDescriptionData? = nil,
+		selectedElementDescriptions: [String: SVGDescriptionData] = [:]
+	) {
 		self.id = id
 		self.viewBox = viewBox
 		self.preserveAspectRatio = preserveAspectRatio
@@ -26,6 +46,10 @@ public struct SVGDocument: Equatable, Sendable {
 		self.elementTitles = elementTitles
 		self.selectedTitle = selectedTitle
 		self.selectedElementTitles = selectedElementTitles
+		self.rootDescriptions = rootDescriptions
+		self.elementDescriptions = elementDescriptions
+		self.selectedDescription = selectedDescription
+		self.selectedElementDescriptions = selectedElementDescriptions
 	}
 
 	public var elementIDs: [String] {
@@ -35,6 +59,21 @@ public struct SVGDocument: Equatable, Sendable {
 
 /// Plain text metadata from an SVG `<title>` descriptive element.
 public struct SVGTitleData: Equatable, Sendable {
+	public let id: String
+	public let text: String
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, text: String, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.text = text
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Plain text metadata from an SVG `<desc>` descriptive element.
+public struct SVGDescriptionData: Equatable, Sendable {
 	public let id: String
 	public let text: String
 	public let language: String?

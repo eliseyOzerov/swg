@@ -61,6 +61,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var currentTitle: SVGTitleBuilder?
 	private var rootTitles: [SVGTitleData] = []
 	private var elementTitles: [String: [SVGTitleData]] = [:]
+	private var currentDescription: SVGDescriptionBuilder?
+	private var rootDescriptions: [SVGDescriptionData] = []
+	private var elementDescriptions: [String: [SVGDescriptionData]] = [:]
 	private var namespaceStack: [SVGNamespaceContext] = [.empty]
 	private var languageStack: [String?] = [nil]
 	private var viewportContextStack: [SVGLengthContext] = [.default]
@@ -102,12 +105,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			rootTitles: rootTitles,
 			elementTitles: elementTitles,
 			selectedTitle: selectTitle(rootTitles),
-			selectedElementTitles: elementTitles.compactMapValues(selectTitle)
+			selectedElementTitles: elementTitles.compactMapValues(selectTitle),
+			rootDescriptions: rootDescriptions,
+			elementDescriptions: elementDescriptions,
+			selectedDescription: selectDescription(rootDescriptions),
+			selectedElementDescriptions: elementDescriptions.compactMapValues(selectDescription)
 		)
 	}
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
-		if !inText && currentTitle == nil {
+		if !inText && currentTitle == nil && currentDescription == nil {
 			characterBuffer = ""
 		}
 
@@ -122,6 +129,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		parsedElementStack.append(parsedElement)
 		if currentTitle != nil {
 			parsedElementStack[parsedElementStack.count - 1].role = .titleContent
+			return
+		}
+		if currentDescription != nil {
+			parsedElementStack[parsedElementStack.count - 1].role = .descriptionContent
 			return
 		}
 		guard parsedElement.isSVGElement else { return }
@@ -163,6 +174,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "title":
 			parseTitleStart(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .title
+		case "desc":
+			parseDescriptionStart(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .description
 		case "style":
 			inStyleElement = true
 			styleText = ""
@@ -233,12 +247,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if !languageStack.isEmpty { languageStack.removeLast() }
 		}
 		guard let parsedElement, parsedElement.isSVGElement else {
-			if currentTitle == nil {
+			if currentTitle == nil && currentDescription == nil {
 				characterBuffer = ""
 			}
 			return
 		}
-		if parsedElement.role == .titleContent {
+		if parsedElement.role == .titleContent || parsedElement.role == .descriptionContent {
 			return
 		}
 		if parsedElement.role == .skipped {
@@ -264,6 +278,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			finalizeContainerElement()
 		case "title":
 			finalizeTitle()
+		case "desc":
+			finalizeDescription()
 		case "style":
 			styleText += characterBuffer
 			characterBuffer = ""
@@ -355,6 +371,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		currentTitle = nil
 		rootTitles = []
 		elementTitles = [:]
+		currentDescription = nil
+		rootDescriptions = []
+		elementDescriptions = [:]
 		namespaceStack = [.empty]
 		languageStack = [nil]
 		viewportContextStack = [.default]
@@ -674,6 +693,33 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			elementTitles[parentID, default: []].append(title)
 		}
 		self.currentTitle = nil
+		characterBuffer = ""
+	}
+
+	private func parseDescriptionStart(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "Desc")
+		setCurrentParsedElementID(id)
+		let parent = currentDescriptiveParent()
+		currentDescription = SVGDescriptionBuilder(
+			id: id,
+			parentID: parent.id,
+			isRootDescription: parent.isRoot,
+			language: parseDescriptiveLanguage(attributes),
+			unknownAttributes: parseUnknownAttributes(attributes, known: []),
+			xmlSpaceMode: parseXMLSpace(attributes["xml:space"], inherited: .default)
+		)
+	}
+
+	private func finalizeDescription() {
+		guard let currentDescription else { return }
+		let text = normalizeTextWhitespace(characterBuffer, mode: currentDescription.xmlSpaceMode)
+		let description = SVGDescriptionData(id: currentDescription.id, text: text, language: currentDescription.language, unknownAttributes: currentDescription.unknownAttributes)
+		if currentDescription.isRootDescription {
+			rootDescriptions.append(description)
+		} else if let parentID = currentDescription.parentID {
+			elementDescriptions[parentID, default: []].append(description)
+		}
+		self.currentDescription = nil
 		characterBuffer = ""
 	}
 
@@ -1260,7 +1306,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if let exactMatch = titles.first(where: { $0.language?.lowercased() == preference }) {
 				return exactMatch
 			}
-			if let prefixMatch = titles.first(where: { titleLanguageMatches($0.language, preference: preference) }) {
+			if let prefixMatch = titles.first(where: { descriptiveLanguageMatches($0.language, preference: preference) }) {
 				return prefixMatch
 			}
 		}
@@ -1270,7 +1316,23 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return titles.first
 	}
 
-	private func titleLanguageMatches(_ language: String?, preference: String) -> Bool {
+	private func selectDescription(_ descriptions: [SVGDescriptionData]) -> SVGDescriptionData? {
+		guard !descriptions.isEmpty else { return nil }
+		for preference in languagePreferences {
+			if let exactMatch = descriptions.first(where: { $0.language?.lowercased() == preference }) {
+				return exactMatch
+			}
+			if let prefixMatch = descriptions.first(where: { descriptiveLanguageMatches($0.language, preference: preference) }) {
+				return prefixMatch
+			}
+		}
+		if let emptyLanguageMatch = descriptions.first(where: { $0.language == "" }) {
+			return emptyLanguageMatch
+		}
+		return descriptions.first
+	}
+
+	private func descriptiveLanguageMatches(_ language: String?, preference: String) -> Bool {
 		guard let language = language?.lowercased(), !language.isEmpty else { return false }
 		return language.hasPrefix("\(preference)-") || preference.hasPrefix("\(language)-")
 	}
@@ -1339,6 +1401,8 @@ private enum SVGParsedElementRole {
 	case linkContainer
 	case title
 	case titleContent
+	case description
+	case descriptionContent
 	case unknownContainer
 	case skipped
 }
@@ -1499,6 +1563,25 @@ private final class SVGTitleBuilder {
 		self.id = id
 		self.parentID = parentID
 		self.isRootTitle = isRootTitle
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+		self.xmlSpaceMode = xmlSpaceMode
+	}
+}
+
+/// Mutable builder used during SVG desc parsing.
+private final class SVGDescriptionBuilder {
+	let id: String
+	let parentID: String?
+	let isRootDescription: Bool
+	let language: String?
+	let unknownAttributes: [String: String]
+	let xmlSpaceMode: SVGXMLSpaceMode
+
+	init(id: String, parentID: String?, isRootDescription: Bool, language: String?, unknownAttributes: [String: String], xmlSpaceMode: SVGXMLSpaceMode) {
+		self.id = id
+		self.parentID = parentID
+		self.isRootDescription = isRootDescription
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 		self.xmlSpaceMode = xmlSpaceMode

@@ -568,6 +568,40 @@ import Testing
 	#expect(document.selectedElementTitles["mark"]?.text == "★")
 }
 
+@Test func svgParserPreservesDescElementsAsNonRenderedMetadata() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
+		<desc id="root-desc">Root description</desc>
+		<desc id="root-empty-lang" lang="">No-language fallback</desc>
+		<g id="chart">
+			<desc id="chart-fr" lang="fr">Graphique detaille</desc>
+			<desc id="chart-en" lang="en-US">Detailed chart description</desc>
+			<path id="bar" d="M0 0 L1 1">
+				<desc id="bar-desc">Bar shape description</desc>
+			</path>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser(languagePreferences: ["en-US"]).parse(svg))
+
+	#expect(document.elementIDs == ["chart", "bar"])
+	#expect(document.rootDescriptions.map(\.id) == ["root-desc", "root-empty-lang"])
+	#expect(document.rootDescriptions.map(\.text) == ["Root description", "No-language fallback"])
+	#expect(document.rootDescriptions.map(\.language) == ["en", ""])
+	#expect(document.selectedDescription?.text == "Root description")
+
+	let chartDescriptions = try #require(document.elementDescriptions["chart"])
+	#expect(chartDescriptions.map(\.id) == ["chart-fr", "chart-en"])
+	#expect(chartDescriptions.map(\.language) == ["fr", "en-US"])
+	#expect(document.selectedElementDescriptions["chart"]?.text == "Detailed chart description")
+
+	let barDescriptions = try #require(document.elementDescriptions["bar"])
+	#expect(barDescriptions.map(\.text) == ["Bar shape description"])
+	#expect(barDescriptions.map(\.language) == ["en"])
+	#expect(document.selectedElementDescriptions["bar"]?.text == "Bar shape description")
+}
+
 @Test func svgParserAppliesLangAndXMLLangMetadata() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" lang="en">
