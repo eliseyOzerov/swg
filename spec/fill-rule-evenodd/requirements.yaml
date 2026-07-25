@@ -1,0 +1,254 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fill-rule-evenodd
+  title: Fill rule evenodd value
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of the `fill-rule` property when its specified value is `evenodd`.
+  non_goals:
+    - The `fill-rule: nonzero` value, covered by a separate Painting TODO bullet.
+    - Renderer hit-testing or rasterization of filled pixels.
+    - Geometry boolean operations for proving point-in-shape results.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-fill-rule-property
+      title: "SVG 2 Painting: Winding rule: the fill-rule property"
+      url: https://www.w3.org/TR/SVG/painting.html#FillRule
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-fill-property
+      title: "SVG 2 Painting: Specifying fill paint: the fill property"
+      url: https://www.w3.org/TR/SVG/painting.html#SpecifyingFillPaint
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `fill-rule` with value grammar `nonzero | evenodd`, initial value `nonzero`, inheritance yes, and computed value as specified.
+    - SVG 2 defines the even-odd winding algorithm independently from the non-zero winding algorithm.
+    - SVG presentation attributes participate in styling, so `fill-rule` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `fill-rule` property on SVG shapes and renderable containers.
+    - Explicit `fill-rule: evenodd` declarations and presentation attributes.
+    - Inheritance of `evenodd` from a parent element.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Invalid `fill-rule` values leaving the current inherited or default value unchanged.
+  excludes:
+    - The `nonzero` initial value and non-zero winding algorithm except as fallback context for invalid values.
+    - Rendering-time point-in-path evaluation.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The parser stores `evenodd` using the package's existing even-odd fill rule representation.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+
+terminology:
+  - id: term-fill-rule
+    term: fill-rule
+    definition: The SVG property that selects the winding rule used to determine which canvas areas are inside a shape.
+    source_refs:
+      - svg2-fill-rule-property
+  - id: term-evenodd
+    term: evenodd
+    definition: The fill-rule value that treats a point as inside when the crossing count is odd.
+    source_refs:
+      - svg2-fill-rule-property
+  - id: term-shape
+    term: shape
+    definition: An SVG graphical element such as a path or basic shape whose interior can be filled.
+    source_refs:
+      - svg2-fill-property
+
+structures:
+  - id: S001
+    name: Fill rule parser state
+    kind: structure
+    source_refs:
+      - svg2-fill-rule-property
+    fields:
+      - name: fillRule
+        type: FillRule
+        cardinality: one
+        position: null
+        constraints:
+          - Supported values include `nonzero` and `evenodd`; this work item verifies `evenodd`.
+          - The computed value for `evenodd` remains `evenodd`.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-fill-rule-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `fill-rule` property must accept `evenodd` as a valid specified value.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-fill-rule-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`fill-rule` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-fill-rule-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "The computed value for `fill-rule: evenodd` must remain `evenodd`."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-fill-rule-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Fill painting must use the current `fill-rule` value to decide which portions of a shape are inside.
+    applies_to:
+      - SVG fill painting
+    source_refs:
+      - svg2-fill-property
+      - svg2-fill-rule-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the rule for renderer consumption; renderer coverage is outside this work item.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `fill-rule` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-fill-rule-property
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Even-odd inside test
+    kind: algorithm
+    summary: A point is inside under `evenodd` when an arbitrary ray from that point crosses an odd number of path segments.
+    steps:
+      - Draw a ray from the tested point to infinity in any direction.
+      - Count each path segment crossing the ray.
+      - Treat the point as outside when the total count is even.
+      - Treat the point as inside when the total count is odd.
+    preconditions:
+      - The shape has path segments that can be tested against a ray.
+    postconditions:
+      - The result classifies the tested point as inside or outside for fill painting.
+    requirement_refs:
+      - R004
+    source_refs:
+      - svg2-fill-rule-property
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `fill-rule` value is neither `nonzero` nor `evenodd`.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-fill-rule-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `fill-rule` declaration must expose `evenodd` when its inherited value is `evenodd`.
+    derived_from:
+      - R002
+      - R003
+    reasoning: Because `fill-rule` is inherited and computed as specified, inherited parser state must preserve an `evenodd` value.
+    source_refs:
+      - svg2-fill-rule-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may represent SVG `evenodd` with its existing `FillRule.evenOdd` case.
+    allowed_by:
+      - The source defines behavior and value semantics, not programming-language enum case names.
+    source_refs:
+      - svg2-fill-rule-property
+
+ambiguities:
+  - id: A001
+    question: Should the package eventually expose a public spelling that exactly matches SVG `evenodd` instead of Swift-style `evenOdd`?
+    impact: API naming may matter for users who expect SVG terminology, but this bullet can verify behavior through the existing representation.
+    options:
+      - Keep `FillRule.evenOdd` as the even-odd representation.
+      - Add an alias or rename in a future API cleanup.
+    source_refs:
+      - svg2-fill-rule-property
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`fill-rule` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-fill-rule-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-fill-rule-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-fill-rule-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-fill-property
+      - svg2-fill-rule-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-fill-rule-property
+    map_item_refs: []

@@ -103,7 +103,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `fill`.
 - [x] `fill-opacity`.
 - [x] `fill-rule: nonzero`.
-- [ ] `fill-rule: evenodd`.
+- [x] `fill-rule: evenodd`.
 - [ ] `stroke`.
 - [x] `stroke-width`.
 - [ ] `stroke-opacity`.

@@ -433,6 +433,51 @@ import Testing
 	#expect(paths["invalid"]?.attributes.fillRule == .evenOdd)
 }
 
+@Test func svgParserAppliesEvenOddFillRuleInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.alternate { fill-rule: evenodd; }
+			.other { fill-rule: nonzero; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="evenodd-parent" fill-rule="evenodd">
+			<path id="inherited" d="M0 0 L10 10"/>
+		</g>
+		<g id="nonzero-parent" fill-rule="nonzero">
+			<path id="attribute" d="M0 0 L10 10" fill-rule="evenodd"/>
+			<path id="class-rule" class="alternate" d="M0 0 L10 10"/>
+			<path id="inline" class="other" d="M0 0 L10 10" style="fill-rule: evenodd"/>
+			<path id="invalid" d="M0 0 L10 10" fill-rule="bogus"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.fillRule == .winding)
+	#expect(paths["inherited"]?.attributes.fillRule == .evenOdd)
+	#expect(paths["attribute"]?.attributes.fillRule == .evenOdd)
+	#expect(paths["class-rule"]?.attributes.fillRule == .evenOdd)
+	#expect(paths["inline"]?.attributes.fillRule == .evenOdd)
+	#expect(paths["invalid"]?.attributes.fillRule == .winding)
+}
+
 @Test func svgParserInheritsOnlyInheritedPresentationProperties() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
