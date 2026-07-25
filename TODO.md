@@ -71,7 +71,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] Implicit repeated commands for non-`M` commands.
 - [x] Compact number tokenization such as `M10-20`.
 - [x] Exponent tokenization.
-- [ ] Arc large-arc and sweep flag combinations.
+- [x] Arc large-arc and sweep flag combinations.
 - [ ] Arc radius correction.
 - [ ] Degenerate arc handling.
 - [ ] Path data error recovery.

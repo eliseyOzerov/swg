@@ -149,6 +149,54 @@ import Testing
 	#expect(secondEnd.distance(to: Point(20, 0)) < 0.000001)
 }
 
+@Test func svgPathParserUsesArcLargeArcAndSweepFlags() throws {
+	func arcCubics(largeArc: Int, sweep: Int) -> [PathCommand] {
+		let path = SVGPathDataParser.parse("M 0 0 A 75 75 0 \(largeArc) \(sweep) 100 0")
+		return Array(path.commands.dropFirst())
+	}
+
+	func cubicEnd(_ command: PathCommand) -> Point? {
+		guard case .cubic(let end, _, _) = command else { return nil }
+		return end
+	}
+
+	let smallNegative = arcCubics(largeArc: 0, sweep: 0)
+	let smallPositive = arcCubics(largeArc: 0, sweep: 1)
+	let largeNegative = arcCubics(largeArc: 1, sweep: 0)
+	let largePositive = arcCubics(largeArc: 1, sweep: 1)
+
+	#expect(smallNegative.count == 1)
+	#expect(smallPositive.count == 1)
+	#expect(largeNegative.count == 4)
+	#expect(largePositive.count == 4)
+
+	guard case .cubic(let smallNegativeEnd, let smallNegativeControl, _) = smallNegative[0],
+		  case .cubic(let smallPositiveEnd, let smallPositiveControl, _) = smallPositive[0],
+		  case .cubic(let largeNegativeEnd, let largeNegativeControl, _) = largeNegative[0],
+		  case .cubic(let largePositiveEnd, let largePositiveControl, _) = largePositive[0] else {
+		Issue.record("Expected arcs to be approximated with cubic segments")
+		return
+	}
+
+	#expect(smallNegativeEnd.distance(to: Point(100, 0)) < 0.000001)
+	#expect(smallPositiveEnd.distance(to: Point(100, 0)) < 0.000001)
+	guard let largeNegativeFinalEnd = largeNegative.last.flatMap(cubicEnd),
+		  let largePositiveFinalEnd = largePositive.last.flatMap(cubicEnd) else {
+		Issue.record("Expected large arcs to end with cubic segments")
+		return
+	}
+	#expect(largeNegativeFinalEnd.distance(to: Point(100, 0)) < 0.000001)
+	#expect(largePositiveFinalEnd.distance(to: Point(100, 0)) < 0.000001)
+
+	#expect(largeNegativeEnd.y > 0)
+	#expect(largePositiveEnd.y < 0)
+
+	#expect(smallNegativeControl.y > 0)
+	#expect(smallPositiveControl.y < 0)
+	#expect(largeNegativeControl.y > 0)
+	#expect(largePositiveControl.y < 0)
+}
+
 @Test func svgPathDataSerializesEditableCommands() {
 	let path = Path(commands: [
 		.move(to: Point(0, 0)),

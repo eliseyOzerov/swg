@@ -1,0 +1,41 @@
+id: path-arc-flag-combinations
+title: SVG path elliptical arc large-arc and sweep flags
+status: requirements
+sources:
+  - id: svg2-paths-elliptical-arc
+    title: SVG 2, 9.3.8 The elliptical arc curve commands
+    url: https://www.w3.org/TR/SVG2/paths.html#PathDataEllipticalArcCommands
+    retrieved: 2026-07-25
+  - id: svg2-paths-grammar
+    title: SVG 2, 9.3.9 The grammar for path data
+    url: https://www.w3.org/TR/SVG2/paths.html#PathDataBNF
+    retrieved: 2026-07-25
+requirements:
+  - id: REQ-PATH-ARC-FLAGS-001
+    text: The `A` and `a` path commands must parse each elliptical arc argument as `rx ry x-axis-rotation large-arc-flag sweep-flag x y`.
+    source: svg2-paths-grammar
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserUsesArcLargeArcAndSweepFlags
+  - id: REQ-PATH-ARC-FLAGS-002
+    text: The large-arc flag value `0` must select the smaller arc sweep, and the value `1` must select the larger arc sweep for endpoint/radius combinations that permit two sweep sizes.
+    source: svg2-paths-elliptical-arc
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserUsesArcLargeArcAndSweepFlags
+  - id: REQ-PATH-ARC-FLAGS-003
+    text: The sweep flag value `1` must draw the arc in the positive-angle direction, and the value `0` must draw it in the negative-angle direction.
+    source: svg2-paths-elliptical-arc
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserUsesArcLargeArcAndSweepFlags
+  - id: REQ-PATH-ARC-FLAGS-004
+    text: The four large-arc/sweep flag combinations must produce four distinct arcs for a non-degenerate arc whose endpoints and radii allow four possible solutions.
+    source: svg2-paths-elliptical-arc
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserUsesArcLargeArcAndSweepFlags
+non_goals:
+  - Arc radius correction is covered by a separate TODO item.
+  - Degenerate arc handling is covered by a separate TODO item.
+  - This item does not require exact cubic control point identity with another renderer, only spec-correct flag selection and endpoint preservation.
