@@ -1078,10 +1078,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parsePaintAttributes(_ attributes: [String: String]) -> SVGPaintAttributes {
-		let inherited = symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
-		var result = inherited
-		result.transform = .identity
-		result.vectorEffect = .none
+		let parent = symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
+		var result = inheritedPaintAttributes(from: parent)
 
 		applyPresentationAttributes(attributes, to: &result)
 		if let className = attributes["class"] {
@@ -1094,6 +1092,23 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let style = attributes["style"] {
 			applyCSS(parseInlineCSS(style), to: &result)
 		}
+		return result
+	}
+
+	private func inheritedPaintAttributes(from parent: SVGPaintAttributes) -> SVGPaintAttributes {
+		var result = SVGPaintAttributes.defaults
+		result.fill = parent.fill
+		result.fillOpacity = parent.fillOpacity
+		result.fillRule = parent.fillRule
+		result.stroke = parent.stroke
+		result.strokeWidth = parent.strokeWidth
+		result.strokeLineCap = parent.strokeLineCap
+		result.strokeLineJoin = parent.strokeLineJoin
+		result.strokeMiterLimit = parent.strokeMiterLimit
+		result.strokeDashArray = parent.strokeDashArray
+		result.strokeDashOffset = parent.strokeDashOffset
+		result.strokeOpacity = parent.strokeOpacity
+		result.visibility = parent.visibility
 		return result
 	}
 

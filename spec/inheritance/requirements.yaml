@@ -1,0 +1,487 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: inheritance
+  title: Styling inheritance
+  domain: SVG 2 / CSS Cascading and Inheritance
+  profile: null
+  summary: Capture parser-visible inheritance behavior for supported SVG styling properties, distinguishing inherited properties from non-inherited per-element effects.
+  non_goals:
+    - The explicit `inherit` CSS-wide keyword, covered by a separate TODO bullet.
+    - The `currentColor` indirect color value, covered by a separate TODO bullet.
+    - Full computed-value resolution, including percentages, URL absolutization, and color computation.
+    - Rendering-time effects of inherited values through group opacity, display, clipping, masking, filtering, or transforms.
+    - Properties not yet represented in `SVGPaintAttributes`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-cascade-defaulting
+      title: "CSS Cascading and Inheritance Level 3: Defaulting"
+      url: https://www.w3.org/TR/css-cascade-3/#defaulting
+      version: W3C Recommendation 11 February 2021
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-cascade-inheritance
+      title: "CSS Cascading and Inheritance Level 3: Inheritance"
+      url: https://www.w3.org/TR/css-cascade-3/#inheritance
+      version: W3C Recommendation 11 February 2021
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-property-index
+      title: "SVG 2 Property Index"
+      url: https://www.w3.org/TR/SVG/propidx.html
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: informative
+    - id: svg2-styling
+      title: "SVG 2 Styling"
+      url: https://www.w3.org/TR/SVG/styling.html
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - The CSS cascade source defines inheritance behavior generically; SVG property definitions identify which SVG properties are inherited.
+    - The SVG property index is informative, but it summarizes the property definition tables used to identify inheritance for the supported properties in this parser milestone.
+
+scope:
+  includes:
+    - Inheriting supported inherited paint, stroke, fill-rule, and visibility properties from parent elements.
+    - Resetting supported non-inherited properties to their initial parser defaults when absent on a child.
+    - Preserving child declarations, presentation attributes, class declarations, and inline style declarations as cascade inputs after the inherited baseline is established.
+    - Ensuring parser attributes represent the child element's own specified values rather than copying a parent's whole style bag.
+  excludes:
+    - Explicit `inherit`, `initial`, `unset`, `revert`, and `all` keyword behavior.
+    - CSS importance, animation origin, transition origin, and user/user-agent origin cascade rules.
+    - Full selector matching and external stylesheet cascade.
+    - Inheritance for text/font properties that are not yet represented in `SVGPaintAttributes`.
+    - Inheritance through use-element shadow trees or flattened trees.
+  assumptions:
+    - The parser stores specified/computed-enough values for downstream renderers and does not model a full CSS computed style object.
+    - "`SVGPaintAttributes.defaults` represents the parser's initial values for supported properties."
+    - The current parser's supported class and inline style mechanisms are already tested by neighboring TODO bullets.
+
+terminology:
+  - id: term-inheritance
+    term: inheritance
+    definition: The defaulting mechanism by which an inherited property on an element uses the computed value of that property on its parent when the cascade supplies no value for that element.
+    source_refs:
+      - css-cascade-inheritance
+  - id: term-inherited-property
+    term: inherited property
+    definition: A property whose definition table says the value is determined by inheritance when the cascade supplies no value.
+    source_refs:
+      - css-cascade-inheritance
+      - svg2-property-index
+  - id: term-initial-value
+    term: initial value
+    definition: The value defined in a property's definition table and used for non-inherited properties when the cascade supplies no value.
+    source_refs:
+      - css-cascade-defaulting
+
+structures:
+  - id: S001
+    name: Supported inherited SVGPaintAttributes fields
+    kind: structure
+    source_refs:
+      - svg2-property-index
+    fields:
+      - name: fill
+        type: SVGPaint
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: fillOpacity
+        type: Double
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property for `fill-opacity`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: fillRule
+        type: FillRule
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property for `fill-rule`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: stroke
+        type: SVGPaint
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: strokeWidth
+        type: Double
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property for `stroke-width`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: strokeLineCap
+        type: LineCap
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property for `stroke-linecap`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: strokeLineJoin
+        type: LineJoin
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property for `stroke-linejoin`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: strokeMiterLimit
+        type: Double
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property for `stroke-miterlimit`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: strokeDashArray
+        type: list of Double
+        cardinality: zero or more
+        position: null
+        constraints:
+          - Inherited property for `stroke-dasharray`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: strokeDashOffset
+        type: Double
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property for `stroke-dashoffset`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: strokeOpacity
+        type: Double
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property for `stroke-opacity`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+      - name: visibility
+        type: SVGVisibility
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-property-index
+  - id: S002
+    name: Supported non-inherited SVGPaintAttributes fields
+    kind: structure
+    source_refs:
+      - svg2-property-index
+    fields:
+      - name: opacity
+        type: Double
+        cardinality: one
+        position: null
+        constraints:
+          - Non-inherited property with initial value 1.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-property-index
+      - name: display
+        type: SVGDisplay
+        cardinality: one
+        position: null
+        constraints:
+          - Non-inherited property with initial value inline.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-property-index
+      - name: transform
+        type: Transform
+        cardinality: one
+        position: null
+        constraints:
+          - Non-inherited property for this parser milestone.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-property-index
+      - name: vectorEffect
+        type: SVGVectorEffect
+        cardinality: one
+        position: null
+        constraints:
+          - Non-inherited property with initial value none.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-property-index
+      - name: clipPathID
+        type: optional String
+        cardinality: zero or one
+        position: null
+        constraints:
+          - Non-inherited property for `clip-path`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-styling
+      - name: filterID
+        type: optional String
+        cardinality: zero or one
+        position: null
+        constraints:
+          - Non-inherited property for `filter`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-styling
+      - name: maskID
+        type: optional String
+        cardinality: zero or one
+        position: null
+        constraints:
+          - Non-inherited property for `mask`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-styling
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: defaulting
+    statement: When the cascade does not produce a value for a property, inherited properties must draw their defaults from the parent element through inheritance, while non-inherited properties use their initial values.
+    applies_to:
+      - SVGParser.parsePaintAttributes
+    source_refs:
+      - css-cascade-defaulting
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Inheritance must propagate an inherited property's parent computed value to the child element when the child has no cascaded value for that property.
+    applies_to:
+      - SVGParser.inheritedPaintAttributes
+    source_refs:
+      - css-cascade-inheritance
+    testability: testable
+    notes:
+      - The parser stores a representation close enough to computed values for supported paint attributes.
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Supported inherited SVG presentation properties must be seeded from the parent element before applying the child element's own declarations.
+    applies_to:
+      - SVGParser.inheritedPaintAttributes
+      - SVGParser.parsePaintAttributes
+    source_refs:
+      - css-cascade-inheritance
+      - svg2-property-index
+    testability: testable
+    notes:
+      - Covered properties include fill, fill-opacity, fill-rule, stroke, stroke-width, stroke-linecap, stroke-linejoin, stroke-miterlimit, stroke-dasharray, stroke-dashoffset, stroke-opacity, and visibility.
+  - id: R004
+    normative_strength: MUST_NOT
+    kind: behavior
+    statement: Supported non-inherited properties must not be copied from a parent element merely because the child has no declaration for that property.
+    applies_to:
+      - SVGParser.inheritedPaintAttributes
+      - SVGParser.parsePaintAttributes
+    source_refs:
+      - css-cascade-defaulting
+      - svg2-property-index
+      - svg2-styling
+    testability: testable
+    notes:
+      - Covered parser fields include opacity, display, transform, vector-effect, clip-path, filter, and mask.
+  - id: R005
+    normative_strength: MUST
+    kind: ordering
+    statement: The inherited baseline must be established before applying supported presentation attributes, class style rules, and inline style declarations on the child element.
+    applies_to:
+      - SVGParser.parsePaintAttributes
+    source_refs:
+      - css-cascade-defaulting
+      - svg2-styling
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Supported parser inheritance baseline
+    kind: algorithm
+    summary: Build a child style baseline from initial values plus only supported inherited properties from the parent.
+    steps:
+      - Start from parser initial values for all supported `SVGPaintAttributes` fields.
+      - Copy supported inherited properties from the parent attributes into the baseline.
+      - Leave supported non-inherited properties at parser initial values.
+      - Apply the child element's own supported declarations through the existing cascade order.
+    preconditions:
+      - Parent parser attributes are available from the open element stack or root attributes.
+      - XML and CSS declarations have already been tokenized by the parser's supported mechanisms.
+    postconditions:
+      - Child attributes inherit supported inherited properties only when the child has no winning declaration for those properties.
+      - Child attributes do not implicitly inherit supported non-inherited properties.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - css-cascade-defaulting
+      - css-cascade-inheritance
+      - svg2-property-index
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A property is not yet represented by `SVGPaintAttributes`.
+    source_behavior: MUST
+    required_behavior: no parser-visible inheritance behavior until the property is implemented
+    decision_required: false
+    source_refs:
+      - svg2-property-index
+  - id: I002
+    condition: A child explicitly uses the CSS-wide `inherit` keyword.
+    source_behavior: MUST
+    required_behavior: null
+    decision_required: false
+    source_refs:
+      - css-cascade-inheritance
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: The parser must not treat `SVGPaintAttributes` as a wholly inheritable struct; it must copy only fields corresponding to inherited properties.
+    derived_from:
+      - R001
+      - R003
+      - R004
+    reasoning: CSS defaulting distinguishes inherited and non-inherited properties, while the parser representation groups both kinds of properties into one struct.
+    source_refs:
+      - css-cascade-defaulting
+      - css-cascade-inheritance
+      - svg2-property-index
+
+implementation_choices:
+  - id: IC001
+    topic: Computed style representation
+    statement: The package may keep using `SVGPaintAttributes` as a parser-facing style representation as long as it seeds inherited and non-inherited fields according to property inheritance rules.
+    allowed_by:
+      - Current package architecture
+    source_refs:
+      - css-cascade-defaulting
+  - id: IC002
+    topic: Property coverage boundary
+    statement: This milestone may limit inheritance enforcement to properties currently represented in `SVGPaintAttributes`; later property bullets must add their own inheritance behavior when appropriate.
+    allowed_by:
+      - User-directed bullet-by-bullet workflow
+    source_refs:
+      - svg2-property-index
+
+ambiguities:
+  - id: A001
+    question: Should future renderers store both cascaded and used values for group-only visual effects?
+    impact: Group opacity, display, clipping, masking, filtering, and transforms affect descendant rendering without being inherited CSS properties; parser data may eventually need separate render-context propagation.
+    options:
+      - Keep per-element specified attributes only.
+      - Add a renderer context that combines group effects at render time.
+      - Store both specified and accumulated render attributes.
+    source_refs:
+      - css-cascade-defaulting
+      - svg2-property-index
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Property Index
+    reason: Identifies inherited versus non-inherited status for supported SVG properties.
+    source_refs:
+      - svg2-property-index
+  - id: DEP002
+    kind: source-section
+    title: CSS Cascading and Inheritance Defaulting
+    reason: Defines how inherited and non-inherited properties default when no cascaded value exists.
+    source_refs:
+      - css-cascade-defaulting
+      - css-cascade-inheritance
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - css-cascade-defaulting
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-cascade-inheritance
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-cascade-inheritance
+      - svg2-property-index
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-cascade-defaulting
+      - svg2-property-index
+      - svg2-styling
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-cascade-defaulting
+      - svg2-styling
+    map_item_refs: []

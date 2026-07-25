@@ -280,6 +280,67 @@ import Testing
 	#expect(path.unknownAttributes["style"] == nil)
 }
 
+@Test func svgParserInheritsOnlyInheritedPresentationProperties() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<g
+			id="parent"
+			fill="red"
+			fill-opacity="0.5"
+			fill-rule="evenodd"
+			stroke="blue"
+			stroke-width="4"
+			stroke-linecap="round"
+			stroke-linejoin="bevel"
+			stroke-miterlimit="9"
+			stroke-dasharray="2 3"
+			stroke-dashoffset="1"
+			stroke-opacity="0.25"
+			visibility="hidden"
+			opacity="0.4"
+			display="none"
+			clip-path="url(#clip)"
+			filter="url(#filter)"
+			mask="url(#mask)"
+			transform="translate(5 6)"
+			vector-effect="non-scaling-stroke"
+		>
+			<path id="child" d="M0 0 L10 10"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let parent) = document.elements.first else {
+		Issue.record("Expected parent group")
+		return
+	}
+	guard case .path(let child) = parent.children.first else {
+		Issue.record("Expected child path")
+		return
+	}
+
+	#expect(child.attributes.fill == .color(.red))
+	#expect(child.attributes.fillOpacity == 0.5)
+	#expect(child.attributes.fillRule == .evenOdd)
+	#expect(child.attributes.stroke == .color(.blue))
+	#expect(child.attributes.strokeWidth == 4)
+	#expect(child.attributes.strokeLineCap == .round)
+	#expect(child.attributes.strokeLineJoin == .bevel)
+	#expect(child.attributes.strokeMiterLimit == 9)
+	#expect(child.attributes.strokeDashArray == [2, 3])
+	#expect(child.attributes.strokeDashOffset == 1)
+	#expect(child.attributes.strokeOpacity == 0.25)
+	#expect(child.attributes.visibility == .hidden)
+	#expect(child.attributes.opacity == 1)
+	#expect(child.attributes.display == .inline)
+	#expect(child.attributes.clipPathID == nil)
+	#expect(child.attributes.filterID == nil)
+	#expect(child.attributes.maskID == nil)
+	#expect(child.attributes.transform == .identity)
+	#expect(child.attributes.vectorEffect == SVGVectorEffect.none)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">
