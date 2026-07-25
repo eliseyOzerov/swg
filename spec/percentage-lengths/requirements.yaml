@@ -1,0 +1,324 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: percentage-lengths
+  title: SVG percentage lengths
+  domain: SVG
+  profile: null
+  summary: Parse scalar SVG length values using the percent suffix and resolve them into user-unit values using an explicit percentage reference distance.
+  non_goals:
+    - Implementing every SVG attribute-specific percentage basis.
+    - Object bounding box percentage resolution for gradients, patterns, filters, clipping, or masking.
+    - Percentage color components, opacity values, time values, or frequency values.
+    - CSS calc() and other non-scalar CSS values.
+    - Dynamic updates when an SVG viewport changes after parsing.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-types-length
+      title: SVG 1.1 Basic Data Types - length and percentage
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeLength
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-coords-units
+      title: SVG 2 Coordinate Systems, Transformations and Units - Units
+      url: https://www.w3.org/TR/SVG/coords.html#Units
+      version: Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-svg-length-value
+      title: SVG 2 Basic Data Types - SVGLength value
+      url: https://www.w3.org/TR/SVG/types.html#__svg__SVGLength__value
+      version: Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 1.1 includes a percent suffix in SVG presentation-attribute length syntax and defines percentage syntax as a number followed by percent.
+    - SVG 1.1 states that percentage reference distance depends on the attribute or property.
+    - SVG 2 defines viewport-relative percentage rules for x/width, y/height, and other viewport-based lengths.
+
+scope:
+  includes:
+    - Single scalar SVG length values using a lowercase percent suffix.
+    - Conversion of percentage lengths into Double user-unit values using an explicit basis.
+    - Horizontal, vertical, normalized-diagonal, and custom basis options for downstream attribute-specific parsing.
+    - Root svg width and height fallback viewBox behavior for percentages using horizontal and vertical viewport bases.
+  excludes:
+    - Attribute-specific basis coverage beyond root svg width and height.
+    - Percentages that represent decimals in objectBoundingBox coordinate systems.
+    - Percentages in colors, paint server offsets, opacity, or animation timing.
+    - Uppercase or alternate percent signs.
+  assumptions:
+    - The package represents one resolved SVG user unit as one Double value.
+    - The default no-associated-element viewport basis is 100 by 100 user units.
+    - The default percentage basis for scalar parsing is the normalized viewport diagonal because SVG uses that basis for non-axis-specific viewport percentages.
+
+terminology:
+  - id: percentage
+    term: percentage
+    definition: A number followed by the percent character, whose value is relative to another reference value.
+    source_refs:
+      - svg11-types-length
+  - id: reference-distance
+    term: reference distance
+    definition: The length or size against which a percentage is resolved for a particular attribute or property.
+    source_refs:
+      - svg11-types-length
+      - svg2-coords-units
+  - id: normalized-diagonal
+    term: normalized diagonal
+    definition: For viewport percentage lengths not tied to x/width or y/height, the viewport diagonal length divided by sqrt(2).
+    source_refs:
+      - svg2-coords-units
+
+structures:
+  - id: S001
+    name: Percentage basis
+    kind: enumeration
+    source_refs:
+      - svg2-coords-units
+      - svg2-svg-length-value
+    fields:
+      - name: horizontal
+        type: enum-case
+        cardinality: optional
+        position: null
+        constraints:
+          - Resolves a percentage against viewport width.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-coords-units
+      - name: vertical
+        type: enum-case
+        cardinality: optional
+        position: null
+        constraints:
+          - Resolves a percentage against viewport height.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-coords-units
+      - name: normalizedDiagonal
+        type: enum-case
+        cardinality: optional
+        position: null
+        constraints:
+          - Resolves a percentage against sqrt(width^2 + height^2) / sqrt(2).
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-coords-units
+      - name: custom
+        type: enum-case
+        cardinality: optional
+        position: null
+        constraints:
+          - Allows downstream attribute parsers to supply a spec-defined reference distance not covered by viewport axis rules.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg11-types-length
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: SVG length parsing must accept the percent character immediately after a valid SVG number.
+    applies_to:
+      - Single SVG length values.
+    source_refs:
+      - svg11-types-length
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: conversion
+    statement: A percentage length with horizontal directionality must resolve as the numeric factor divided by 100 and multiplied by the viewport width basis.
+    applies_to:
+      - x-coordinate values.
+      - width values.
+    source_refs:
+      - svg2-coords-units
+      - svg2-svg-length-value
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: conversion
+    statement: A percentage length with vertical directionality must resolve as the numeric factor divided by 100 and multiplied by the viewport height basis.
+    applies_to:
+      - y-coordinate values.
+      - height values.
+    source_refs:
+      - svg2-coords-units
+      - svg2-svg-length-value
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: conversion
+    statement: A viewport-relative percentage length without horizontal or vertical directionality must resolve against the normalized diagonal sqrt(width^2 + height^2) / sqrt(2).
+    applies_to:
+      - Other viewport-relative length values.
+    source_refs:
+      - svg2-coords-units
+      - svg2-svg-length-value
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: conversion
+    statement: Attribute-specific percentage reference distances must be supplied explicitly when they differ from viewport horizontal, vertical, or normalized-diagonal rules.
+    applies_to:
+      - Attribute-specific percentage lengths.
+    source_refs:
+      - svg11-types-length
+    testability: reviewable
+    notes: []
+  - id: R006
+    normative_strength: MUST_NOT
+    kind: scope
+    statement: This work item must not mark percentage behavior for gradients, patterns, filters, masks, color components, or animation as completed length-percentage coverage.
+    applies_to:
+      - Non-length percentage values.
+      - Object bounding box percentage values.
+    source_refs:
+      - svg11-types-length
+      - svg2-coords-units
+    testability: reviewable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Percentage length conversion
+    kind: algorithm
+    summary: Convert a parsed numeric factor and percent suffix into user units using a supplied reference distance.
+    steps:
+      - Parse the numeric factor before the percent suffix using the SVG number grammar.
+      - Select the reference distance from the supplied percentage basis.
+      - For horizontal basis, use viewport width.
+      - For vertical basis, use viewport height.
+      - For normalized-diagonal basis, use sqrt(width^2 + height^2) / sqrt(2).
+      - For custom basis, use the supplied reference distance.
+      - Return numeric factor divided by 100 and multiplied by the selected reference distance.
+    preconditions: []
+    postconditions:
+      - Returned values are in user units.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - svg11-types-length
+      - svg2-coords-units
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Percent suffix without a valid preceding SVG number.
+    source_behavior: MUST_NOT
+    required_behavior: Reject the value.
+    decision_required: false
+    source_refs:
+      - svg11-types-length
+  - id: I002
+    condition: Attribute-specific percentage basis not supplied by the caller.
+    source_behavior: UNSPECIFIED
+    required_behavior: Use the parser default basis only for generic scalar parsing; downstream attribute parsers must provide the specific basis needed for checked feature coverage.
+    decision_required: false
+    source_refs:
+      - svg11-types-length
+      - svg2-coords-units
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: Root svg width percentages must resolve against the current viewport width basis, and root svg height percentages must resolve against the current viewport height basis for fallback viewBox construction.
+    derived_from:
+      - svg2-coords-units
+      - package-root-dimension-parser
+    reasoning: SVG 2 maps width percentages to viewport width and height percentages to viewport height; the package uses parsed root width and height to construct a fallback viewBox when no viewBox is specified.
+    source_refs:
+      - svg2-coords-units
+
+implementation_choices:
+  - id: IC001
+    topic: Default percentage basis
+    statement: Use normalized diagonal as the default parser basis so generic length parsing follows SVG's non-axis-specific viewport percentage rule.
+    allowed_by:
+      - svg2-coords-units
+    source_refs:
+      - svg2-coords-units
+  - id: IC002
+    topic: Root viewport dimensions
+    statement: Use the existing default 100 by 100 viewport basis for root svg percentage width and height until host viewport sizing is implemented.
+    allowed_by:
+      - svg2-svg-length-value
+    source_refs:
+      - svg2-svg-length-value
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG length and percentage grammar
+    reason: Defines percent suffix grammar and attribute-dependent percentage references.
+    source_refs:
+      - svg11-types-length
+  - id: DEP002
+    kind: source-section
+    title: SVG viewport percentage units
+    reason: Defines width, height, and normalized diagonal percentage bases.
+    source_refs:
+      - svg2-coords-units
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-coords-units
+      - svg2-svg-length-value
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-coords-units
+      - svg2-svg-length-value
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-coords-units
+      - svg2-svg-length-value
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg11-types-length
+      - svg2-coords-units
+    map_item_refs: []

@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import Swg
 
@@ -70,9 +71,21 @@ import Testing
 	#expect(SVGLengthParser.parse("10vmax", context: context) == 20)
 }
 
-@Test func svgLengthParserRejectsPercentAndUppercaseUnits() {
-	#expect(SVGLengthParser.parse("10%") == nil)
+@Test func svgLengthParserConvertsPercentageLengthsToUserUnits() throws {
+	let context = SVGLengthContext(viewportWidth: 200, viewportHeight: 100)
+	let diagonal = try #require(SVGLengthParser.parse("10%", context: context, percentageBasis: .normalizedDiagonal))
+
+	#expect(SVGLengthParser.parse("50%", context: context, percentageBasis: .horizontal) == 100)
+	#expect(SVGLengthParser.parse("50%", context: context, percentageBasis: .vertical) == 50)
+	#expect(abs(diagonal - 15.811388300841898) < 0.000001)
+	#expect(SVGLengthParser.parse("25%", context: context, percentageBasis: .custom(80)) == 20)
+	#expect(SVGLengthParser.parse("50%") == 50)
+}
+
+@Test func svgLengthParserRejectsUppercaseUnitsAndMalformedPercentages() {
 	#expect(SVGLengthParser.parse("10PX") == nil)
 	#expect(SVGLengthParser.parse("10EM") == nil)
 	#expect(SVGLengthParser.parse("10VW") == nil)
+	#expect(SVGLengthParser.parse("%") == nil)
+	#expect(SVGLengthParser.parse("10%%") == nil)
 }

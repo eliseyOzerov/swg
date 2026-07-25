@@ -213,9 +213,21 @@ import Testing
 	#expect(document.viewBox == Rect(x: 0, y: 0, width: 150, height: 250))
 }
 
-@Test func svgParserDoesNotTreatPercentageUnitsAsRootDimensions() throws {
+@Test func svgParserUsesDefaultViewportMetricsForPercentageRootDimensions() throws {
 	let svg = """
-	<svg xmlns="http://www.w3.org/2000/svg" width="24%" height="10PX">
+	<svg xmlns="http://www.w3.org/2000/svg" width="50%" height="25%">
+		<rect id="box" width="10" height="10"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.viewBox == Rect(x: 0, y: 0, width: 50, height: 25))
+}
+
+@Test func svgParserDoesNotTreatMalformedPercentageOrUppercaseUnitsAsRootDimensions() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="24%%" height="10PX">
 		<rect id="box" width="10" height="10"/>
 	</svg>
 	"""

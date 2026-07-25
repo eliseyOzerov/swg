@@ -685,15 +685,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				viewBox = Rect(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
 			}
 		}
-		rootWidth = attributes["width"].flatMap { parseDimension($0) }
-		rootHeight = attributes["height"].flatMap { parseDimension($0) }
+		rootWidth = attributes["width"].flatMap { parseDimension($0, percentageBasis: .horizontal) }
+		rootHeight = attributes["height"].flatMap { parseDimension($0, percentageBasis: .vertical) }
 		rootLanguage = currentLanguage
 		rootPaintAttributes = parsePaintAttributes(attributes)
 		rootUnknownAttributes = parseUnknownAttributes(attributes, known: ["viewBox", "width", "height"])
 	}
 
-	private func parseDimension(_ value: String) -> Double? {
-		SVGLengthParser.parse(value)
+	private func parseDimension(_ value: String, percentageBasis: SVGLengthPercentageBasis = .normalizedDiagonal) -> Double? {
+		SVGLengthParser.parse(value, percentageBasis: percentageBasis)
 	}
 
 	private func resolveID(_ explicit: String?, elementName: String) -> String {

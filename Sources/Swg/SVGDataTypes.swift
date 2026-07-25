@@ -60,6 +60,31 @@ struct SVGLengthContext: Equatable, Sendable {
 	var resolvedViewportMaximum: Double {
 		max(viewportWidth, viewportHeight)
 	}
+
+	var resolvedViewportNormalizedDiagonal: Double {
+		sqrt((viewportWidth * viewportWidth) + (viewportHeight * viewportHeight)) / sqrt(2)
+	}
+}
+
+/// Reference distance used to resolve an SVG percentage length into user units.
+enum SVGLengthPercentageBasis: Equatable, Sendable {
+	case horizontal
+	case vertical
+	case normalizedDiagonal
+	case custom(Double)
+
+	func referenceDistance(in context: SVGLengthContext) -> Double {
+		switch self {
+		case .horizontal:
+			context.viewportWidth
+		case .vertical:
+			context.viewportHeight
+		case .normalizedDiagonal:
+			context.resolvedViewportNormalizedDiagonal
+		case .custom(let distance):
+			distance
+		}
+	}
 }
 
 /// Parses reusable SVG primitive data types such as unitless and scalar lengths.
@@ -85,8 +110,13 @@ enum SVGLengthParser {
 		("mm", 96 / 25.4)
 	]
 
-	static func parse(_ value: String, context: SVGLengthContext = .default) -> Double? {
+	static func parse(_ value: String, context: SVGLengthContext = .default, percentageBasis: SVGLengthPercentageBasis = .normalizedDiagonal) -> Double? {
 		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed.hasSuffix("%") {
+			let numberText = String(trimmed.dropLast())
+			guard let number = SVGNumberParser.parse(numberText) else { return nil }
+			return number * percentageBasis.referenceDistance(in: context) / 100
+		}
 		for unit in fontRelativeUnits where trimmed.hasSuffix(unit.suffix) {
 			let numberText = String(trimmed.dropLast(unit.suffix.count))
 			guard let number = SVGNumberParser.parse(numberText) else { return nil }
