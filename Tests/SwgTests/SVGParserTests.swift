@@ -103,6 +103,25 @@ import Testing
 	#expect(Point(4, 5).applying(nonuniform.attributes.transform) == Point(8, 15))
 }
 
+@Test func svgParserParsesSingleAngleRotateTransformFunction() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<g id="rotated" transform="rotate(90)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let group) = document.elements.first else {
+		Issue.record("Expected rotated group")
+		return
+	}
+
+	expectTransformApproximately(group.attributes.transform, Transform(a: 0, b: 1, c: -1, d: 0, tx: 0, ty: 0))
+	let point = Point(2, 3).applying(group.attributes.transform)
+	#expect(abs(point.x + 3) < 0.000001)
+	#expect(abs(point.y - 2) < 0.000001)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">
