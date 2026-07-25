@@ -19,7 +19,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let globalAttributeNames: Set<String> = [
 		"class", "clip-path", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
-		"stroke-width", "style", "transform", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
+		"stroke-width", "style", "transform", "vector-effect", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
 		"zoomAndPan"
 	]
 	private static let basicShapeGeometryPropertyNames: Set<String> = [
@@ -1081,6 +1081,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let inherited = symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
 		var result = inherited
 		result.transform = .identity
+		result.vectorEffect = .none
 
 		if let className = attributes["class"] {
 			for cls in className.split(separator: " ") {
@@ -1147,6 +1148,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let value = attributes["clip-path"] { result.clipPathID = parseURLID(value) }
 		if let value = attributes["filter"] { result.filterID = parseURLID(value) }
 		if let value = attributes["mask"] { result.maskID = parseURLID(value) }
+		if let value = attributes["vector-effect"], let vectorEffect = parseVectorEffect(value) { result.vectorEffect = vectorEffect }
 		if let transform = attributes["transform"] { result.transform = parseTransform(transform) }
 	}
 
@@ -1158,6 +1160,46 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let trimmed = value.trimmingCharacters(in: .whitespaces)
 		if trimmed == "none" { return [] }
 		return SVGListParser.parse(trimmed, itemParser: parseNumber) ?? []
+	}
+
+	private func parseVectorEffect(_ value: String) -> SVGVectorEffect? {
+		let tokens = value.split(whereSeparator: { $0.isWhitespace }).map(String.init)
+		guard !tokens.isEmpty else { return nil }
+		if tokens == ["none"] { return SVGVectorEffect.none }
+
+		var components: [SVGVectorEffectComponent] = []
+		var coordinateSpace: SVGVectorEffectCoordinateSpace = .viewport
+		var didReadCoordinateSpace = false
+
+		for (index, token) in tokens.enumerated() {
+			switch token {
+			case "non-scaling-stroke":
+				guard !didReadCoordinateSpace else { return nil }
+				components.append(.nonScalingStroke)
+			case "non-scaling-size":
+				guard !didReadCoordinateSpace else { return nil }
+				components.append(.nonScalingSize)
+			case "non-rotation":
+				guard !didReadCoordinateSpace else { return nil }
+				components.append(.nonRotation)
+			case "fixed-position":
+				guard !didReadCoordinateSpace else { return nil }
+				components.append(.fixedPosition)
+			case "viewport":
+				guard index == tokens.count - 1, !didReadCoordinateSpace else { return nil }
+				coordinateSpace = .viewport
+				didReadCoordinateSpace = true
+			case "screen":
+				guard index == tokens.count - 1, !didReadCoordinateSpace else { return nil }
+				coordinateSpace = .screen
+				didReadCoordinateSpace = true
+			default:
+				return nil
+			}
+		}
+
+		guard !components.isEmpty else { return nil }
+		return .effects(components, coordinateSpace: coordinateSpace)
 	}
 
 	private func parseURLID(_ value: String) -> String? {

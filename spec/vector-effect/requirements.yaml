@@ -1,0 +1,267 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: vector-effect
+  title: SVG vector-effect property
+  domain: SVG 2
+  profile: null
+  summary: The `vector-effect` property records constrained transformation behavior for graphics elements and use elements, including non-scaling stroke behavior and at-risk constrained transform values.
+  non_goals:
+    - Rendering non-scaling strokes.
+    - Computing vector-effect transformation formulas for nested viewport coordinate systems.
+    - DOM interfaces.
+    - Animation.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-vector-effects
+      title: SVG 2, 8.13 Vector effects
+      url: https://www.w3.org/TR/SVG2/coords.html#VectorEffects
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-vector-effect-property
+      title: SVG 2, vector-effect property definition
+      url: https://www.w3.org/TR/SVG2/coords.html#VectorEffectProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-vector-effect-computation
+      title: SVG 2, 8.13.1 Computing the vector effects
+      url: https://www.w3.org/TR/SVG2/coords.html#ComputingVectorEffects
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 marks values other than `none` and `non-scaling-stroke` as at risk due to implementation status, but they remain in the property grammar in the referenced draft.
+    - This work item preserves parsed property intent for renderers; stroke rendering behavior is deferred.
+
+scope:
+  includes:
+    - Parsing the `vector-effect` property from presentation attributes and CSS declarations already consumed by the parser.
+    - Preserving `none`.
+    - Preserving `non-scaling-stroke`.
+    - Preserving `non-scaling-size`, `non-rotation`, and `fixed-position` combinations.
+    - Preserving optional `viewport` and `screen` coordinate-space keywords.
+    - Enforcing the property's non-inherited initial value in parsed attributes.
+  excludes:
+    - Stroke outline rendering behavior.
+    - CTM decomposition or constrained transformation formula evaluation.
+    - Animating vector-effect changes.
+  assumptions:
+    - The package may represent at-risk values even before renderers implement their visual effects.
+
+terminology:
+  - id: term-vector-effect
+    term: vector-effect
+    definition: A property that specifies constrained transformation behavior to use when drawing an SVG graphics or use element.
+    source_refs:
+      - svg2-vector-effects
+      - svg2-vector-effect-property
+  - id: term-host-coordinate-space
+    term: host coordinate space
+    definition: The coordinate space keyword, `viewport` or `screen`, used for constrained transformations when vector effects are applied in nested viewport coordinate systems.
+    source_refs:
+      - svg2-vector-effect-property
+
+structures:
+  - id: S001
+    name: vector-effect
+    kind: property
+    source_refs:
+      - svg2-vector-effect-property
+    fields:
+      - name: mode
+        type: keyword-or-keyword-list
+        cardinality: required
+        position: 1
+        constraints:
+          - May be `none`.
+          - Otherwise includes one or more effect keywords from `non-scaling-stroke`, `non-scaling-size`, `non-rotation`, and `fixed-position`.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - svg2-vector-effect-property
+      - name: coordinateSpace
+        type: keyword
+        cardinality: optional
+        position: after-effects
+        constraints:
+          - May be `viewport`.
+          - May be `screen`.
+          - Defaults to `viewport` when omitted.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-vector-effect-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `vector-effect` property must have initial value `none`, must apply to graphics elements and `use`, and must not inherit.
+    applies_to:
+      - SVGPaintAttributes
+      - SVGParser.parsePaintAttributes
+    source_refs:
+      - svg2-vector-effect-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must accept `none` as the `vector-effect` value and represent it as no vector effect.
+    applies_to:
+      - SVGParser.parseVectorEffect
+    source_refs:
+      - svg2-vector-effect-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must accept one or more vector effect keywords from `non-scaling-stroke`, `non-scaling-size`, `non-rotation`, and `fixed-position`.
+    applies_to:
+      - SVGParser.parseVectorEffect
+    source_refs:
+      - svg2-vector-effect-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must preserve an optional `viewport` or `screen` coordinate-space keyword, defaulting to `viewport` when no coordinate-space keyword is specified.
+    applies_to:
+      - SVGParser.parseVectorEffect
+      - SVGVectorEffect
+    source_refs:
+      - svg2-vector-effect-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: The `none` value specifies the default rendering behavior with no vector effect applied.
+    applies_to:
+      - SVGVectorEffect
+    source_refs:
+      - svg2-vector-effect-property
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: The `non-scaling-stroke` value records that the object's stroke width is not intended to depend on element transformations or zoom level.
+    applies_to:
+      - SVGVectorEffect
+      - future renderers
+    source_refs:
+      - svg2-vector-effects
+      - svg2-vector-effect-property
+    testability: reviewable
+    notes:
+      - Rendering behavior is out of scope for this parser milestone.
+
+algorithms:
+  - id: ALG001
+    name: vector-effect parsing
+    kind: algorithm
+    summary: Parse either `none` or a whitespace-separated list of effect keywords followed by an optional coordinate-space keyword.
+    steps:
+      - Split the property value on SVG/CSS whitespace.
+      - If the only token is `none`, return the no-effect value.
+      - Otherwise collect effect keywords.
+      - If the last token is `viewport` or `screen`, store that coordinate-space keyword; otherwise use `viewport`.
+      - Reject values containing `none` alongside other tokens, unknown tokens, or coordinate-space keywords in the wrong position.
+    preconditions:
+      - The input is the raw `vector-effect` property value.
+    postconditions:
+      - Valid values are represented without losing effect keywords or the coordinate-space keyword.
+    requirement_refs:
+      - R002
+      - R003
+      - R004
+    source_refs:
+      - svg2-vector-effect-property
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `vector-effect` value with unknown keywords, `none` combined with other tokens, or coordinate-space keywords outside the final position.
+    source_behavior: invalid-property-value
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-vector-effect-property
+
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Renderer behavior
+    statement: The parser may preserve vector-effect values without implementing stroke rendering or constrained transformation formulas in this work item.
+    allowed_by:
+      - svg2-vector-effect-property
+      - svg2-vector-effect-computation
+    source_refs:
+      - svg2-vector-effect-property
+      - svg2-vector-effect-computation
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2, 8.13.1 Computing the vector effects
+    reason: Defines rendering-time constrained transformation formulas that future renderers will need after parsed values are preserved.
+    source_refs:
+      - svg2-vector-effect-computation
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-vector-effect-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-vector-effect-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-vector-effect-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-vector-effect-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-vector-effect-property
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-vector-effects
+      - svg2-vector-effect-property
+    map_item_refs: []
+  - item_id: ALG001
+    item_type: algorithm
+    source_refs:
+      - svg2-vector-effect-property
+    map_item_refs: []
+  - item_id: S001
+    item_type: structure
+    source_refs:
+      - svg2-vector-effect-property
+    map_item_refs: []

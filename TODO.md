@@ -86,7 +86,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `rotate(angle cx cy)`.
 - [x] `skewX`.
 - [x] `skewY`.
-- [ ] `vector-effect`.
+- [x] `vector-effect`.
 
 ## Styling and Cascade
 

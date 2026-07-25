@@ -20,6 +20,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var clipPathID: String?
 	public var filterID: String?
 	public var maskID: String?
+	public var vectorEffect: SVGVectorEffect
 
 	public init(
 		fill: SVGPaint = .color(.black),
@@ -39,7 +40,8 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		display: SVGDisplay = .inline,
 		clipPathID: String? = nil,
 		filterID: String? = nil,
-		maskID: String? = nil
+		maskID: String? = nil,
+		vectorEffect: SVGVectorEffect = .none
 	) {
 		self.fill = fill
 		self.fillOpacity = fillOpacity
@@ -59,6 +61,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.clipPathID = clipPathID
 		self.filterID = filterID
 		self.maskID = maskID
+		self.vectorEffect = vectorEffect
 	}
 
 	public static let defaults = SVGPaintAttributes()
@@ -86,6 +89,26 @@ public enum SVGVisibility: Sendable, Equatable, Hashable {
 public enum SVGDisplay: Sendable, Equatable, Hashable {
 	case inline
 	case none
+}
+
+/// SVG vector-effect property value that controls constrained transform behavior.
+public enum SVGVectorEffect: Sendable, Equatable, Hashable {
+	case none
+	case effects([SVGVectorEffectComponent], coordinateSpace: SVGVectorEffectCoordinateSpace)
+}
+
+/// Individual vector-effect keyword other than none or coordinate space.
+public enum SVGVectorEffectComponent: Sendable, Equatable, Hashable {
+	case nonScalingStroke
+	case nonScalingSize
+	case nonRotation
+	case fixedPosition
+}
+
+/// Host coordinate space used for vector-effect constrained transformations.
+public enum SVGVectorEffectCoordinateSpace: Sendable, Equatable, Hashable {
+	case viewport
+	case screen
 }
 
 /// Per-element style override that renderers can apply after parsing.

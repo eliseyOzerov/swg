@@ -182,6 +182,48 @@ import Testing
 	#expect(abs(point.y - 5) < 0.000001)
 }
 
+@Test func svgParserParsesVectorEffectPropertyWithoutInheritance() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>.screen-fixed { vector-effect: non-scaling-size non-rotation fixed-position screen; }</style>
+		<g id="parent" vector-effect="non-scaling-stroke">
+			<path id="child" d="M0 0 L10 10"/>
+		</g>
+		<path id="stroke" vector-effect="non-scaling-stroke" d="M0 0 L10 10"/>
+		<path id="none" vector-effect="none" d="M0 0 L10 10"/>
+		<path id="screen" class="screen-fixed" d="M0 0 L10 10"/>
+		<path id="invalid" vector-effect="none non-scaling-stroke" d="M0 0 L10 10"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let paths = Dictionary(uniqueKeysWithValues: document.elements.flatMap { element -> [(String, SVGPathData)] in
+		switch element {
+		case .group(let group):
+			return group.children.compactMap {
+				if case .path(let path) = $0 { return (path.id, path) }
+				return nil
+			}
+		case .path(let path):
+			return [(path.id, path)]
+		default:
+			return []
+		}
+	})
+
+	guard case .group(let parent) = document.elements.first else {
+		Issue.record("Expected vector-effect parent group")
+		return
+	}
+	#expect(parent.attributes.vectorEffect == .effects([.nonScalingStroke], coordinateSpace: .viewport))
+	#expect(paths["child"]?.attributes.vectorEffect == SVGVectorEffect.none)
+	#expect(paths["stroke"]?.attributes.vectorEffect == .effects([.nonScalingStroke], coordinateSpace: .viewport))
+	#expect(paths["none"]?.attributes.vectorEffect == SVGVectorEffect.none)
+	#expect(paths["screen"]?.attributes.vectorEffect == .effects([.nonScalingSize, .nonRotation, .fixedPosition], coordinateSpace: .screen))
+	#expect(paths["invalid"]?.attributes.vectorEffect == SVGVectorEffect.none)
+	#expect(paths["stroke"]?.unknownAttributes["vector-effect"] == nil)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">
