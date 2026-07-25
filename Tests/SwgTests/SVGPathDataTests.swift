@@ -37,6 +37,19 @@ import Testing
 	])
 }
 
+@Test func svgPathParserHandlesSmoothQuadraticBezierCommands() {
+	let path = SVGPathDataParser.parse("M 0 0 Q 10 10 20 0 T 40 0 t 20 0 L 70 0 T 80 0")
+
+	#expect(path.commands == [
+		.move(to: Point(0, 0)),
+		.quad(to: Point(20, 0), control: Point(10, 10)),
+		.quad(to: Point(40, 0), control: Point(30, -10)),
+		.quad(to: Point(60, 0), control: Point(50, 10)),
+		.line(to: Point(70, 0)),
+		.quad(to: Point(80, 0), control: Point(70, 0)),
+	])
+}
+
 @Test func svgPathParserConvertsArcsToCubics() throws {
 	let path = SVGPathDataParser.parse("M 0 0 A 10 10 0 0 1 10 10")
 

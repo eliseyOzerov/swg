@@ -1,0 +1,298 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: path-t-smooth-quadratic-bezier
+  title: T/t smooth quadratic Bezier path commands
+  domain: SVG 2
+  profile: null
+  summary: >
+    Capture SVG 2 path data behavior for explicit T and t smooth quadratic
+    Bezier curveto commands, including endpoint parsing, reflected control
+    point calculation, fallback control behavior, and relative coordinates.
+  non_goals:
+    - Explicit Q/q quadratic Bezier commands.
+    - Implicit repeated command parsing after T/t.
+    - Path data tokenizer edge cases such as compact signs or exponents.
+    - Rendering, flattening, or length calculation for quadratic curves.
+
+source_context:
+  spec_map: null
+  map_items:
+    - id: path-data-t-smooth-quadratic-bezier
+      title: Path Data - T/t smooth quadratic Bezier
+      artifact_path: spec/path-t-smooth-quadratic-bezier/requirements.yaml
+  canonical_sources:
+    - id: svg2-path-data
+      title: SVG 2 Paths - Path data
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataQuadraticBezierCommands
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-path-data-grammar
+      title: SVG 2 Paths - Grammar for path data
+      url: https://www.w3.org/TR/SVG2/paths.html#PathDataBNF
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-reflected-control-points
+      title: SVG 2 Paths - Reflected control points
+      url: https://www.w3.org/TR/SVG2/paths.html#ReflectedControlPoints
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - Recognizing uppercase T as an absolute smooth quadratic Bezier curveto command.
+    - Recognizing lowercase t as a relative smooth quadratic Bezier curveto command.
+    - Parsing each explicit T/t command from one endpoint coordinate pair.
+    - Deriving the control point by reflecting the previous quadratic control point around the current point.
+    - Using the current point as the control point when there is no previous quadratic control point to reflect.
+    - Updating the current point to the command endpoint.
+  excludes:
+    - Explicit Q/q command argument parsing.
+    - Implicit repeated coordinate-pair sequences.
+    - Error recovery for malformed path data.
+    - Conversion of quadratic curves into cubic curves for rendering.
+  assumptions:
+    - >
+      The package represents smooth quadratic Bezier segments as PathCommand.quad
+      with the reflected control point materialized as an absolute point.
+    - >
+      Tests for repeated T/t parameter groups are deferred to the separate
+      implicit repeated non-M command TODO bullet.
+
+terminology:
+  - id: term-smooth-quadratic-bezier-curveto
+    term: smooth quadratic Bezier curveto
+    definition: >
+      A quadratic Bezier path command that omits the control point from the
+      command arguments and derives it from prior path state.
+    source_refs:
+      - svg2-path-data
+  - id: term-reflected-control-point
+    term: reflected control point
+    definition: >
+      A control point calculated by mirroring the previous quadratic control
+      point around the current point.
+    source_refs:
+      - svg2-reflected-control-points
+
+structures:
+  - id: S001
+    name: T/t command arguments
+    kind: structure
+    source_refs:
+      - svg2-path-data
+      - svg2-path-data-grammar
+    fields:
+      - name: end
+        type: coordinate-pair
+        cardinality: required
+        position: first
+        constraints:
+          - Absolute for T.
+          - Relative to the current point for t.
+          - Becomes the new current point after the command.
+        requirement_refs:
+          - R001
+          - R004
+          - R005
+        source_refs:
+          - svg2-path-data
+          - svg2-path-data-grammar
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: >
+      A smooth quadratic Bezier curveto command is introduced by T or t and
+      consumes a coordinate-pair sequence for its endpoint arguments.
+    applies_to:
+      - path data parser
+    source_refs:
+      - svg2-path-data-grammar
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      When a previous quadratic control point is available, T/t uses the
+      reflection of that point around the current point as the new segment's
+      control point.
+    applies_to:
+      - smooth quadratic Bezier segment
+    source_refs:
+      - svg2-path-data
+      - svg2-reflected-control-points
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: geometry
+    statement: >
+      When no previous quadratic control point is available, T/t uses the
+      current point as the control point.
+    applies_to:
+      - smooth quadratic Bezier segment
+    source_refs:
+      - svg2-path-data
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: relative-coordinate
+    statement: >
+      For t, endpoint coordinates are relative to the current point at the start
+      of the command.
+    applies_to:
+      - relative smooth quadratic Bezier segment
+    source_refs:
+      - svg2-path-data
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: state
+    statement: >
+      After a T/t segment, the path current point is the segment endpoint.
+    applies_to:
+      - path current point
+    source_refs:
+      - svg2-path-data
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Reflected quadratic control point
+    kind: algorithm
+    summary: >
+      Derive the omitted T/t control point by reflecting the previous quadratic
+      control point around the current point.
+    steps:
+      - Let the current point be (curx, cury).
+      - Let the previous quadratic control point be (oldx, oldy).
+      - Calculate the reflected control point as (2 * curx - oldx, 2 * cury - oldy).
+    preconditions:
+      - A previous quadratic control point is available.
+    postconditions:
+      - The reflected point is used as the T/t segment control point.
+    requirement_refs:
+      - R002
+    source_refs:
+      - svg2-reflected-control-points
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: >
+      For this package, an explicit T/t segment must produce a PathCommand.quad
+      whose control and endpoint are stored as absolute points.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    reasoning: >
+      PathCommand values are inspectable absolute path commands in this package,
+      so omitted and relative T/t inputs need to be resolved before storage.
+    source_refs:
+      - svg2-path-data
+      - svg2-path-data-grammar
+      - svg2-reflected-control-points
+
+implementation_choices:
+  - id: IC001
+    topic: Repeated T/t arguments
+    statement: >
+      This bullet intentionally tests explicit T/t command instances only;
+      repeated argument groups are deferred to the separate repeated-command
+      TODO bullet.
+    allowed_by:
+      - R001
+    source_refs:
+      - svg2-path-data-grammar
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 path coordinate grammar
+    reason: >
+      T/t command endpoints are expressed as coordinate pairs using the shared
+      path data coordinate grammar.
+    source_refs:
+      - svg2-path-data-grammar
+  - id: DEP002
+    kind: source-section
+    title: SVG 2 reflected control point notes
+    reason: >
+      T/t depends on the shared reflected-control-point behavior described for
+      smooth path commands.
+    source_refs:
+      - svg2-reflected-control-points
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-path-data-grammar
+    map_item_refs:
+      - path-data-t-smooth-quadratic-bezier
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-path-data
+      - svg2-reflected-control-points
+    map_item_refs:
+      - path-data-t-smooth-quadratic-bezier
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-path-data
+    map_item_refs:
+      - path-data-t-smooth-quadratic-bezier
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-path-data
+    map_item_refs:
+      - path-data-t-smooth-quadratic-bezier
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-path-data
+    map_item_refs:
+      - path-data-t-smooth-quadratic-bezier
+  - item_id: ALG001
+    item_type: algorithm
+    source_refs:
+      - svg2-reflected-control-points
+    map_item_refs:
+      - path-data-t-smooth-quadratic-bezier
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-path-data
+      - svg2-path-data-grammar
+      - svg2-reflected-control-points
+    map_item_refs:
+      - path-data-t-smooth-quadratic-bezier
