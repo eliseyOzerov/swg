@@ -5,6 +5,8 @@ import FoundationXML
 
 /// Parses SVG XML data into an `SVGDocument`.
 public final class SVGParser: NSObject, XMLParserDelegate {
+	fileprivate static let svgNamespaceURI = "http://www.w3.org/2000/svg"
+
 	private var viewBox: Rect = .zero
 	private var rootWidth: Double?
 	private var rootHeight: Double?
@@ -32,6 +34,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var styleText = ""
 	private var styleSheet: [String: [String: String]] = [:]
 	private var characterBuffer = ""
+	private var namespaceStack: [SVGNamespaceContext] = [.empty]
+	private var parsedElementStack: [SVGParsedElement] = []
 
 	public func parse(_ string: String) -> SVGDocument? {
 		guard let data = string.data(using: .utf8) else { return nil }
@@ -57,6 +61,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
 		characterBuffer = ""
+
+		var namespaceContext = namespaceStack.last ?? .empty
+		namespaceContext.applyDeclarations(from: attributes)
+		namespaceStack.append(namespaceContext)
+
+		let expandedName = namespaceContext.expandedElementName(for: elementName)
+		let parsedElement = SVGParsedElement(localName: expandedName.localName, namespaceURI: expandedName.namespaceURI)
+		parsedElementStack.append(parsedElement)
+		guard parsedElement.isSVGElement else { return }
+		let elementName = parsedElement.localName
 
 		switch elementName {
 		case "svg":
@@ -120,6 +134,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	public func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName: String?) {
+		let parsedElement = parsedElementStack.last
+		defer {
+			if !parsedElementStack.isEmpty { parsedElementStack.removeLast() }
+			if !namespaceStack.isEmpty { namespaceStack.removeLast() }
+		}
+		guard let parsedElement, parsedElement.isSVGElement else {
+			characterBuffer = ""
+			return
+		}
+		let elementName = parsedElement.localName
+
 		switch elementName {
 		case "defs":
 			inDefs = false
@@ -210,6 +235,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		styleText = ""
 		styleSheet = [:]
 		characterBuffer = ""
+		namespaceStack = [.empty]
+		parsedElementStack = []
 	}
 
 	private func parseShapeElement(_ elementName: String, attributes: [String: String]) {
@@ -298,7 +325,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseHref(_ attributes: [String: String]) -> String? {
-		let raw = attributes["href"] ?? attributes["xlink:href"]
+		let raw = attributes["href"] ?? xlinkAttribute("href", in: attributes)
 		return raw?.hasPrefix("#") == true ? String(raw!.dropFirst()) : raw
 	}
 
@@ -310,8 +337,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseImage(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "Image")
-		let href = attributes["href"] ?? attributes["xlink:href"] ?? ""
+		let href = attributes["href"] ?? xlinkAttribute("href", in: attributes) ?? ""
 		appendElement(.image(SVGImageData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), href: href, attributes: parsePaintAttributes(attributes))))
+	}
+
+	private func xlinkAttribute(_ localName: String, in attributes: [String: String]) -> String? {
+		attributes["xlink:\(localName)"]
 	}
 
 	private func parseTextStart(_ attributes: [String: String]) {
@@ -617,6 +648,58 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		guard let value, let number = Double(value) else { return 0 }
 		return number
 	}
+}
+
+private struct SVGNamespaceContext {
+	var bindings: [String: String]
+
+	static let empty = SVGNamespaceContext(bindings: [:])
+
+	mutating func applyDeclarations(from attributes: [String: String]) {
+		for (name, value) in attributes {
+			if name == "xmlns" {
+				setNamespace(value, for: "")
+			} else if name.hasPrefix("xmlns:") {
+				let prefix = String(name.dropFirst("xmlns:".count))
+				setNamespace(value, for: prefix)
+			}
+		}
+	}
+
+	func expandedElementName(for qualifiedName: String) -> SVGExpandedName {
+		let name = splitQualifiedName(qualifiedName)
+		return SVGExpandedName(localName: name.localName, namespaceURI: bindings[name.prefix ?? ""])
+	}
+
+	private mutating func setNamespace(_ namespaceURI: String, for prefix: String) {
+		if namespaceURI.isEmpty {
+			bindings.removeValue(forKey: prefix)
+		} else {
+			bindings[prefix] = namespaceURI
+		}
+	}
+}
+
+private struct SVGExpandedName {
+	var localName: String
+	var namespaceURI: String?
+}
+
+private struct SVGParsedElement {
+	var localName: String
+	var namespaceURI: String?
+
+	var isSVGElement: Bool {
+		guard let namespaceURI else { return true }
+		return namespaceURI == SVGParser.svgNamespaceURI
+	}
+}
+
+private func splitQualifiedName(_ qualifiedName: String) -> (prefix: String?, localName: String) {
+	guard let separator = qualifiedName.firstIndex(of: ":") else {
+		return (nil, qualifiedName)
+	}
+	return (String(qualifiedName[..<separator]), String(qualifiedName[qualifiedName.index(after: separator)...]))
 }
 
 private extension SVGElement {

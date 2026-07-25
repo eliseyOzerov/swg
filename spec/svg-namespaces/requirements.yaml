@@ -1,0 +1,183 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: svg-namespaces
+  title: SVG XML namespaces and XLink href
+  domain: SVG 2
+  profile: null
+  summary: Parse SVG XML elements by namespace-expanded names, accepting both default and prefixed SVG namespace declarations, and recognize legacy XLink href references where SVG 2 defines them as backwards-compatible fallbacks.
+  non_goals:
+    - Preserve unknown foreign-namespaced elements and attributes in the public document model.
+    - Resolve external URL references.
+    - Implement general URL processing semantics beyond same-document href string parsing.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-structure-namespace
+      title: SVG 2 Document Structure, Namespace
+      url: https://www.w3.org/TR/SVG/struct.html#Namespace
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-linking-xlink
+      title: SVG 2 Linking, Deprecated XLink URL reference attributes
+      url: https://www.w3.org/TR/SVG/linking.html#XLinkRefAttrs
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: xml-names
+      title: Namespaces in XML 1.0, Qualified Names and Namespace Defaulting
+      url: https://www.w3.org/TR/xml-names/
+      version: Third Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - No project-local spec map exists yet, so this artifact is scoped directly to the TODO bullet.
+
+scope:
+  includes:
+    - SVG element recognition when the SVG namespace is declared as the default namespace.
+    - SVG element recognition when the SVG namespace is declared with a prefix.
+    - XLink namespaced href fallback for SVG elements with href URL reference attributes.
+    - Plain href precedence over XLink href when both are present.
+  excludes:
+    - DOM preservation for foreign namespace content.
+    - Rendering semantics for use, image, or gradient references.
+    - Namespace behavior for HTML-parsed inline SVG fragments.
+  assumptions:
+    - The parser continues accepting unnamespaced SVG XML as a compatibility mode for existing callers and fixtures.
+
+terminology:
+  - id: term-svg-namespace
+    term: SVG namespace
+    definition: The namespace URI http://www.w3.org/2000/svg used for SVG elements in XML.
+    source_refs:
+      - svg2-structure-namespace
+  - id: term-qualified-name
+    term: Qualified name
+    definition: An XML name that may contain a prefix and local part, where the prefix maps to a namespace URI.
+    source_refs:
+      - xml-names
+  - id: term-default-namespace
+    term: Default namespace
+    definition: A namespace declaration that applies to unprefixed element names within its scope but not directly to unprefixed attribute names.
+    source_refs:
+      - xml-names
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: conformance
+    statement: SVG XML parsed as XML must identify SVG elements as belonging to the SVG namespace URI.
+    applies_to:
+      - SVG XML element parsing
+    source_refs:
+      - svg2-structure-namespace
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: dispatch
+    statement: A default SVG namespace declaration must make unprefixed descendant element names SVG elements within the declaration scope.
+    applies_to:
+      - SVG XML element parsing
+    source_refs:
+      - svg2-structure-namespace
+      - xml-names
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: dispatch
+    statement: A prefixed SVG namespace declaration must make element names with that prefix SVG elements within the declaration scope.
+    applies_to:
+      - SVG XML element parsing
+    source_refs:
+      - svg2-structure-namespace
+      - xml-names
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: SVG elements with href URL reference attributes must recognize an XLink-namespaced href attribute as a backwards-compatible fallback.
+    applies_to:
+      - use href parsing
+      - image href parsing
+      - gradient href parsing
+    source_refs:
+      - svg2-linking-xlink
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: SHALL
+    kind: precedence
+    statement: When both unnamespaced href and XLink-namespaced href are present, the unnamespaced href value is used and the XLink value is ignored.
+    applies_to:
+      - href parsing
+    source_refs:
+      - svg2-linking-xlink
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Unnamespaced SVG compatibility
+    statement: The source requires SVG namespaces for XML conformance, but this parser may continue accepting unnamespaced SVG XML for compatibility with existing package behavior.
+    allowed_by:
+      - Existing package API behavior
+    source_refs:
+      - svg2-structure-namespace
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 URL reference attributes
+    reason: Defines the href and legacy xlink:href relationship used by use, image, and gradient parsing.
+    source_refs:
+      - svg2-linking-xlink
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-structure-namespace
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-structure-namespace
+      - xml-names
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-structure-namespace
+      - xml-names
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-linking-xlink
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-linking-xlink
+    map_item_refs: []

@@ -37,3 +37,54 @@ import Testing
 	#expect(path.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
 	#expect(path.attributes.strokeWidth == 2)
 }
+
+@Test func svgParserHandlesDefaultNamespaceAndXLinkHref() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10">
+		<defs>
+			<path id="symbolPath" d="M0 0 L1 1"/>
+		</defs>
+		<use id="copy" xlink:href="#symbolPath" x="2" y="3"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.viewBox == Rect(x: 0, y: 0, width: 10, height: 10))
+	#expect(document.defs.reusableElements["symbolPath"]?.count == 1)
+
+	guard case .use(let use) = document.elements.first else {
+		Issue.record("Expected root element to be a use element")
+		return
+	}
+	#expect(use.id == "copy")
+	#expect(use.href == "symbolPath")
+	#expect(use.x == 2)
+	#expect(use.y == 3)
+}
+
+@Test func svgParserHandlesPrefixedSVGNamespaceAndHrefPrecedence() throws {
+	let svg = """
+	<svg:svg xmlns:svg="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 16 16">
+		<svg:defs>
+			<svg:path id="preferred" d="M0 0 L2 2"/>
+			<svg:path id="legacy" d="M1 1 L3 3"/>
+		</svg:defs>
+		<custom:path xmlns:custom="https://example.com/custom" id="foreign" d="M0 0 L9 9"/>
+		<svg:use id="copy" href="#preferred" xlink:href="#legacy"/>
+	</svg:svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.viewBox == Rect(x: 0, y: 0, width: 16, height: 16))
+	#expect(document.defs.reusableElements["preferred"]?.count == 1)
+	#expect(document.defs.reusableElements["legacy"]?.count == 1)
+	#expect(document.elementIDs.contains("foreign") == false)
+
+	guard case .use(let use) = document.elements.first else {
+		Issue.record("Expected root element to be a use element")
+		return
+	}
+	#expect(use.href == "preferred")
+}
