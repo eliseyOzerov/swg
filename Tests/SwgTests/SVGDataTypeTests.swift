@@ -61,12 +61,18 @@ import Testing
 	#expect(SVGLengthParser.parse("2ch", context: upright) == 40)
 }
 
-@Test func svgLengthParserRejectsViewportPercentAndUppercaseUnits() {
-	#expect(SVGLengthParser.parse("10vw") == nil)
-	#expect(SVGLengthParser.parse("10vh") == nil)
-	#expect(SVGLengthParser.parse("10vmin") == nil)
-	#expect(SVGLengthParser.parse("10vmax") == nil)
+@Test func svgLengthParserConvertsViewportRelativeUnitsToUserUnits() {
+	let context = SVGLengthContext(viewportWidth: 200, viewportHeight: 100)
+
+	#expect(SVGLengthParser.parse("10vw", context: context) == 20)
+	#expect(SVGLengthParser.parse("10vh", context: context) == 10)
+	#expect(SVGLengthParser.parse("10vmin", context: context) == 10)
+	#expect(SVGLengthParser.parse("10vmax", context: context) == 20)
+}
+
+@Test func svgLengthParserRejectsPercentAndUppercaseUnits() {
 	#expect(SVGLengthParser.parse("10%") == nil)
 	#expect(SVGLengthParser.parse("10PX") == nil)
 	#expect(SVGLengthParser.parse("10EM") == nil)
+	#expect(SVGLengthParser.parse("10VW") == nil)
 }

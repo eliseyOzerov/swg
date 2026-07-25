@@ -213,9 +213,9 @@ import Testing
 	#expect(document.viewBox == Rect(x: 0, y: 0, width: 150, height: 250))
 }
 
-@Test func svgParserDoesNotTreatViewportOrPercentageUnitsAsRootDimensions() throws {
+@Test func svgParserDoesNotTreatPercentageUnitsAsRootDimensions() throws {
 	let svg = """
-	<svg xmlns="http://www.w3.org/2000/svg" width="24vw" height="24%">
+	<svg xmlns="http://www.w3.org/2000/svg" width="24%" height="10PX">
 		<rect id="box" width="10" height="10"/>
 	</svg>
 	"""
@@ -223,6 +223,18 @@ import Testing
 	let document = try #require(SVGParser().parse(svg))
 
 	#expect(document.viewBox == Rect(x: 0, y: 0, width: 100, height: 100))
+}
+
+@Test func svgParserUsesDefaultViewportMetricsForViewportRelativeRootDimensions() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="50vw" height="25vh">
+		<rect id="box" width="10" height="10"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.viewBox == Rect(x: 0, y: 0, width: 50, height: 25))
 }
 
 @Test func svgParserUsesDefaultFontMetricsForFontRelativeRootDimensions() throws {

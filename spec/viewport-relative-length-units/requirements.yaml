@@ -1,0 +1,291 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: viewport-relative-length-units
+  title: SVG viewport-relative length units
+  domain: SVG
+  profile: null
+  summary: Parse scalar SVG length values using vw, vh, vmin, and vmax units and resolve them into user-unit values from viewport dimensions.
+  non_goals:
+    - Percentage length values using the percent suffix.
+    - Font-relative length units.
+    - CSS cascade, media query, or host layout viewport integration.
+    - Dynamic updates when viewport dimensions change after parsing.
+    - Attribute-specific percentage bases and directionality-specific percentage behavior.
+    - Angle, time, frequency, list, paint, IRI, and functional IRI parsing.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-values-viewport-relative-lengths
+      title: CSS Values and Units Level 3 - Viewport-percentage Lengths
+      url: https://www.w3.org/TR/css-values-3/#viewport-relative-lengths
+      version: Candidate Recommendation Draft, 22 March 2024
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-svg-length-value
+      title: SVG 2 Basic Data Types - SVGLength value
+      url: https://www.w3.org/TR/SVG/types.html#__svg__SVGLength__value
+      version: Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - CSS Values Level 3 defines vw, vh, vmin, and vmax as viewport-percentage length units.
+    - SVG 2 defines SVGLength value conversion in user units using viewport size as a conversion basis when needed.
+    - SVG 2's SVGLength unitType table does not expose all CSS length units, so this work item covers parser conversion rather than DOM unitType representation.
+
+scope:
+  includes:
+    - Single scalar SVG length values using lowercase vw, vh, vmin, or vmax suffixes.
+    - Conversion into Double user-unit values using supplied viewport width and height context.
+    - Deterministic default conversion when no associated viewport context exists.
+    - Root svg width and height fallback viewBox behavior for viewport-relative lengths using the default context.
+  excludes:
+    - Uppercase or mixed-case unit spelling in SVG XML presentation attributes.
+    - Percent suffix parsing and percentage basis rules.
+    - CSS calc() and other non-scalar values.
+    - Live host viewport measurement.
+  assumptions:
+    - The package represents one resolved CSS px as one user unit.
+    - The default no-associated-viewport context uses a 100 by 100 user-unit viewport basis, matching SVG 2's no-associated-element viewport size fallback for length conversion bases.
+    - Viewport-relative units are resolved before absolute units so vmin is not interpreted as an invalid in length.
+
+terminology:
+  - id: viewport-relative-length
+    term: viewport-relative length
+    definition: A relative length whose used value is resolved as a percentage of viewport dimensions.
+    source_refs:
+      - css-values-viewport-relative-lengths
+  - id: vw
+    term: vw
+    definition: A viewport-relative unit equal to 1% of the viewport width.
+    source_refs:
+      - css-values-viewport-relative-lengths
+  - id: vh
+    term: vh
+    definition: A viewport-relative unit equal to 1% of the viewport height.
+    source_refs:
+      - css-values-viewport-relative-lengths
+
+structures:
+  - id: S001
+    name: Viewport metric context
+    kind: structure
+    source_refs:
+      - css-values-viewport-relative-lengths
+      - svg2-svg-length-value
+    fields:
+      - name: viewportWidth
+        type: length
+        cardinality: required
+        position: null
+        constraints:
+          - Provides the width basis for vw and for vmin/vmax comparison.
+        requirement_refs:
+          - R002
+          - R004
+          - R005
+        source_refs:
+          - css-values-viewport-relative-lengths
+      - name: viewportHeight
+        type: length
+        cardinality: required
+        position: null
+        constraints:
+          - Provides the height basis for vh and for vmin/vmax comparison.
+        requirement_refs:
+          - R003
+          - R004
+          - R005
+        source_refs:
+          - css-values-viewport-relative-lengths
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: SVG length parsing must accept lowercase vw, vh, vmin, and vmax unit identifiers immediately after a valid scalar number.
+    applies_to:
+      - Single SVG length values.
+    source_refs:
+      - css-values-viewport-relative-lengths
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: conversion
+    statement: A vw length value must convert by multiplying its numeric factor by 1% of the viewport width basis.
+    applies_to:
+      - vw lengths.
+    source_refs:
+      - css-values-viewport-relative-lengths
+      - svg2-svg-length-value
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: conversion
+    statement: A vh length value must convert by multiplying its numeric factor by 1% of the viewport height basis.
+    applies_to:
+      - vh lengths.
+    source_refs:
+      - css-values-viewport-relative-lengths
+      - svg2-svg-length-value
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: conversion
+    statement: A vmin length value must convert by multiplying its numeric factor by the smaller of 1vw and 1vh.
+    applies_to:
+      - vmin lengths.
+    source_refs:
+      - css-values-viewport-relative-lengths
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: conversion
+    statement: A vmax length value must convert by multiplying its numeric factor by the larger of 1vw and 1vh.
+    applies_to:
+      - vmax lengths.
+    source_refs:
+      - css-values-viewport-relative-lengths
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST_NOT
+    kind: scope
+    statement: This work item must not mark percent suffix values or uppercase unit spellings as accepted viewport-relative coverage.
+    applies_to:
+      - Single SVG XML attribute length values.
+    source_refs:
+      - css-values-viewport-relative-lengths
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Viewport-relative length conversion
+    kind: algorithm
+    summary: Convert a parsed numeric factor and viewport-relative unit suffix into user units.
+    steps:
+      - Parse the numeric factor using the SVG number grammar.
+      - If the suffix is vw, multiply by viewportWidth divided by 100.
+      - If the suffix is vh, multiply by viewportHeight divided by 100.
+      - If the suffix is vmin, multiply by the smaller of viewportWidth and viewportHeight divided by 100.
+      - If the suffix is vmax, multiply by the larger of viewportWidth and viewportHeight divided by 100.
+      - Otherwise, defer to other completed length unit parsing or return nil.
+    preconditions: []
+    postconditions:
+      - Returned values are in user units.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - css-values-viewport-relative-lengths
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Uppercase or mixed-case SVG XML presentation-attribute unit spelling.
+    source_behavior: UNSPECIFIED
+    required_behavior: Reject for SVG XML attribute parsing in this package.
+    decision_required: false
+    source_refs:
+      - css-values-viewport-relative-lengths
+  - id: I002
+    condition: Percent suffix values.
+    source_behavior: DESCRIPTIVE
+    required_behavior: Leave percent suffix parsing to the dedicated percentage lengths work item.
+    decision_required: false
+    source_refs:
+      - svg2-svg-length-value
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: When no viewport context is supplied, viewport-relative length conversion must use the package's 100 by 100 default viewport basis so scalar parsing is deterministic.
+    derived_from:
+      - svg2-svg-length-value
+      - package-existing-default-viewBox
+    reasoning: SVG 2 uses 100 as the no-associated-element viewport size basis for length conversion, and the package already falls back to a 100 by 100 root viewBox.
+    source_refs:
+      - svg2-svg-length-value
+
+implementation_choices:
+  - id: IC001
+    topic: Default viewport basis
+    statement: Use 100 user units for both viewport width and height until parser callers can provide a host viewport size.
+    allowed_by:
+      - svg2-svg-length-value
+    source_refs:
+      - svg2-svg-length-value
+  - id: IC002
+    topic: Host viewport integration
+    statement: Do not measure or observe SwiftUI/UIKit/AppKit viewport sizes in this work item.
+    allowed_by:
+      - css-values-viewport-relative-lengths
+    source_refs:
+      - css-values-viewport-relative-lengths
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: CSS viewport-percentage lengths
+    reason: Defines vw, vh, vmin, and vmax conversion bases.
+    source_refs:
+      - css-values-viewport-relative-lengths
+  - id: DEP002
+    kind: source-section
+    title: SVGLength user-unit conversion
+    reason: Provides SVG user-unit conversion context for viewport bases.
+    source_refs:
+      - svg2-svg-length-value
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - css-values-viewport-relative-lengths
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-values-viewport-relative-lengths
+      - svg2-svg-length-value
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-values-viewport-relative-lengths
+      - svg2-svg-length-value
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-values-viewport-relative-lengths
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-values-viewport-relative-lengths
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - css-values-viewport-relative-lengths
+    map_item_refs: []

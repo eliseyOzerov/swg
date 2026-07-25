@@ -23,19 +23,23 @@ enum SVGIntegerParser {
 	}
 }
 
-/// Context used to resolve SVG font-relative length units into user units.
+/// Context used to resolve SVG relative length units into user units.
 struct SVGLengthContext: Equatable, Sendable {
 	var fontSize: Double
 	var rootFontSize: Double
+	var viewportWidth: Double
+	var viewportHeight: Double
 	var xHeight: Double?
 	var zeroAdvance: Double?
 	var isUprightText: Bool
 
-	static let `default` = SVGLengthContext(fontSize: 16, rootFontSize: 16)
+	static let `default` = SVGLengthContext(fontSize: 16, rootFontSize: 16, viewportWidth: 100, viewportHeight: 100)
 
-	init(fontSize: Double = 16, rootFontSize: Double = 16, xHeight: Double? = nil, zeroAdvance: Double? = nil, isUprightText: Bool = false) {
+	init(fontSize: Double = 16, rootFontSize: Double = 16, viewportWidth: Double = 100, viewportHeight: Double = 100, xHeight: Double? = nil, zeroAdvance: Double? = nil, isUprightText: Bool = false) {
 		self.fontSize = fontSize
 		self.rootFontSize = rootFontSize
+		self.viewportWidth = viewportWidth
+		self.viewportHeight = viewportHeight
 		self.xHeight = xHeight
 		self.zeroAdvance = zeroAdvance
 		self.isUprightText = isUprightText
@@ -48,6 +52,14 @@ struct SVGLengthContext: Equatable, Sendable {
 	var resolvedZeroAdvance: Double {
 		zeroAdvance ?? (isUprightText ? fontSize : fontSize * 0.5)
 	}
+
+	var resolvedViewportMinimum: Double {
+		min(viewportWidth, viewportHeight)
+	}
+
+	var resolvedViewportMaximum: Double {
+		max(viewportWidth, viewportHeight)
+	}
 }
 
 /// Parses reusable SVG primitive data types such as unitless and scalar lengths.
@@ -57,6 +69,12 @@ enum SVGLengthParser {
 		("em", { $0.fontSize }),
 		("ex", { $0.resolvedXHeight }),
 		("ch", { $0.resolvedZeroAdvance })
+	]
+	private static let viewportRelativeUnits: [(suffix: String, resolve: @Sendable (SVGLengthContext) -> Double)] = [
+		("vmin", { $0.resolvedViewportMinimum / 100 }),
+		("vmax", { $0.resolvedViewportMaximum / 100 }),
+		("vw", { $0.viewportWidth / 100 }),
+		("vh", { $0.viewportHeight / 100 })
 	]
 	private static let absoluteUnits: [(suffix: String, multiplier: Double)] = [
 		("px", 1),
@@ -70,6 +88,11 @@ enum SVGLengthParser {
 	static func parse(_ value: String, context: SVGLengthContext = .default) -> Double? {
 		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
 		for unit in fontRelativeUnits where trimmed.hasSuffix(unit.suffix) {
+			let numberText = String(trimmed.dropLast(unit.suffix.count))
+			guard let number = SVGNumberParser.parse(numberText) else { return nil }
+			return number * unit.resolve(context)
+		}
+		for unit in viewportRelativeUnits where trimmed.hasSuffix(unit.suffix) {
 			let numberText = String(trimmed.dropLast(unit.suffix.count))
 			guard let number = SVGNumberParser.parse(numberText) else { return nil }
 			return number * unit.resolve(context)
