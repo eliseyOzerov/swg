@@ -22,12 +22,25 @@ public enum SVGPathDataParser {
 			return value
 		}
 
+		func nextFlag() -> Bool? {
+			guard let value = nextNumber() else { return nil }
+			guard value == 0 || value == 1 else {
+				index = tokens.count
+				return nil
+			}
+			return value == 1
+		}
+
 		func nextPoint() -> Point? {
 			guard let x = nextNumber(), let y = nextNumber() else { return nil }
 			return Point(x, y)
 		}
 
 		while index < tokens.count {
+			if case .invalid = tokens[index] {
+				break
+			}
+
 			let command: Character
 			if case .command(let value) = tokens[index] {
 				command = value
@@ -115,7 +128,7 @@ public enum SVGPathDataParser {
 
 			case "A":
 				guard let rx = nextNumber(), let ry = nextNumber(), let rotation = nextNumber(),
-					  let largeArc = nextNumber(), let sweep = nextNumber(), let end = nextPoint() else { break }
+					  let largeArc = nextFlag(), let sweep = nextFlag(), let end = nextPoint() else { break }
 				let absoluteEnd = isRelative ? current + end : end
 				addArc(
 					to: &builder,
@@ -124,8 +137,8 @@ public enum SVGPathDataParser {
 					rx: abs(rx),
 					ry: abs(ry),
 					xRotation: rotation,
-					largeArc: largeArc != 0,
-					sweep: sweep != 0
+					largeArc: largeArc,
+					sweep: sweep
 				)
 				current = absoluteEnd
 				lastCubicControlPoint = nil
@@ -377,6 +390,7 @@ public enum SVGPathDataParser {
 	private enum Token {
 		case command(Character)
 		case number(Double)
+		case invalid
 	}
 
 	private static func tokenize(_ data: String) -> [Token] {
@@ -436,13 +450,16 @@ public enum SVGPathDataParser {
 					}
 				}
 
-				if let value = Double(number) {
-					tokens.append(.number(value))
+				guard let value = Double(number) else {
+					tokens.append(.invalid)
+					return tokens
 				}
+				tokens.append(.number(value))
 				continue
 			}
 
-			index += 1
+			tokens.append(.invalid)
+			return tokens
 		}
 
 		return tokens

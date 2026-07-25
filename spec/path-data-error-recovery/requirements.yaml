@@ -1,0 +1,34 @@
+id: path-data-error-recovery
+title: SVG path data error recovery
+status: requirements
+sources:
+  - id: svg2-paths-grammar
+    title: SVG 2, 9.3.9 The grammar for path data
+    url: https://www.w3.org/TR/SVG2/paths.html#PathDataBNF
+    retrieved: 2026-07-25
+  - id: svg2-paths-error-handling
+    title: SVG 2, 9.5.4 Error handling in path data
+    url: https://www.w3.org/TR/SVG2/paths.html#PathDataErrorHandling
+    retrieved: 2026-07-25
+requirements:
+  - id: REQ-PATH-ERROR-001
+    text: Unrecognized content within path data must be treated as an error, and path rendering must stop before the command containing the first error.
+    source: svg2-paths-error-handling
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserStopsAtUnrecognizedPathData
+  - id: REQ-PATH-ERROR-002
+    text: If a path command has an incorrect set of parameters, rendering must include the last correctly defined segment from that command and stop before the incomplete segment.
+    source: svg2-paths-error-handling
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserKeepsLastCompleteSegmentForParameterErrors
+  - id: REQ-PATH-ERROR-003
+    text: Elliptical arc flags must match the path data grammar flag production, accepting only `0` or `1`.
+    source: svg2-paths-grammar
+    status: tested
+    tests:
+      - SVGPathDataTests.svgPathParserRejectsInvalidArcFlags
+non_goals:
+  - This package does not expose diagnostic reporting for every path data error yet.
+  - This item covers parser recovery boundaries, not visual error indicators.

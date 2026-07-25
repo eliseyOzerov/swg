@@ -241,6 +241,36 @@ import Testing
 	])
 }
 
+@Test func svgPathParserStopsAtUnrecognizedPathData() {
+	let path = SVGPathDataParser.parse("M 0 0 L 10 0 @ L 20 0")
+
+	#expect(path.commands == [
+		.move(to: Point(0, 0)),
+		.line(to: Point(10, 0)),
+	])
+}
+
+@Test func svgPathParserKeepsLastCompleteSegmentForParameterErrors() {
+	let path = SVGPathDataParser.parse("M 10 10 L 20 20 30")
+
+	#expect(path.commands == [
+		.move(to: Point(10, 10)),
+		.line(to: Point(20, 20)),
+	])
+}
+
+@Test func svgPathParserRejectsInvalidArcFlags() throws {
+	let path = SVGPathDataParser.parse("M 0 0 A 10 10 0 0 1 10 0 A 10 10 0 2 1 20 0 L 30 0")
+
+	#expect(path.commands.count == 2)
+	guard case .cubic(let end, _, _) = path.commands[1] else {
+		Issue.record("Expected first valid arc to be preserved")
+		return
+	}
+
+	#expect(end.distance(to: Point(10, 0)) < 0.000001)
+}
+
 @Test func svgPathDataSerializesEditableCommands() {
 	let path = Path(commands: [
 		.move(to: Point(0, 0)),
