@@ -1,0 +1,341 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: currentcolor
+  title: currentColor paint value
+  domain: SVG 2 / CSS Color
+  profile: null
+  summary: Capture parser-visible `currentColor` behavior for SVG paint properties and their dependency on the inherited `color` property.
+  non_goals:
+    - Complete CSS color syntax support beyond the color syntaxes already parsed by the package.
+    - Full renderer-side paint server fallback resolution.
+    - "`currentColor` behavior for `stop-color`, `flood-color`, or `lighting-color`."
+    - The standalone Painting `color` TODO bullet as complete coverage for every behavior of the `color` property.
+    - CSS animations or the animated value of `color`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-paint
+      title: "SVG 2 Painting: Specifying paint"
+      url: https://www.w3.org/TR/SVG/painting.html#SpecifyingPaint
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-color-property
+      title: "SVG 2 Painting: The effect of the color property"
+      url: https://www.w3.org/TR/SVG/painting.html#ColorProperty
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-property-index
+      title: "SVG 2 Property Index"
+      url: https://www.w3.org/TR/SVG/propidx.html
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: informative
+    - id: css-color-currentcolor
+      title: "CSS Color Module Level 3: currentColor color keyword"
+      url: https://www.w3.org/TR/css-color-3/#currentcolor
+      version: W3C Recommendation 18 January 2022
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `currentColor` through CSS Color and describes the SVG-specific `color` property effect for fill and stroke.
+    - The SVG 2 property index is informative, but it summarizes that `color` is inherited and applies where fill and stroke apply.
+    - This work item is narrower than the complete `color` property TODO; it adds enough `color` handling to make `currentColor` meaningful for supported paint properties.
+
+scope:
+  includes:
+    - Parsing `currentColor` as a paint value for supported fill and stroke properties.
+    - Parsing the inherited `color` presentation/style property when it is needed as the indirect value for `currentColor`.
+    - Applying presentation attributes, class style rules, inline style declarations, implicit inheritance, and explicit `inherit` to the supported `color` property.
+    - Preserving URL paint fallback values that use `currentColor`.
+  excludes:
+    - Resolving external paint servers before choosing a fallback.
+    - Applying `currentColor` to gradient stops, filters, or lighting properties.
+    - CSS Color Level 4 additions.
+    - System colors, HSL/HSLA, ICC color management, and complete named-color coverage.
+  assumptions:
+    - Parser output may preserve `currentColor` as a symbolic paint while separately exposing the current `color` property value to downstream renderers.
+    - The parser default for the user-agent-dependent initial `color` value is black, matching the package's existing default paint behavior.
+    - Existing color syntax tests remain the source of truth for which concrete color values the package currently accepts.
+
+terminology:
+  - id: term-currentcolor
+    term: currentColor
+    definition: A CSS color keyword whose used value is the computed value of the `color` property.
+    source_refs:
+      - css-color-currentcolor
+  - id: term-color-property
+    term: color property
+    definition: The inherited CSS property that SVG uses to provide the indirect `currentColor` value for fill and stroke.
+    source_refs:
+      - svg2-color-property
+      - svg2-property-index
+  - id: term-paint
+    term: paint
+    definition: The value grammar used by SVG fill and stroke to describe no paint, a color, a paint server URL with optional fallback, or context paint.
+    source_refs:
+      - svg2-paint
+
+structures:
+  - id: S001
+    name: Parser-visible currentColor state
+    kind: structure
+    source_refs:
+      - svg2-color-property
+      - css-color-currentcolor
+    fields:
+      - name: color
+        type: Color
+        cardinality: one
+        position: null
+        constraints:
+          - Inherited property.
+          - Provides the indirect value used by `currentColor`.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - svg2-color-property
+          - svg2-property-index
+      - name: fill
+        type: SVGPaint
+        cardinality: one
+        position: null
+        constraints:
+          - May be the symbolic `currentColor` paint value.
+        requirement_refs:
+          - R001
+          - R004
+        source_refs:
+          - svg2-paint
+      - name: stroke
+        type: SVGPaint
+        cardinality: one
+        position: null
+        constraints:
+          - May be the symbolic `currentColor` paint value.
+        requirement_refs:
+          - R001
+          - R004
+        source_refs:
+          - svg2-paint
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: Supported SVG paint values for fill and stroke must accept `currentColor` wherever a CSS color is accepted.
+    applies_to:
+      - fill
+      - stroke
+      - URL fallback paint values
+    source_refs:
+      - svg2-paint
+      - css-color-currentcolor
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The `color` property must provide the indirect value used by `currentColor` for supported fill and stroke paint values.
+    applies_to:
+      - color
+      - fill
+      - stroke
+    source_refs:
+      - svg2-color-property
+      - css-color-currentcolor
+    testability: testable
+    notes:
+      - Parser output may expose the symbolic paint and the current `color` value separately.
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: The supported `color` property must inherit from the parent element when no winning declaration sets it on the child.
+    applies_to:
+      - color
+    source_refs:
+      - svg2-property-index
+      - svg2-color-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: ordering
+    statement: "`currentColor` and the `color` property must participate in the same supported cascade subset as other presentation/style properties."
+    applies_to:
+      - Presentation attributes
+      - Class style rules
+      - Inline style attributes
+    source_refs:
+      - svg2-presentation-attributes
+      - svg2-color-property
+      - css-color-currentcolor
+    testability: testable
+    notes:
+      - A later inline style declaration can set `color` while fill or stroke remains `currentColor`.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: "If `currentColor` is set on the `color` property itself, it must be treated as `color: inherit`."
+    applies_to:
+      - color
+    source_refs:
+      - css-color-currentcolor
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Parser-visible currentColor resolution
+    kind: algorithm
+    summary: Track the current `color` property alongside symbolic `currentColor` paint values.
+    steps:
+      - Seed each element's `color` property from its parent because `color` is inherited.
+      - Apply supported declarations for `color`, treating `inherit` and `currentColor` as parent color.
+      - Parse fill and stroke values of `currentColor` as symbolic paint values.
+      - Leave downstream consumers enough data to substitute the element's current color when rendering symbolic `currentColor` paint.
+    preconditions:
+      - The element is in the SVG namespace and the property is in the parser's supported subset.
+    postconditions:
+      - A parsed element with `fill` or `stroke` equal to `currentColor` also exposes the current `color` value selected by the supported cascade subset.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - svg2-color-property
+      - css-color-currentcolor
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `color` declaration uses a color syntax not currently supported by the package.
+    source_behavior: MUST
+    required_behavior: The source requires CSS color syntax support, but this bullet may leave unsupported color syntaxes to their existing unchecked TODO bullets.
+    decision_required: false
+    source_refs:
+      - svg2-paint
+      - css-color-currentcolor
+  - id: I002
+    condition: A non-fill/non-stroke property uses `currentColor`.
+    source_behavior: MUST
+    required_behavior: Source behavior applies where the property accepts colors, but this package may ignore unsupported properties until their TODO bullets are implemented.
+    decision_required: false
+    source_refs:
+      - css-color-currentcolor
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must prove both symbolic `currentColor` paint parsing and inherited/cascaded `color` state on the same element.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+    reasoning: The package already recognizes the paint token; the unchecked standard behavior is making that token meaningful through the element's current `color` value and cascade.
+    source_refs:
+      - svg2-color-property
+      - css-color-currentcolor
+
+implementation_choices:
+  - id: IC001
+    topic: Symbolic paint representation
+    statement: The parser may preserve `currentColor` as an `SVGPaint` case rather than eagerly replacing it with a concrete color, provided the element also exposes the current `color` property value.
+    allowed_by:
+      - Parser-facing model
+      - Current renderer integration boundary
+    source_refs:
+      - css-color-currentcolor
+  - id: IC002
+    topic: Initial color
+    statement: The parser may use black for the initial `color` value until host/user-agent integration supplies another initial foreground color.
+    allowed_by:
+      - User-agent-dependent initial value
+      - Current package defaults
+    source_refs:
+      - svg2-property-index
+
+ambiguities:
+  - id: A001
+    question: Should future renderer APIs expose a helper that resolves `SVGPaint.currentColor` to an actual `Color`?
+    impact: The parser can provide the needed data, but renderers may prefer a convenience API to avoid duplicating resolution logic.
+    options:
+      - Keep symbolic paint and color separate.
+      - Add renderer-facing resolved paint helpers.
+    source_refs:
+      - css-color-currentcolor
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG paint grammar
+    reason: Defines that CSS color values are accepted in SVG paint positions.
+    source_refs:
+      - svg2-paint
+  - id: DEP002
+    kind: source-section
+    title: CSS currentColor keyword
+    reason: Defines how `currentColor` obtains its used value from the `color` property.
+    source_refs:
+      - css-color-currentcolor
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-paint
+      - css-color-currentcolor
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-color-property
+      - css-color-currentcolor
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-property-index
+      - svg2-color-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-presentation-attributes
+      - css-color-currentcolor
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-color-currentcolor
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-color-property
+      - css-color-currentcolor
+    map_item_refs: []

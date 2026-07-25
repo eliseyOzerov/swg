@@ -17,7 +17,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		"title", "tspan", "use", "view"
 	]
 	private static let globalAttributeNames: Set<String> = [
-		"class", "clip-path", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "stroke",
+		"class", "clip-path", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
 		"stroke-width", "style", "transform", "vector-effect", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
 		"zoomAndPan"
@@ -1097,6 +1097,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func inheritedPaintAttributes(from parent: SVGPaintAttributes) -> SVGPaintAttributes {
 		var result = SVGPaintAttributes.defaults
+		result.color = parent.color
 		result.fill = parent.fill
 		result.fillOpacity = parent.fillOpacity
 		result.fillRule = parent.fillRule
@@ -1144,6 +1145,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func applyPresentationAttributes(_ attributes: [String: String], to result: inout SVGPaintAttributes, inherited: SVGPaintAttributes) {
+		if let color = attributes["color"] {
+			if isInheritKeyword(color) || isCurrentColorKeyword(color) {
+				result.color = inherited.color
+			} else if let parsed = parseColor(color) {
+				result.color = parsed
+			}
+		}
 		if let fill = attributes["fill"] {
 			if isInheritKeyword(fill) {
 				result.fill = inherited.fill
@@ -1239,6 +1247,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func isInheritKeyword(_ value: String) -> Bool {
 		value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "inherit"
+	}
+
+	private func isCurrentColorKeyword(_ value: String) -> Bool {
+		value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "currentcolor"
 	}
 
 	private func parseDashArray(_ value: String) -> [Double] {

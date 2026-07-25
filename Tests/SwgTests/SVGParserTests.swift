@@ -388,6 +388,38 @@ import Testing
 	#expect(child.attributes.vectorEffect == .effects([.nonScalingStroke], coordinateSpace: .viewport))
 }
 
+@Test func svgParserAppliesCurrentColorFromInheritedColorProperty() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" color="red">
+		<style>.accent { color: #336699; fill: currentColor; stroke: currentColor; }</style>
+		<g id="parent" color="blue">
+			<path id="classed" class="accent" d="M0 0 L10 10"/>
+			<path id="inlineInherit" class="accent" d="M0 0 L10 10" style="color: currentColor; stroke: url(#missing) currentColor"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let parent) = document.elements.first else {
+		Issue.record("Expected parent group")
+		return
+	}
+	let paths = Dictionary(uniqueKeysWithValues: parent.children.compactMap { element -> (String, SVGPathData)? in
+		if case .path(let path) = element { return (path.id, path) }
+		return nil
+	})
+	let classed = try #require(paths["classed"])
+	let inlineInherit = try #require(paths["inlineInherit"])
+
+	#expect(parent.attributes.color == .blue)
+	#expect(classed.attributes.color == Color(0.2, 0.4, 0.6))
+	#expect(classed.attributes.fill == .currentColor)
+	#expect(classed.attributes.stroke == .currentColor)
+	#expect(inlineInherit.attributes.color == .blue)
+	#expect(inlineInherit.attributes.fill == .currentColor)
+	#expect(inlineInherit.attributes.stroke == .urlWithFallback("missing", .currentColor))
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

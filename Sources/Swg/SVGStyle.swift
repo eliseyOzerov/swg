@@ -2,6 +2,7 @@ import Foundation
 
 /// Common SVG presentation attributes for fill, stroke, opacity, and transform.
 public struct SVGPaintAttributes: Equatable, Sendable {
+	public var color: Color
 	public var fill: SVGPaint
 	public var fillOpacity: Double
 	public var fillRule: FillRule
@@ -23,6 +24,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var vectorEffect: SVGVectorEffect
 
 	public init(
+		color: Color = .black,
 		fill: SVGPaint = .color(.black),
 		fillOpacity: Double = 1,
 		fillRule: FillRule = .winding,
@@ -43,6 +45,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		maskID: String? = nil,
 		vectorEffect: SVGVectorEffect = .none
 	) {
+		self.color = color
 		self.fill = fill
 		self.fillOpacity = fillOpacity
 		self.fillRule = fillRule
