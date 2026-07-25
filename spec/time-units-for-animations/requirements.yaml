@@ -1,0 +1,341 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: time-units-for-animations
+  title: SVG animation time units
+  domain: SVG
+  profile: null
+  summary: Parse SVG animation clock values into seconds, including clock forms and timecount units used by timing attributes. Keep this work item limited to reusable time value parsing rather than animation scheduling or playback.
+  non_goals:
+    - Animation element modeling, playback, interpolation, or scheduling.
+    - begin and end value list parsing beyond reusable Clock-value syntax.
+    - Event, syncbase, repeat, accessKey, wallclock, media, or indefinite timing values.
+    - CSS calc() time expressions.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-clock-values
+      title: "SVG 1.1 Animation: Clock values"
+      url: https://www.w3.org/TR/SVG11/animate.html#ClockValueSyntax
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-animation-timing
+      title: "SVG 1.1 Animation: Attributes to control the timing of the animation"
+      url: https://www.w3.org/TR/SVG11/animate.html#AnimationTimingAttributes
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: css-values-3-time
+      title: "CSS Values and Units Level 3: Duration Units"
+      url: https://www.w3.org/TR/css-values-3/#time
+      version: Candidate Recommendation Draft, 22 March 2024
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG animation timing attributes use Clock-value for durations and offsets.
+    - CSS Values Level 3 defines the general CSS time unit relationship between s and ms; SVG animation Clock-value additionally includes h and min timecount metrics.
+
+scope:
+  includes:
+    - Full clock values of the form hours:minutes:seconds with optional fractional seconds.
+    - Partial clock values of the form minutes:seconds with optional fractional seconds.
+    - Timecount values with optional fractional component and optional metric.
+    - Timecount metrics h, min, s, and ms.
+    - Unitless timecount values defaulting to seconds.
+    - Conversion of accepted values into seconds.
+  excludes:
+    - Negative offsets from begin, end, event, syncbase, repeat, accessKey, or wallclock timing syntax.
+    - Attribute-specific validity such as duration values that must be greater than zero.
+    - Parsing the media or indefinite timing keywords.
+    - Semicolon-separated timing lists.
+  assumptions:
+    - Package internals use seconds as the canonical representation for parsed animation time values.
+    - A reusable Clock-value parser should reject embedded whitespace and malformed values so attribute-level parsers can decide fallback/error behavior later.
+
+terminology:
+  - id: clock-value
+    term: Clock-value
+    definition: An SVG animation time value in full clock, partial clock, or timecount form.
+    source_refs:
+      - svg11-clock-values
+  - id: timecount
+    term: Timecount
+    definition: A digit sequence with optional fractional component and optional metric suffix.
+    source_refs:
+      - svg11-clock-values
+  - id: metric
+    term: Metric
+    definition: A timecount unit suffix: h, min, s, or ms.
+    source_refs:
+      - svg11-clock-values
+
+structures:
+  - id: S001
+    name: Clock-value
+    kind: grammar
+    source_refs:
+      - svg11-clock-values
+    fields:
+      - name: full-clock-value
+        type: alternative
+        cardinality: optional
+        position: null
+        constraints:
+          - Hours, a colon, two-digit minutes, a colon, two-digit seconds, and optional fractional seconds.
+          - Minutes and seconds must each be in the range 00 through 59.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg11-clock-values
+      - name: partial-clock-value
+        type: alternative
+        cardinality: optional
+        position: null
+        constraints:
+          - Two-digit minutes, a colon, two-digit seconds, and optional fractional seconds.
+          - Minutes and seconds must each be in the range 00 through 59.
+        requirement_refs:
+          - R001
+          - R003
+        source_refs:
+          - svg11-clock-values
+      - name: timecount-value
+        type: alternative
+        cardinality: optional
+        position: null
+        constraints:
+          - Digit timecount, optional fractional component, and optional metric suffix.
+          - If the metric is omitted, the value is seconds.
+        requirement_refs:
+          - R001
+          - R004
+          - R005
+        source_refs:
+          - svg11-clock-values
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: A Clock-value must match one of the full clock, partial clock, or timecount alternatives.
+    applies_to:
+      - Clock-value
+    source_refs:
+      - svg11-clock-values
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Full clock values must parse hours, minutes, seconds, and optional fractional seconds.
+    applies_to:
+      - full-clock-value
+    source_refs:
+      - svg11-clock-values
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Partial clock values must parse minutes, seconds, and optional fractional seconds.
+    applies_to:
+      - partial-clock-value
+    source_refs:
+      - svg11-clock-values
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Timecount values may use the h, min, s, or ms metric suffix.
+    applies_to:
+      - timecount-value
+    source_refs:
+      - svg11-clock-values
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Timecount values without a metric suffix must default to seconds.
+    applies_to:
+      - timecount-value
+    source_refs:
+      - svg11-clock-values
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: Clock values must not contain embedded whitespace, though leading and trailing whitespace is ignored.
+    applies_to:
+      - Clock-value
+    source_refs:
+      - svg11-clock-values
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: Milliseconds must convert using 1000 milliseconds per second.
+    applies_to:
+      - ms
+    source_refs:
+      - css-values-3-time
+      - svg11-clock-values
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Clock-value conversion to seconds
+    kind: algorithm
+    summary: Convert an accepted SVG Clock-value into seconds.
+    steps:
+      - Trim leading and trailing whitespace.
+      - If the value matches full clock syntax, calculate hours * 3600 + minutes * 60 + seconds including any fractional seconds.
+      - If the value matches partial clock syntax, calculate minutes * 60 + seconds including any fractional seconds.
+      - If the value matches timecount syntax, convert by metric: h uses 3600 seconds, min uses 60 seconds, s uses 1 second, ms uses 0.001 seconds.
+      - If a timecount metric is omitted, use seconds.
+    preconditions:
+      - The input is a scalar Clock-value candidate.
+    postconditions:
+      - Accepted values have a canonical value in seconds.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+      - R007
+    source_refs:
+      - svg11-clock-values
+      - css-values-3-time
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Missing digits or a missing required clock component.
+    source_behavior: invalid clock grammar
+    required_behavior: Reject the value for scalar Clock-value parsing.
+    decision_required: false
+    source_refs:
+      - svg11-clock-values
+  - id: I002
+    condition: Minutes or seconds outside the 00 through 59 range in full or partial clock syntax.
+    source_behavior: invalid clock grammar
+    required_behavior: Reject the value for scalar Clock-value parsing.
+    decision_required: false
+    source_refs:
+      - svg11-clock-values
+  - id: I003
+    condition: Embedded whitespace inside a Clock-value.
+    source_behavior: invalid clock grammar
+    required_behavior: Reject the value for scalar Clock-value parsing.
+    decision_required: false
+    source_refs:
+      - svg11-clock-values
+  - id: I004
+    condition: Negative or explicitly positive signed values.
+    source_behavior: outside Clock-value grammar; signs belong to offset-value syntax.
+    required_behavior: Reject the value for scalar Clock-value parsing.
+    decision_required: false
+    source_refs:
+      - svg11-animation-timing
+      - svg11-clock-values
+  - id: I005
+    condition: media or indefinite keywords.
+    source_behavior: valid in selected animation attributes but not Clock-value metrics.
+    required_behavior: Reject the value for scalar Clock-value parsing.
+    decision_required: false
+    source_refs:
+      - svg11-animation-timing
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A reusable parser for this package must expose parsed Clock-values in seconds because seconds are the canonical unit for both SVG timecount defaults and CSS time values.
+    derived_from:
+      - R005
+      - R007
+    reasoning: SVG defaults unitless timecount values to seconds, and CSS Values identifies s as the canonical time unit.
+    source_refs:
+      - svg11-clock-values
+      - css-values-3-time
+
+implementation_choices:
+  - id: IC001
+    topic: Attribute-level duration range checks
+    statement: The Clock-value parser may accept zero because the Clock-value grammar permits it in examples and some attributes have their own default or greater-than-zero constraints.
+    allowed_by:
+      - svg11-clock-values
+      - svg11-animation-timing
+    source_refs:
+      - svg11-clock-values
+      - svg11-animation-timing
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG animation timing attributes
+    reason: Timing attributes define where Clock-value is used and distinguish Clock-value from offset and keyword syntaxes.
+    source_refs:
+      - svg11-animation-timing
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-clock-values
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-clock-values
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg11-clock-values
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg11-clock-values
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg11-clock-values
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg11-clock-values
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - css-values-3-time
+      - svg11-clock-values
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg11-clock-values
+      - css-values-3-time
+    map_item_refs: []

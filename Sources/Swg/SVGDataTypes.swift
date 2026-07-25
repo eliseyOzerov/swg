@@ -43,6 +43,81 @@ enum SVGAngleParser {
 	}
 }
 
+/// Parses reusable SVG animation clock values into seconds.
+enum SVGClockValueParser {
+	private static let fullClockPattern = #"^([0-9]+):([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?$"#
+	private static let partialClockPattern = #"^([0-9]{2}):([0-9]{2})(?:\.([0-9]+))?$"#
+	private static let timecountPattern = #"^([0-9]+)(?:\.([0-9]+))?(h|min|s|ms)?$"#
+
+	static func parse(_ value: String) -> Double? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if let components = match(trimmed, pattern: fullClockPattern) {
+			return parseFullClock(components)
+		}
+		if let components = match(trimmed, pattern: partialClockPattern) {
+			return parsePartialClock(components)
+		}
+		if let components = match(trimmed, pattern: timecountPattern) {
+			return parseTimecount(components)
+		}
+		return nil
+	}
+
+	private static func parseFullClock(_ components: [String?]) -> Double? {
+		guard let hoursText = components[0], let minutesText = components[1], let secondsText = components[2] else { return nil }
+		guard let hours = Double(hoursText), let minutes = parseClockComponent(minutesText), let seconds = parseClockComponent(secondsText) else { return nil }
+		guard let secondValue = parseFractionalClockComponent(seconds, fraction: components[3]) else { return nil }
+		return hours * 3600 + Double(minutes) * 60 + secondValue
+	}
+
+	private static func parsePartialClock(_ components: [String?]) -> Double? {
+		guard let minutesText = components[0], let secondsText = components[1] else { return nil }
+		guard let minutes = parseClockComponent(minutesText), let seconds = parseClockComponent(secondsText) else { return nil }
+		guard let secondValue = parseFractionalClockComponent(seconds, fraction: components[2]) else { return nil }
+		return Double(minutes) * 60 + secondValue
+	}
+
+	private static func parseTimecount(_ components: [String?]) -> Double? {
+		guard let wholeText = components[0] else { return nil }
+		let fractionText = components[1].map { ".\($0)" } ?? ""
+		guard let value = Double("\(wholeText)\(fractionText)") else { return nil }
+		switch components[2] {
+		case "h":
+			return value * 3600
+		case "min":
+			return value * 60
+		case "ms":
+			return value / 1000
+		case "s", nil:
+			return value
+		default:
+			return nil
+		}
+	}
+
+	private static func parseClockComponent(_ value: String) -> Int? {
+		guard let component = Int(value), (0...59).contains(component) else { return nil }
+		return component
+	}
+
+	private static func parseFractionalClockComponent(_ seconds: Int, fraction: String?) -> Double? {
+		let fractionText = fraction.map { ".\($0)" } ?? ""
+		return Double("\(seconds)\(fractionText)")
+	}
+
+	private static func match(_ value: String, pattern: String) -> [String?]? {
+		guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+		let range = NSRange(location: 0, length: (value as NSString).length)
+		guard let match = regex.firstMatch(in: value, range: range), match.range == range else { return nil }
+		let nsValue = value as NSString
+		return (1..<match.numberOfRanges).map { index in
+			let range = match.range(at: index)
+			guard range.location != NSNotFound else { return nil }
+			return nsValue.substring(with: range)
+		}
+	}
+}
+
 /// Context used to resolve SVG relative length units into user units.
 struct SVGLengthContext: Equatable, Sendable {
 	var fontSize: Double

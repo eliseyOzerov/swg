@@ -20,7 +20,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] Viewport-relative length units: `vw`, `vh`, `vmin`, `vmax`.
 - [x] Percentage lengths.
 - [x] Angle units: `deg`, `grad`, `rad`, `turn`.
-- [ ] Time units for animations.
+- [x] Time units for animations.
 - [ ] Frequency units.
 - [ ] List parsing with comma and whitespace separators.
 - [ ] Paint value parsing.

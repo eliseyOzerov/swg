@@ -112,3 +112,44 @@ import Testing
 	#expect(SVGAngleParser.parse("1turns") == nil)
 	#expect(SVGAngleParser.parse("1 2deg") == nil)
 }
+
+@Test func svgClockValueParserConvertsTimecountUnitsToSeconds() throws {
+	let hours = try #require(SVGClockValueParser.parse("3.2h"))
+	let minutes = try #require(SVGClockValueParser.parse("45min"))
+	let seconds = try #require(SVGClockValueParser.parse("30s"))
+	let milliseconds = try #require(SVGClockValueParser.parse("5ms"))
+	let unitless = try #require(SVGClockValueParser.parse("12.467"))
+
+	#expect(abs(hours - 11520) < 0.000001)
+	#expect(abs(minutes - 2700) < 0.000001)
+	#expect(abs(seconds - 30) < 0.000001)
+	#expect(abs(milliseconds - 0.005) < 0.000001)
+	#expect(abs(unitless - 12.467) < 0.000001)
+}
+
+@Test func svgClockValueParserConvertsFullAndPartialClockValuesToSeconds() throws {
+	let full = try #require(SVGClockValueParser.parse("02:30:03"))
+	let fullFraction = try #require(SVGClockValueParser.parse("50:00:10.25"))
+	let partial = try #require(SVGClockValueParser.parse("02:33"))
+	let partialFraction = try #require(SVGClockValueParser.parse("00:10.5"))
+
+	#expect(abs(full - 9003) < 0.000001)
+	#expect(abs(fullFraction - 180010.25) < 0.000001)
+	#expect(abs(partial - 153) < 0.000001)
+	#expect(abs(partialFraction - 10.5) < 0.000001)
+}
+
+@Test func svgClockValueParserRejectsMalformedClockValues() {
+	#expect(SVGClockValueParser.parse("") == nil)
+	#expect(SVGClockValueParser.parse("+3s") == nil)
+	#expect(SVGClockValueParser.parse("-3s") == nil)
+	#expect(SVGClockValueParser.parse(".5s") == nil)
+	#expect(SVGClockValueParser.parse("1e3s") == nil)
+	#expect(SVGClockValueParser.parse("3 s") == nil)
+	#expect(SVGClockValueParser.parse("01:60") == nil)
+	#expect(SVGClockValueParser.parse("01:02:60") == nil)
+	#expect(SVGClockValueParser.parse("1:02") == nil)
+	#expect(SVGClockValueParser.parse("5MS") == nil)
+	#expect(SVGClockValueParser.parse("indefinite") == nil)
+	#expect(SVGClockValueParser.parse("media") == nil)
+}
