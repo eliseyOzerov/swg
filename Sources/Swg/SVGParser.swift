@@ -117,15 +117,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "filter":
 			currentFilter = SVGFilterDef(id: attributes["id"] ?? "")
 		case "feGaussianBlur":
-			if let std = attributes["stdDeviation"].flatMap(Double.init) {
+			if let std = attributes["stdDeviation"].flatMap(parseNumber) {
 				currentFilter?.primitives.append(.gaussianBlur(stdDeviation: std))
 			}
 		case "feDropShadow":
-			let dx = attributes["dx"].flatMap(Double.init) ?? 0
-			let dy = attributes["dy"].flatMap(Double.init) ?? 0
-			let std = attributes["stdDeviation"].flatMap(Double.init) ?? 0
+			let dx = attributes["dx"].flatMap(parseNumber) ?? 0
+			let dy = attributes["dy"].flatMap(parseNumber) ?? 0
+			let std = attributes["stdDeviation"].flatMap(parseNumber) ?? 0
 			let color = attributes["flood-color"].flatMap { parseColor($0) } ?? .black
-			let opacity = attributes["flood-opacity"].flatMap(Double.init) ?? 1
+			let opacity = attributes["flood-opacity"].flatMap(parseNumber) ?? 1
 			currentFilter?.primitives.append(.dropShadow(dx: dx, dy: dy, stdDeviation: std, color: color.withAlpha(opacity)))
 		case "mask":
 			inMask = true
@@ -352,22 +352,24 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseGradientStop(_ attributes: [String: String]) {
 		var offset: Double = 0
 		if let value = attributes["offset"] {
-			if value.hasSuffix("%") {
-				offset = (Double(value.dropLast()) ?? 0) / 100
+			let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+			if trimmed.hasSuffix("%") {
+				offset = (parseNumber(String(trimmed.dropLast())) ?? 0) / 100
 			} else {
-				offset = Double(value) ?? 0
+				offset = parseNumber(trimmed) ?? 0
 			}
 		}
 		let color = attributes["stop-color"].flatMap { parseColor($0) } ?? .black
-		let opacity = attributes["stop-opacity"].flatMap(Double.init) ?? 1
+		let opacity = attributes["stop-opacity"].flatMap(parseNumber) ?? 1
 		currentGradientStops.append(SVGGradientStop(offset: offset, color: color, opacity: opacity))
 	}
 
 	private func parseGradientCoord(_ value: String) -> Double {
-		if value.hasSuffix("%") {
-			return (Double(value.dropLast()) ?? 0) / 100
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed.hasSuffix("%") {
+			return (parseNumber(String(trimmed.dropLast())) ?? 0) / 100
 		}
-		return Double(value) ?? 0
+		return parseNumber(trimmed) ?? 0
 	}
 
 	private func parseHref(_ attributes: [String: String]) -> String? {
@@ -636,15 +638,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func applyPresentationAttributes(_ attributes: [String: String], to result: inout SVGPaintAttributes) {
 		if let fill = attributes["fill"] { result.fill = parsePaint(fill) }
 		if let stroke = attributes["stroke"] { result.stroke = parsePaint(stroke) }
-		if let value = attributes["stroke-width"], let number = Double(value) { result.strokeWidth = number }
+		if let value = attributes["stroke-width"], let number = parseNumber(value) { result.strokeWidth = number }
 		if let cap = attributes["stroke-linecap"] { result.strokeLineCap = parseLineCap(cap) }
 		if let join = attributes["stroke-linejoin"] { result.strokeLineJoin = parseLineJoin(join) }
-		if let value = attributes["stroke-miterlimit"], let number = Double(value) { result.strokeMiterLimit = number }
+		if let value = attributes["stroke-miterlimit"], let number = parseNumber(value) { result.strokeMiterLimit = number }
 		if let value = attributes["stroke-dasharray"] { result.strokeDashArray = parseDashArray(value) }
-		if let value = attributes["stroke-dashoffset"], let number = Double(value) { result.strokeDashOffset = number }
-		if let value = attributes["stroke-opacity"], let number = Double(value) { result.strokeOpacity = number }
-		if let value = attributes["opacity"], let number = Double(value) { result.opacity = number }
-		if let value = attributes["fill-opacity"], let number = Double(value) { result.fillOpacity = number }
+		if let value = attributes["stroke-dashoffset"], let number = parseNumber(value) { result.strokeDashOffset = number }
+		if let value = attributes["stroke-opacity"], let number = parseNumber(value) { result.strokeOpacity = number }
+		if let value = attributes["opacity"], let number = parseNumber(value) { result.opacity = number }
+		if let value = attributes["fill-opacity"], let number = parseNumber(value) { result.fillOpacity = number }
 		if let value = attributes["fill-rule"] { result.fillRule = value == "evenodd" ? .evenOdd : .winding }
 		if let value = attributes["visibility"] {
 			result.visibility = value == "hidden" ? .hidden : value == "collapse" ? .collapse : .visible
@@ -664,7 +666,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let trimmed = value.trimmingCharacters(in: .whitespaces)
 		if trimmed == "none" { return [] }
 		return trimmed.split(whereSeparator: { $0 == "," || $0 == " " })
-			.compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+			.compactMap { parseNumber(String($0)) }
 	}
 
 	private func parseURLID(_ value: String) -> String? {
@@ -678,7 +680,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseSVGRoot(_ attributes: [String: String]) {
 		rootID = attributes["id"]
 		if let vb = attributes["viewBox"] {
-			let parts = vb.split(whereSeparator: { $0 == " " || $0 == "," }).compactMap { Double($0) }
+			let parts = vb.split(whereSeparator: { $0 == " " || $0 == "," }).compactMap { parseNumber(String($0)) }
 			if parts.count == 4 {
 				viewBox = Rect(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
 			}
@@ -691,7 +693,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseDimension(_ value: String) -> Double? {
-		Double(value.replacingOccurrences(of: "px", with: "").replacingOccurrences(of: "pt", with: "").trimmingCharacters(in: .whitespaces))
+		parseNumber(value.replacingOccurrences(of: "px", with: "").replacingOccurrences(of: "pt", with: ""))
 	}
 
 	private func resolveID(_ explicit: String?, elementName: String) -> String {
@@ -726,7 +728,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func rgbColor(_ value: String) -> Color? {
 		let inner = value.drop { $0 != "(" }.dropFirst().prefix { $0 != ")" }
-		let parts = inner.split(whereSeparator: { $0 == "," || $0 == " " }).compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+		let parts = inner.split(whereSeparator: { $0 == "," || $0 == " " }).compactMap { parseNumber(String($0)) }
 		guard parts.count >= 3 else { return nil }
 		return Color(parts[0] / 255, parts[1] / 255, parts[2] / 255)
 	}
@@ -778,7 +780,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			let function = nsValue.substring(with: match.range(at: 1))
 			let args = nsValue.substring(with: match.range(at: 2))
 				.split(whereSeparator: { $0 == "," || $0 == " " })
-				.compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }
+				.compactMap { parseNumber(String($0)) }
 			switch function {
 			case "translate" where args.count >= 1:
 				transform = transform.translatedBy(x: args[0], y: args.count >= 2 ? args[1] : 0)
@@ -796,7 +798,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parsePoints(_ value: String) -> [Point] {
-		let numbers = value.split(whereSeparator: { $0 == " " || $0 == "," }).compactMap { Double($0) }
+		let numbers = value.split(whereSeparator: { $0 == " " || $0 == "," }).compactMap { parseNumber(String($0)) }
 		var points: [Point] = []
 		var index = 0
 		while index + 1 < numbers.count {
@@ -807,7 +809,22 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func double(_ value: String?) -> Double {
-		guard let value, let number = Double(value) else { return 0 }
+		guard let value, let number = parseNumber(value) else { return 0 }
+		return number
+	}
+
+	private func parseNumber(_ value: String) -> Double? {
+		SVGNumberParser.parse(value)
+	}
+}
+
+private enum SVGNumberParser {
+	private static let pattern = #"^[+-]?(?:(?:[0-9]+(?:[Ee][+-]?[0-9]+)?)|(?:[0-9]*\.[0-9]+(?:[Ee][+-]?[0-9]+)?))$"#
+
+	static func parse(_ value: String) -> Double? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		guard trimmed.range(of: pattern, options: .regularExpression) != nil else { return nil }
+		guard let number = Double(trimmed), number.isFinite else { return nil }
 		return number
 	}
 }

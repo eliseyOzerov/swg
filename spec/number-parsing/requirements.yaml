@@ -1,0 +1,194 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: number-parsing
+  title: SVG number parsing
+  domain: SVG
+  profile: null
+  summary: Parse the SVG XML attribute number grammar used by numeric SVG attributes, including optional signs, decimal notation, and exponent notation.
+  non_goals:
+    - Integer-only validation.
+    - Length unit conversion.
+    - Percentage interpretation beyond existing callers that already strip percent signs.
+    - List separator grammar and compact tokenization.
+    - CSS stylesheet number grammar.
+    - Path data tokenization.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg11-types-number
+      title: SVG 1.1 Basic Data Types - number
+      url: https://www.w3.org/TR/SVG11/types.html#DataTypeNumber
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg11-real-number-precision
+      title: SVG 1.1 Basic Data Types - real number precision
+      url: https://www.w3.org/TR/SVG11/types.html#RealNumberPrecision
+      version: Second Edition
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-attribute-syntax
+      title: SVG 2 Basic Data Types and Interfaces - attribute syntax
+      url: https://www.w3.org/TR/SVG/types.html#syntax
+      version: null
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 1.1 gives the explicit XML attribute number grammar used for this work item. SVG 2 describes how attribute syntax is defined and keeps numeric values tied to the host architecture's finite floating-point support.
+
+scope:
+  includes:
+    - Single numeric SVG XML attribute values.
+    - Optional plus and minus signs.
+    - Integer digit sequences.
+    - Decimal values with digits after the decimal point.
+    - Scientific notation using "e" or "E" with an integer exponent.
+    - Attribute boundary whitespace normalization before parsing.
+  excludes:
+    - Separating multiple numbers in a list.
+    - Attaching or converting units.
+    - Range restrictions for specific attributes.
+    - CSS property parsing differences.
+  assumptions:
+    - XML attribute normalization has already been performed by Foundation XMLParser before SVG-specific parsing.
+    - Existing parser fallback behavior for invalid numeric attributes remains in place until a later error-handling bullet defines stricter behavior.
+
+terminology:
+  - id: number
+    term: number
+    definition: A real numeric SVG XML attribute value matching either an integer optionally followed by an exponent, or a signed decimal value optionally followed by an exponent.
+    source_refs:
+      - svg11-types-number
+  - id: integer
+    term: integer
+    definition: An optional sign followed by one or more ASCII digits.
+    source_refs:
+      - svg11-types-number
+
+structures: []
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: grammar
+    statement: A number in an SVG XML attribute must accept an integer production with an optional exponent.
+    applies_to:
+      - Single numeric SVG XML attributes.
+    source_refs:
+      - svg11-types-number
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: grammar
+    statement: A number in an SVG XML attribute must accept a signed decimal production with zero or more digits before the decimal point and one or more digits after it.
+    applies_to:
+      - Single numeric SVG XML attributes.
+    source_refs:
+      - svg11-types-number
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: grammar
+    statement: Exponent notation must accept either "e" or "E" followed by an integer exponent, including an optional exponent sign.
+    applies_to:
+      - Single numeric SVG XML attributes.
+    source_refs:
+      - svg11-types-number
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: conformance
+    statement: Numeric values must support at least the finite single-precision range required by SVG unless a particular attribute states otherwise.
+    applies_to:
+      - Parsed SVG numbers.
+    source_refs:
+      - svg11-real-number-precision
+    testability: reviewable
+    notes:
+      - Double-precision storage exceeds this minimum for normal parsed values.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: If an attribute value cannot be parsed according to its syntax, the implementation must continue using the existing initial or fallback value for that attribute.
+    applies_to:
+      - Invalid single numeric SVG XML attributes.
+    source_refs:
+      - svg2-attribute-syntax
+    testability: testable
+    notes:
+      - This records current local parser behavior while preserving SVG's invalid-value concept for a future error-processing work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A numeric attribute contains text that does not match the SVG XML attribute number grammar.
+    source_behavior: invalid value
+    required_behavior: Preserve the package's current initial or fallback value behavior for the affected attribute.
+    decision_required: false
+    source_refs:
+      - svg2-attribute-syntax
+      - svg11-types-number
+
+recommendations:
+  - id: N001
+    normative_strength: RECOMMENDED
+    statement: Higher precision floating-point storage and computation is recommended for operations such as coordinate transforms.
+    source_refs:
+      - svg11-real-number-precision
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Attribute boundary whitespace
+    statement: Trim leading and trailing XML whitespace before parsing a single numeric attribute value.
+    allowed_by:
+      - XML attribute values are delivered as strings and SVG numeric syntax applies to the attribute value after XML parsing.
+    source_refs:
+      - svg2-attribute-syntax
+      - svg11-types-number
+
+ambiguities: []
+
+dependencies: []
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg11-types-number
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg11-types-number
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg11-types-number
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg11-real-number-precision
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-attribute-syntax
+    map_item_refs: []

@@ -159,6 +159,48 @@ import Testing
 	#expect(path.unknownAttributes["id"] == nil)
 }
 
+@Test func svgParserParsesSignedDecimalAndExponentNumbers() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<rect id="box" x=" +.5 " y="-.25e2" width="+1E2" height=".5e+1" stroke-width=" 1.25e1 " opacity=" +.75 "/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	guard case .rect(let rect) = document.elements.first else {
+		Issue.record("Expected root element to be a rect")
+		return
+	}
+	#expect(rect.x == 0.5)
+	#expect(rect.y == -25)
+	#expect(rect.width == 100)
+	#expect(rect.height == 5)
+	#expect(rect.attributes.strokeWidth == 12.5)
+	#expect(rect.attributes.opacity == 0.75)
+}
+
+@Test func svgParserKeepsFallbacksForInvalidNumberValues() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<rect id="box" x="1e" y="." width="10" height="10" stroke-width="1e" opacity="."/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	guard case .rect(let rect) = document.elements.first else {
+		Issue.record("Expected root element to be a rect")
+		return
+	}
+	#expect(rect.x == 0)
+	#expect(rect.y == 0)
+	#expect(rect.width == 10)
+	#expect(rect.height == 10)
+	#expect(rect.attributes.strokeWidth == 1)
+	#expect(rect.attributes.opacity == 1)
+}
+
 @Test func svgParserDecodesXMLPredefinedEntitiesAndCharacterReferences() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

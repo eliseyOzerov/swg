@@ -16,7 +16,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Basic Data Types
 
-- [ ] Number parsing, including signs, decimals, and exponents.
+- [x] Number parsing, including signs, decimals, and exponents.
 - [ ] Integer parsing.
 - [ ] Length parsing without units.
 - [ ] Absolute length units: `px`, `pt`, `pc`, `mm`, `cm`, `in`.
