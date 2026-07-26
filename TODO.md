@@ -130,7 +130,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `spreadMethod="pad"`.
 - [x] `spreadMethod="reflect"`.
 - [x] `spreadMethod="repeat"`.
-- [ ] `<pattern>`.
+- [x] `<pattern>`.
 - [ ] `patternContentUnits`.
 
 ## Clipping, Masking, and Compositing

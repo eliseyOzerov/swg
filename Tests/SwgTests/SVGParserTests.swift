@@ -325,6 +325,50 @@ import Testing
 	#expect(document.defs.radialGradients["radial"]?.spreadMethod == .repeat)
 }
 
+@Test func svgParserPreservesPatternDefinitions() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100">
+		<defs>
+			<pattern id="tile" patternUnits="userSpaceOnUse" x="10%" y="5" width="25%" height="20" patternTransform="translate(1 2) scale(3)" viewBox="0 0 10 10" preserveAspectRatio="xMaxYMax slice" href="#template">
+				<rect id="background" width="10" height="10" fill="white"/>
+				<path id="mark" d="M0 0 L10 10" stroke="black"/>
+			</pattern>
+			<pattern id="defaults"/>
+		</defs>
+		<rect id="painted" width="100" height="50" fill="url(#tile)"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let tile = try #require(document.defs.patterns["tile"])
+	let defaults = try #require(document.defs.patterns["defaults"])
+
+	#expect(document.elements.count == 1)
+	#expect(tile.x == 20)
+	#expect(tile.y == 5)
+	#expect(tile.width == 50)
+	#expect(tile.height == 20)
+	#expect(tile.patternUnits == .userSpaceOnUse)
+	#expect(tile.patternTransform == Transform.identity.translatedBy(x: 1, y: 2).scaledBy(x: 3, y: 3))
+	#expect(tile.viewBox == Rect(x: 0, y: 0, width: 10, height: 10))
+	#expect(tile.preserveAspectRatio.align == .xMaxYMax)
+	#expect(tile.preserveAspectRatio.meetOrSlice == .slice)
+	#expect(tile.href == "template")
+	#expect(tile.children.count == 2)
+	#expect(tile.children.flatMap { $0.collectIDs() } == ["background", "mark"])
+
+	#expect(defaults.x == 0)
+	#expect(defaults.y == 0)
+	#expect(defaults.width == 0)
+	#expect(defaults.height == 0)
+	#expect(defaults.patternUnits == .objectBoundingBox)
+	#expect(defaults.patternTransform == .identity)
+	#expect(defaults.viewBox == nil)
+	#expect(defaults.preserveAspectRatio == .default)
+	#expect(defaults.href == nil)
+	#expect(defaults.children.isEmpty)
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

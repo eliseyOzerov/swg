@@ -145,10 +145,11 @@ public struct SVGMetadataElementData: Equatable, Sendable {
 	}
 }
 
-/// A registry of reusable SVG definitions such as gradients, clip paths, filters, and masks.
+/// A registry of reusable SVG definitions such as gradients, patterns, clip paths, filters, and masks.
 public struct SVGDefs: Equatable, Sendable {
 	public var linearGradients: [String: SVGLinearGradientDef]
 	public var radialGradients: [String: SVGRadialGradientDef]
+	public var patterns: [String: SVGPatternDef]
 	public var symbols: [String: SVGSymbolData]
 	public var views: [String: SVGViewData]
 	public var clipPaths: [String: [SVGElement]]
@@ -159,6 +160,7 @@ public struct SVGDefs: Equatable, Sendable {
 	public init(
 		linearGradients: [String: SVGLinearGradientDef] = [:],
 		radialGradients: [String: SVGRadialGradientDef] = [:],
+		patterns: [String: SVGPatternDef] = [:],
 		symbols: [String: SVGSymbolData] = [:],
 		views: [String: SVGViewData] = [:],
 		clipPaths: [String: [SVGElement]] = [:],
@@ -168,6 +170,7 @@ public struct SVGDefs: Equatable, Sendable {
 	) {
 		self.linearGradients = linearGradients
 		self.radialGradients = radialGradients
+		self.patterns = patterns
 		self.symbols = symbols
 		self.views = views
 		self.clipPaths = clipPaths
@@ -517,6 +520,62 @@ public struct SVGViewData: Equatable, Sendable {
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
+}
+
+/// Data for an SVG `<pattern>` paint server.
+public struct SVGPatternDef: Equatable, Sendable {
+	public var id: String
+	public var x: Double
+	public var y: Double
+	public var width: Double
+	public var height: Double
+	public var patternUnits: SVGPatternUnits
+	public var patternTransform: Transform
+	public var viewBox: Rect?
+	public var preserveAspectRatio: SVGPreserveAspectRatio
+	public var href: String?
+	public var attributes: SVGPaintAttributes
+	public var children: [SVGElement]
+	public var language: String?
+	public var unknownAttributes: [String: String]
+
+	public init(
+		id: String,
+		x: Double = 0,
+		y: Double = 0,
+		width: Double = 0,
+		height: Double = 0,
+		patternUnits: SVGPatternUnits = .objectBoundingBox,
+		patternTransform: Transform = .identity,
+		viewBox: Rect? = nil,
+		preserveAspectRatio: SVGPreserveAspectRatio = .default,
+		href: String? = nil,
+		attributes: SVGPaintAttributes = .defaults,
+		children: [SVGElement] = [],
+		language: String? = nil,
+		unknownAttributes: [String: String] = [:]
+	) {
+		self.id = id
+		self.x = x
+		self.y = y
+		self.width = width
+		self.height = height
+		self.patternUnits = patternUnits
+		self.patternTransform = patternTransform
+		self.viewBox = viewBox
+		self.preserveAspectRatio = preserveAspectRatio
+		self.href = href
+		self.attributes = attributes
+		self.children = children
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Coordinate space for SVG pattern tile geometry.
+public enum SVGPatternUnits: Sendable, Equatable, Hashable {
+	case objectBoundingBox
+	case userSpaceOnUse
 }
 
 /// How an SVG `viewBox` is aligned within its viewport.

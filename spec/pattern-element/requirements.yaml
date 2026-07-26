@@ -1,0 +1,404 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: pattern-element
+  title: SVG pattern element paint server
+  domain: SVG 2
+  profile: null
+  summary: Preserve SVG `<pattern>` paint-server definitions, including their tile geometry, transform, viewBox metadata, href templating reference, and renderable child content.
+  non_goals:
+    - Rendering tiled pattern paint into a concrete raster or vector surface.
+    - Implementing `patternContentUnits`; it is tracked by the next TODO bullet.
+    - Implementing external-resource template fetching.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-paint-servers-patterns
+      title: "SVG 2 Paint Servers: Patterns"
+      url: https://www.w3.org/TR/SVG/pservers.html#Patterns
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-paint-server-templates
+      title: "SVG 2 Paint Servers: Using paint servers as templates"
+      url: https://www.w3.org/TR/SVG/pservers.html#PaintServerTemplates
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 marks paint-server elements as never-rendered resources that can be referenced by paint properties.
+    - Attribute lists also include global, event, presentation, and deprecated xlink attributes; this work item focuses on pattern-specific data needed to preserve a pattern definition.
+
+scope:
+  includes:
+    - "`<pattern>` definitions as paint servers."
+    - Pattern child content allowed by the element content model.
+    - Pattern tile attributes `x`, `y`, `width`, `height`, and `patternUnits`.
+    - Pattern `patternTransform`, `viewBox`, `preserveAspectRatio`, and `href` attributes.
+    - Default values for pattern-specific attributes covered by this work item.
+  excludes:
+    - "`patternContentUnits` behavior and defaults."
+    - Full paint-server template resolution.
+    - User-agent stylesheet clipping behavior and actual tile rendering.
+    - Event listener processing.
+  assumptions:
+    - Local URL references can be preserved by fragment identifier for downstream template resolution.
+    - Negative `width` and `height` are recorded as invalid input handling rather than requiring parser failure for this bullet.
+
+terminology:
+  - id: T001
+    term: pattern
+    definition: A paint server defined by a `<pattern>` element whose graphic content is replicated as tiles to fill or stroke referencing graphics.
+    source_refs:
+      - svg2-paint-servers-patterns
+  - id: T002
+    term: reference rectangle
+    definition: The rectangle with top-left at `x`, `y` and bottom-right at `x + width`, `y + height` that defines pattern tile placement and spacing.
+    source_refs:
+      - svg2-paint-servers-patterns
+  - id: T003
+    term: patternUnits
+    definition: The coordinate system used for the pattern tile attributes `x`, `y`, `width`, and `height`.
+    source_refs:
+      - svg2-paint-servers-patterns
+
+structures:
+  - id: S001
+    name: SVG pattern definition
+    kind: structure
+    source_refs:
+      - svg2-paint-servers-patterns
+    fields:
+      - name: id
+        type: string
+        cardinality: optional-in-source
+        position: null
+        constraints:
+          - Core attribute used for paint-server references.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: x
+        type: length
+        cardinality: optional
+        position: tile
+        constraints:
+          - Initial value is 0.
+          - Interpreted in the coordinate space defined by `patternUnits` and `patternTransform`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: y
+        type: length
+        cardinality: optional
+        position: tile
+        constraints:
+          - Initial value is 0.
+          - Interpreted in the coordinate space defined by `patternUnits` and `patternTransform`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: width
+        type: length
+        cardinality: optional
+        position: tile
+        constraints:
+          - Initial value is 0.
+          - Negative values are errors.
+          - Zero disables rendering of the pattern paint.
+        requirement_refs:
+          - R004
+          - R008
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: height
+        type: length
+        cardinality: optional
+        position: tile
+        constraints:
+          - Initial value is 0.
+          - Negative values are errors.
+          - Zero disables rendering of the pattern paint.
+        requirement_refs:
+          - R004
+          - R008
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: patternUnits
+        type: enumeration
+        cardinality: optional
+        position: null
+        constraints:
+          - Allowed values are `userSpaceOnUse` and `objectBoundingBox`.
+          - Initial value is `objectBoundingBox`.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: patternTransform
+        type: transform-list
+        cardinality: optional
+        position: null
+        constraints:
+          - Initial value is identity transform.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: viewBox
+        type: rect
+        cardinality: optional
+        position: null
+        constraints:
+          - When present, pattern content is fitted into the pattern tile using normal viewBox and preserveAspectRatio rules.
+        requirement_refs:
+          - R007
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: preserveAspectRatio
+        type: preserveAspectRatio
+        cardinality: optional
+        position: null
+        constraints:
+          - Applies with `viewBox` according to the standard viewBox fitting rules.
+        requirement_refs:
+          - R007
+        source_refs:
+          - svg2-paint-servers-patterns
+      - name: href
+        type: URL
+        cardinality: optional
+        position: null
+        constraints:
+          - A valid template reference must target a different `<pattern>` element.
+        requirement_refs:
+          - R009
+        source_refs:
+          - svg2-paint-servers-patterns
+          - svg2-paint-server-templates
+      - name: children
+        type: SVG element list
+        cardinality: zero-or-more
+        position: content
+        constraints:
+          - Content can include animation elements, descriptive elements, paint server elements, shape elements, structural elements, and other listed SVG elements.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-paint-servers-patterns
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: A `<pattern>` element defines a pattern paint server that can be referenced by fill or stroke paint values.
+    applies_to:
+      - pattern
+    source_refs:
+      - svg2-paint-servers-patterns
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST_NOT
+    kind: rendering
+    statement: Pattern elements are never rendered directly as ordinary document graphics.
+    applies_to:
+      - pattern
+    source_refs:
+      - svg2-paint-servers-patterns
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: content
+    statement: A pattern definition must preserve its child content for use when rendering the pattern paint server.
+    applies_to:
+      - pattern.children
+    source_refs:
+      - svg2-paint-servers-patterns
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: geometry
+    statement: Pattern tile placement and spacing are defined by `x`, `y`, `width`, and `height`, with initial values of 0.
+    applies_to:
+      - pattern.x
+      - pattern.y
+      - pattern.width
+      - pattern.height
+    source_refs:
+      - svg2-paint-servers-patterns
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: coordinate-system
+    statement: "`patternUnits` must select either `userSpaceOnUse` or `objectBoundingBox` for `x`, `y`, `width`, and `height`, defaulting to `objectBoundingBox`."
+    applies_to:
+      - pattern.patternUnits
+    source_refs:
+      - svg2-paint-servers-patterns
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: transform
+    statement: "`patternTransform` must preserve an optional additional transform from the pattern coordinate system onto the target coordinate system, defaulting to identity."
+    applies_to:
+      - pattern.patternTransform
+    source_refs:
+      - svg2-paint-servers-patterns
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: viewport
+    statement: A pattern may specify `viewBox` and `preserveAspectRatio`; when `viewBox` exists, content is fitted into the pattern tile by the standard viewBox rules.
+    applies_to:
+      - pattern.viewBox
+      - pattern.preserveAspectRatio
+    source_refs:
+      - svg2-paint-servers-patterns
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST
+    kind: error
+    statement: Negative `width` or `height` values are errors, and zero width or height disables rendering of the pattern paint.
+    applies_to:
+      - pattern.width
+      - pattern.height
+    source_refs:
+      - svg2-paint-servers-patterns
+    testability: reviewable
+    notes: []
+  - id: R009
+    normative_strength: MUST
+    kind: templating
+    statement: A pattern `href` value identifies a template pattern; attributes not defined on the current pattern may be copied from the template by the paint-server templating process.
+    applies_to:
+      - pattern.href
+    source_refs:
+      - svg2-paint-servers-patterns
+      - svg2-paint-server-templates
+    testability: reviewable
+    notes:
+      - This bullet preserves the reference and does not implement template inheritance.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `<pattern>` has negative `width` or `height`.
+    source_behavior: error
+    required_behavior: Treat as an invalid tile size for rendering; parser failure is not required by this work item.
+    decision_required: false
+    source_refs:
+      - svg2-paint-servers-patterns
+  - id: I002
+    condition: "A `<pattern>` has `overflow: visible` and child content outside the tile bounds."
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - svg2-paint-servers-patterns
+
+recommendations:
+  - id: N001
+    normative_strength: SHOULD
+    statement: If pattern overflow is rendered, tiles should be rendered left to right in rows and rows top to bottom.
+    source_refs:
+      - svg2-paint-servers-patterns
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Template resolution
+    statement: The source requires template behavior, but this bullet may preserve local hrefs without resolving inherited attributes until a later templating work item.
+    allowed_by:
+      - R009
+    source_refs:
+      - svg2-paint-server-templates
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG viewBox and preserveAspectRatio
+    reason: Required to render pattern content when a pattern viewBox is present.
+    source_refs:
+      - svg2-paint-servers-patterns
+  - id: DEP002
+    kind: source-section
+    title: SVG object bounding box units
+    reason: Required to interpret objectBoundingBox pattern tile coordinates.
+    source_refs:
+      - svg2-paint-servers-patterns
+  - id: DEP003
+    kind: source-section
+    title: SVG transform-list
+    reason: Required to parse and apply `patternTransform`.
+    source_refs:
+      - svg2-paint-servers-patterns
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+    map_item_refs: []
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+    map_item_refs: []
+  - item_id: R009
+    item_type: requirement
+    source_refs:
+      - svg2-paint-servers-patterns
+      - svg2-paint-server-templates
+    map_item_refs: []
