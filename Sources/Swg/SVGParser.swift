@@ -1661,8 +1661,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			method: parseTextPathMethod(attributes["method"]),
 			spacing: parseTextPathSpacing(attributes["spacing"]),
 			side: parseTextPathSide(attributes["side"]),
+			textAnchor: parseOptionalTextAnchor(attributes["text-anchor"]),
 			attributes: parsePaintAttributes(attributes),
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side", "text-anchor"])
 		))
 	}
 
@@ -1673,7 +1674,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			dxValues: parseTextCoordinateList(attributes["dx"], percentageBasis: .horizontal) ?? [],
 			dyValues: parseTextCoordinateList(attributes["dy"], percentageBasis: .vertical) ?? [],
 			rotateValues: parseTextRotateList(attributes["rotate"]) ?? [],
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate"])
+			textAnchor: parseOptionalTextAnchor(attributes["text-anchor"]),
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "text-anchor"])
 		)
 	}
 
@@ -1880,6 +1882,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			rotateValues: positioning.rotateValues,
 			fontSize: nil,
 			fontWeight: nil,
+			textAnchor: positioning.textAnchor,
 			attributes: attributes,
 			textPath: textPathStack.last,
 			language: language,
@@ -1976,10 +1979,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseTextAnchor(_ value: String?) -> SVGTextAnchor {
+		parseOptionalTextAnchor(value) ?? .start
+	}
+
+	private func parseOptionalTextAnchor(_ value: String?) -> SVGTextAnchor? {
 		switch value {
+		case "start": .start
 		case "middle": .middle
 		case "end": .end
-		default: .start
+		default: nil
 		}
 	}
 
@@ -3275,13 +3283,14 @@ private final class SVGTextBuilder {
 
 /// Mutable tspan positioning collected before the text run is finalized.
 private struct SVGTextSpanPositioning {
-	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], unknownAttributes: [:])
+	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], textAnchor: nil, unknownAttributes: [:])
 
 	let xValues: [Double]
 	let yValues: [Double]
 	let dxValues: [Double]
 	let dyValues: [Double]
 	let rotateValues: [Double]
+	let textAnchor: SVGTextAnchor?
 	let unknownAttributes: [String: String]
 }
 

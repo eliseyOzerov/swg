@@ -1,0 +1,164 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: text-anchor
+  title: SVG text-anchor property
+  domain: SVG Text
+  profile: null
+  summary: Requirements for preserving the text-anchor property on SVG text content elements.
+  non_goals:
+    - Applying anchor alignment during glyph layout.
+    - Direction and writing-mode resolution.
+    - Auto-wrapped text layout.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-text-anchor
+      title: SVG 2, Text alignment, the text-anchor property
+      url: https://www.w3.org/TR/SVG/text.html#TextAnchorProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C text chapter.
+
+scope:
+  includes:
+    - Recognition of text-anchor on text, tspan, and textPath.
+    - Preservation of start, middle, and end values.
+    - Preservation of the initial start value on text when absent or invalid.
+  excludes:
+    - Geometric alignment of text chunks.
+    - Direction-specific interpretation of start and end.
+    - Multi-line chunk anchoring.
+  assumptions:
+    - Parser-level conformance can preserve local text-anchor values for a later rendering phase.
+    - Child text content elements store nil when no local text-anchor override is present and inherit during rendering.
+
+terminology:
+  - id: term-text-chunk
+    term: text chunk
+    definition: An independent block of text whose characters are positioned together before text-anchor is applied.
+    source_refs:
+      - svg2-text-anchor
+  - id: term-initial-current-text-position
+    term: initial current text position
+    definition: The point relative to which the text chunk is aligned by text-anchor.
+    source_refs:
+      - svg2-text-anchor
+
+structures:
+  - id: S001
+    name: text-anchor
+    kind: property
+    source_refs:
+      - svg2-text-anchor
+    fields:
+      - name: value
+        type: enum
+        cardinality: optional
+        position: property
+        constraints:
+          - Allowed values are start, middle, and end.
+          - Initial value is start.
+          - Applies to text content elements.
+          - Inherited.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-text-anchor
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: text-anchor accepts start, middle, and end values and applies to SVG text content elements.
+    applies_to:
+      - text
+      - tspan
+      - textPath
+    source_refs:
+      - svg2-text-anchor
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: text-anchor has the initial value start and is inherited.
+    applies_to:
+      - text-anchor
+    source_refs:
+      - svg2-text-anchor
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: text-anchor aligns each text chunk relative to its initial current text position using start, middle, or end alignment.
+    applies_to:
+      - text-anchor
+    source_refs:
+      - svg2-text-anchor
+    testability: reviewable
+    notes:
+      - Parser preservation enables a later layout phase to apply the geometric alignment.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Unsupported text-anchor value.
+    source_behavior: UNSPECIFIED
+    required_behavior: Use the inherited or initial value during rendering; parser stores no local child override and uses start for root text fallback.
+    decision_required: false
+    source_refs:
+      - svg2-text-anchor
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: A parser may store root text-anchor as a resolved value and child text-anchor values as optional local overrides.
+    allowed_by:
+      - R001
+      - R002
+    source_refs:
+      - svg2-text-anchor
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG text layout
+    reason: Applying text-anchor depends on text chunk layout and initial/final current text positions.
+    source_refs:
+      - svg2-text-anchor
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-text-anchor
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-text-anchor
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-text-anchor
+    map_item_refs: []

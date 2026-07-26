@@ -5017,6 +5017,29 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(text.spans[1].rotateValues == [-45, 90])
 }
 
+@Test func svgParserPreservesTextAnchorOnTextContentElements() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+		<defs>
+			<path id="curve" d="M 0 60 L 200 60" />
+		</defs>
+		<text id="label" x="10" y="30" text-anchor="middle">A<tspan text-anchor="end">B</tspan><textPath href="#curve" text-anchor="end">C</textPath></text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected parsed text element")
+		return
+	}
+	#expect(text.textAnchor == .middle)
+	#expect(text.spans.map(\.text) == ["A", "B", "C"])
+	#expect(text.spans[0].textAnchor == nil)
+	#expect(text.spans[1].textAnchor == .end)
+	let path = try #require(text.spans[2].textPath)
+	#expect(path.textAnchor == .end)
+}
+
 @Test func svgParserNormalizesDefaultTextWhitespace() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

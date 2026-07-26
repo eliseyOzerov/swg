@@ -839,12 +839,13 @@ public struct SVGTextSpan: Equatable, Sendable {
 	public let rotateValues: [Double]
 	public let fontSize: Double?
 	public let fontWeight: String?
+	public let textAnchor: SVGTextAnchor?
 	public let attributes: SVGPaintAttributes?
 	public let textPath: SVGTextPathData?
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double?, fontWeight: String?, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double?, fontWeight: String?, textAnchor: SVGTextAnchor? = nil, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.text = text
 		self.x = x
 		self.y = y
@@ -857,6 +858,7 @@ public struct SVGTextSpan: Equatable, Sendable {
 		self.rotateValues = rotateValues
 		self.fontSize = fontSize
 		self.fontWeight = fontWeight
+		self.textAnchor = textAnchor
 		self.attributes = attributes
 		self.textPath = textPath
 		self.language = language
@@ -872,16 +874,18 @@ public struct SVGTextPathData: Equatable, Sendable {
 	public let method: SVGTextPathMethod
 	public let spacing: SVGTextPathSpacing
 	public let side: SVGTextPathSide
+	public let textAnchor: SVGTextAnchor?
 	public let attributes: SVGPaintAttributes
 	public let unknownAttributes: [String: String]
 
-	public init(path: String? = nil, href: String? = nil, startOffset: String = "0", method: SVGTextPathMethod = .align, spacing: SVGTextPathSpacing = .exact, side: SVGTextPathSide = .left, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(path: String? = nil, href: String? = nil, startOffset: String = "0", method: SVGTextPathMethod = .align, spacing: SVGTextPathSpacing = .exact, side: SVGTextPathSide = .left, textAnchor: SVGTextAnchor? = nil, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
 		self.path = path
 		self.href = href
 		self.startOffset = startOffset
 		self.method = method
 		self.spacing = spacing
 		self.side = side
+		self.textAnchor = textAnchor
 		self.attributes = attributes
 		self.unknownAttributes = unknownAttributes
 	}
