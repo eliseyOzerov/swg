@@ -1,0 +1,234 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stroke-dashoffset
+  title: Stroke dashoffset property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of `stroke-dashoffset`, including initial value, inheritance, length-percentage values, negative values, and invalid fallback.
+  non_goals:
+    - Renderer computation of dash positions from `stroke-dasharray` and `stroke-dashoffset`.
+    - Renderer normalization of negative dash offsets against the dash pattern sum.
+    - Interaction with `pathLength` during stroke rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-stroke-dashoffset-property
+      title: "SVG 2 Painting: Stroke dashing: the stroke-dasharray and stroke-dashoffset properties"
+      url: https://www.w3.org/TR/SVG/painting.html#StrokeDashing
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `stroke-dashoffset` with value grammar `<length-percentage>`, initial value `0`, inheritance yes, and percentages resolved against the current SVG viewport.
+    - SVG 2 defines the computed value as an absolute length or percentage.
+    - SVG 2 states that negative values are valid and have a renderer-defined effect equivalent to an offset derived from the dash pattern sum.
+    - SVG presentation attributes participate in styling, so `stroke-dashoffset` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `stroke-dashoffset` property on SVG shapes and renderable containers.
+    - Initial `stroke-dashoffset` value of `0`.
+    - Explicit length, percentage, and unitless dash offset declarations and presentation attributes.
+    - Negative dash offset values preserved in parser-visible state.
+    - Inheritance from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Malformed `stroke-dashoffset` values leaving the current inherited or default value unchanged.
+  excludes:
+    - Renderer conversion of negative dash offsets into positive positions within the dash cycle.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The parser stores computed dash offset values as user-unit numbers in the package's existing style field.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+
+terminology:
+  - id: term-stroke-dashoffset
+    term: stroke-dashoffset
+    definition: The SVG property that specifies the distance into the repeated dash pattern where stroke dashing begins.
+    source_refs:
+      - svg2-stroke-dashoffset-property
+
+structures:
+  - id: S001
+    name: Stroke dashoffset parser state
+    kind: structure
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    fields:
+      - name: strokeDashOffset
+        type: resolved length
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is `0`.
+          - Valid parser-visible values include length, percentage, unitless, and negative values.
+          - The property is inherited.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-stroke-dashoffset-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `stroke-dashoffset` property must accept length-percentage values, including unitless values supported by SVG length parsing.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `stroke-dashoffset` value must be `0`.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`stroke-dashoffset` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Negative `stroke-dashoffset` values must be preserved as specified values for renderer use.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `stroke-dashoffset` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-dashoffset-property
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: During rendering, a negative `stroke-dashoffset` value must be interpreted relative to the dash pattern sum.
+    applies_to:
+      - SVG stroke rendering
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the value for renderer consumption; dash position computation is outside this work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `stroke-dashoffset` value is malformed.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-dashoffset-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `stroke-dashoffset` declaration must expose the inherited dash offset from its parent.
+    derived_from:
+      - R003
+    reasoning: Because `stroke-dashoffset` is inherited, parser state must preserve the parent's specified dash offset for children.
+    source_refs:
+      - svg2-stroke-dashoffset-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may represent SVG `stroke-dashoffset` with its existing numeric style field after resolving supported length values into user units.
+    allowed_by:
+      - The source defines value semantics, not programming-language storage details.
+    source_refs:
+      - svg2-stroke-dashoffset-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`stroke-dashoffset` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-dashoffset-property
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-stroke-dashoffset-property
+    map_item_refs: []

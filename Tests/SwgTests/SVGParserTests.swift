@@ -806,6 +806,51 @@ import Testing
 	#expect(paths["invalid"]?.attributes.strokeDashArray == [8, 4])
 }
 
+@Test func svgParserAppliesStrokeDashOffsetInitialInheritanceCascadeLengthsAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.offset { stroke-dashoffset: 50%; }
+			.negative { stroke-dashoffset: -3px; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" stroke-dashoffset="7">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="attribute" d="M0 0 L10 10" stroke-dashoffset="12px"/>
+			<path id="class-rule" class="offset" d="M0 0 L10 10"/>
+			<path id="inline" class="offset" d="M0 0 L10 10" style="stroke-dashoffset: -2"/>
+			<path id="negative-class" class="negative" d="M0 0 L10 10"/>
+			<path id="invalid" d="M0 0 L10 10" stroke-dashoffset="bogus"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.strokeDashOffset == 0)
+	#expect(paths["inherited"]?.attributes.strokeDashOffset == 7)
+	#expect(paths["attribute"]?.attributes.strokeDashOffset == 12)
+	#expect(abs((paths["class-rule"]?.attributes.strokeDashOffset ?? 0) - 50) < 0.000001)
+	#expect(paths["inline"]?.attributes.strokeDashOffset == -2)
+	#expect(paths["negative-class"]?.attributes.strokeDashOffset == -3)
+	#expect(paths["invalid"]?.attributes.strokeDashOffset == 7)
+}
+
 @Test func svgParserAppliesFillOpacityInitialInheritancePercentagesAndClamping() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

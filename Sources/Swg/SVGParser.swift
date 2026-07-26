@@ -1222,8 +1222,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let value = attributes["stroke-dashoffset"] {
 			if isInheritKeyword(value) {
 				result.strokeDashOffset = inherited.strokeDashOffset
-			} else if let number = parseNumber(value) {
-				result.strokeDashOffset = number
+			} else if let length = parseDimension(value, context: currentViewportContext, percentageBasis: .normalizedDiagonal) {
+				result.strokeDashOffset = length
 			}
 		}
 		if let value = attributes["stroke-opacity"] {

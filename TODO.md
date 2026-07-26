@@ -108,7 +108,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `stroke-linejoin: bevel`.
 - [x] `stroke-miterlimit`.
 - [x] `stroke-dasharray`.
-- [ ] `stroke-dashoffset`.
+- [x] `stroke-dashoffset`.
 - [ ] `paint-order`.
 - [ ] `color`.
 - [ ] `color-interpolation`.
