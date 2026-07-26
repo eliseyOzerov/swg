@@ -172,7 +172,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feOffset>`.
 - [x] `<fePointLight>`.
 - [x] `<feSpecularLighting>`.
-- [ ] `<feSpotLight>`.
+- [x] `<feSpotLight>`.
 - [ ] `<feTile>`.
 - [ ] `<feTurbulence>`.
 

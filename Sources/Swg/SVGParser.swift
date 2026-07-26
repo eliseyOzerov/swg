@@ -506,6 +506,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				kernelUnitLengthY: kernelUnitLength.y
 			))
 			currentLightingPrimitiveIndex = currentFilter?.primitives.indices.last
+		case "feSpotLight":
+			setFilterLightSource(.spotLight(
+				x: attributes["x"].flatMap(parseNumber) ?? 0,
+				y: attributes["y"].flatMap(parseNumber) ?? 0,
+				z: attributes["z"].flatMap(parseNumber) ?? 0,
+				pointsAtX: attributes["pointsAtX"].flatMap(parseNumber) ?? 0,
+				pointsAtY: attributes["pointsAtY"].flatMap(parseNumber) ?? 0,
+				pointsAtZ: attributes["pointsAtZ"].flatMap(parseNumber) ?? 0,
+				specularExponent: attributes["specularExponent"].flatMap(parseNumber) ?? 1,
+				limitingConeAngle: attributes["limitingConeAngle"].flatMap(parseNumber)
+			))
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2

@@ -1096,6 +1096,56 @@ private func expectSpecularLighting(
 	#expect(lightSource == expectedLightSource)
 }
 
+@Test func svgParserPreservesSpotLightAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="spot">
+			<feDiffuseLighting>
+				<feSpotLight/>
+			</feDiffuseLighting>
+			<feDiffuseLighting>
+				<feSpotLight x="1" y="2" z="3" pointsAtX="4" pointsAtY="5" pointsAtZ="6" specularExponent="7" limitingConeAngle="8"/>
+			</feDiffuseLighting>
+			<feDiffuseLighting>
+				<feSpotLight x="bad" y="bad" z="bad" pointsAtX="bad" pointsAtY="bad" pointsAtZ="bad" specularExponent="bad" limitingConeAngle="bad"/>
+			</feDiffuseLighting>
+			<feSpotLight x="9" y="9" z="9"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["spot"])
+	#expect(filter.primitives.count == 3)
+	expectDiffuseLighting(
+		filter.primitives[0],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .spotLight(x: 0, y: 0, z: 0, pointsAtX: 0, pointsAtY: 0, pointsAtZ: 0, specularExponent: 1, limitingConeAngle: nil)
+	)
+	expectDiffuseLighting(
+		filter.primitives[1],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .spotLight(x: 1, y: 2, z: 3, pointsAtX: 4, pointsAtY: 5, pointsAtZ: 6, specularExponent: 7, limitingConeAngle: 8)
+	)
+	expectDiffuseLighting(
+		filter.primitives[2],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .spotLight(x: 0, y: 0, z: 0, pointsAtX: 0, pointsAtY: 0, pointsAtZ: 0, specularExponent: 1, limitingConeAngle: nil)
+	)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")

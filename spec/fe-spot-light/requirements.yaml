@@ -1,0 +1,320 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-spot-light
+  title: SVG feSpotLight light source
+  domain: SVG Filter Effects
+  profile: null
+  summary: Requirements for preserving feSpotLight child light-source attributes used by SVG lighting filter primitives.
+  non_goals:
+    - Lighting rasterization or cone boundary smoothing.
+    - Full DOM IDL reflection or animation support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-spot-light
+      title: Filter Effects Module Level 1, feSpotLight element
+      url: https://www.w3.org/TR/filter-effects-1/#feSpotLightElement
+      version: Editor-independent W3C Working Draft snapshot
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C section.
+
+scope:
+  includes:
+    - feSpotLight recognition as a light source element.
+    - The x, y, z, pointsAtX, pointsAtY, pointsAtZ, specularExponent, and limitingConeAngle attributes.
+    - Initial values for omitted numeric attributes.
+    - Association of the light source with a lighting filter primitive parent.
+  excludes:
+    - Standalone rendering behavior outside lighting filter primitives.
+    - Animation and DOM mutation behavior.
+  assumptions:
+    - A light source element outside a supported lighting primitive does not create a standalone filter primitive.
+    - An omitted limitingConeAngle is represented distinctly from a numeric value because the source says no limiting cone is applied when unspecified.
+
+terminology:
+  - id: term-spot-light
+    term: Spot light
+    definition: A light source located at one point and directed toward another point, optionally restricted by a limiting cone.
+    source_refs:
+      - filter-effects-fe-spot-light
+
+structures:
+  - id: S001
+    name: feSpotLight
+    kind: element
+    source_refs:
+      - filter-effects-fe-spot-light
+    fields:
+      - name: x
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - The value is in the coordinate system established by primitiveUnits.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-spot-light
+      - name: y
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - The value is in the coordinate system established by primitiveUnits.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-fe-spot-light
+      - name: z
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - The value is in the coordinate system established by primitiveUnits.
+          - One unit along Z equals one unit in X and Y.
+        requirement_refs:
+          - R003
+        source_refs:
+          - filter-effects-fe-spot-light
+      - name: pointsAtX
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+        requirement_refs:
+          - R004
+        source_refs:
+          - filter-effects-fe-spot-light
+      - name: pointsAtY
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+        requirement_refs:
+          - R005
+        source_refs:
+          - filter-effects-fe-spot-light
+      - name: pointsAtZ
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - One unit along Z equals one unit in X and Y.
+        requirement_refs:
+          - R006
+        source_refs:
+          - filter-effects-fe-spot-light
+      - name: specularExponent
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 1.
+        requirement_refs:
+          - R007
+        source_refs:
+          - filter-effects-fe-spot-light
+      - name: limitingConeAngle
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - No limiting cone is applied when omitted.
+        requirement_refs:
+          - R008
+        source_refs:
+          - filter-effects-fe-spot-light
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The x attribute is a number value for the light source X location and has an initial value of 0.
+    applies_to:
+      - feSpotLight.x
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The y attribute is a number value for the light source Y location and has an initial value of 0.
+    applies_to:
+      - feSpotLight.y
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: The z attribute is a number value for the light source Z location and has an initial value of 0.
+    applies_to:
+      - feSpotLight.z
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: The pointsAtX attribute is a number value for the point the light source aims at and has an initial value of 0.
+    applies_to:
+      - feSpotLight.pointsAtX
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: structure
+    statement: The pointsAtY attribute is a number value for the point the light source aims at and has an initial value of 0.
+    applies_to:
+      - feSpotLight.pointsAtY
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: structure
+    statement: The pointsAtZ attribute is a number value for the point the light source aims at and has an initial value of 0.
+    applies_to:
+      - feSpotLight.pointsAtZ
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: structure
+    statement: The specularExponent attribute is a number controlling the spot light focus and has an initial value of 1.
+    applies_to:
+      - feSpotLight.specularExponent
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST
+    kind: structure
+    statement: The limitingConeAngle attribute is a number in degrees; when no value is specified, no limiting cone is applied.
+    applies_to:
+      - feSpotLight.limitingConeAngle
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+  - id: R009
+    normative_strength: MUST
+    kind: structure
+    statement: feSpotLight is a light source element for lighting filter primitives.
+    applies_to:
+      - feSpotLight
+    source_refs:
+      - filter-effects-fe-spot-light
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Any feSpotLight numeric attribute is syntactically malformed.
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - filter-effects-fe-spot-light
+
+recommendations:
+  - id: N001
+    normative_strength: SHOULD
+    statement: User agents should apply smoothing such as anti-aliasing at the limiting cone boundary.
+    source_refs:
+      - filter-effects-fe-spot-light
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Malformed numeric values
+    statement: A parser may fall back to initial numeric values for malformed attributes when preserving a usable light-source representation.
+    allowed_by:
+      - I001
+    source_refs:
+      - filter-effects-fe-spot-light
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG lighting filter primitives
+    reason: feSpotLight is only useful as a child light source of a lighting primitive.
+    source_refs:
+      - filter-effects-fe-spot-light
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []
+  - item_id: R009
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-spot-light
+    map_item_refs: []

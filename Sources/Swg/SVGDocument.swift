@@ -1039,6 +1039,7 @@ public enum SVGCrossOriginMode: Equatable, Sendable, Hashable {
 public enum SVGFilterLightSource: Equatable, Sendable, Hashable {
 	case distantLight(azimuth: Double = 0, elevation: Double = 0)
 	case pointLight(x: Double = 0, y: Double = 0, z: Double = 0)
+	case spotLight(x: Double = 0, y: Double = 0, z: Double = 0, pointsAtX: Double = 0, pointsAtY: Double = 0, pointsAtZ: Double = 0, specularExponent: Double = 1, limitingConeAngle: Double? = nil)
 }
 
 /// Color channel selected by an SVG filter primitive.
