@@ -1,0 +1,185 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: animation-value-control-attributes
+  title: SVG animation value control attributes
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for preserving and lightly parsing `calcMode`, `values`, `keyTimes`, and `keySplines` on SVG animation elements.
+  non_goals:
+    - Animation interpolation, pacing, distance functions, error processing, or rendering.
+    - Validating whether `keyTimes` length matches `values` or from/to/by animation forms.
+    - Validating whether `keySplines` length is exactly one fewer than `keyTimes`.
+    - Parsing each `values` item according to the target animated attribute.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-value-attributes
+      title: SVG Animations Level 2, Attributes that define animation values over time
+      url: https://svgwg.org/specs/animations/#ValueAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - The SVG Animations draft delegates most animation value processing rules to SMIL Animation except where SVG-specific rules are stated.
+    - This work item is parser-scoped and preserves enough data for later evaluator work.
+
+scope:
+  includes:
+    - "`calcMode` keyword preservation for `discrete`, `linear`, `paced`, and `spline`."
+    - "`values` semicolon-list splitting with leading and trailing whitespace removed from each item and a trailing empty final item ignored."
+    - "`keyTimes` semicolon-list parsing into numbers when all items are valid numbers in the inclusive range 0...1."
+    - "`keySplines` semicolon-list parsing into cubic control-point quadruples when all numbers are in the inclusive range 0...1."
+    - Raw unresolved preservation for malformed `calcMode`, `keyTimes`, or `keySplines` values.
+    - Removal of parsed value-control attributes from animation `unknownAttributes`.
+  excludes:
+    - Runtime defaults for omitted `calcMode`.
+    - Runtime ignoring of `keyTimes` for paced animation or indefinite simple durations.
+    - Runtime ignoring of `keySplines` unless `calcMode` is `spline`.
+    - Document-fragment error reporting for malformed key time or key spline specifications.
+  assumptions:
+    - Parser output may store unresolved malformed lists so later validation can report errors with source-like data.
+    - Parser output may store `values` as raw strings because target-attribute-specific parsing is a later evaluator responsibility.
+
+terminology:
+  - id: term-calc-mode
+    term: calcMode
+    definition: Attribute that selects the interpolation mode for an animation.
+    source_refs:
+      - svg-animations-value-attributes
+  - id: term-values
+    term: values
+    definition: A semicolon-separated sequence of target values used over the course of an animation.
+    source_refs:
+      - svg-animations-value-attributes
+  - id: term-key-times
+    term: keyTimes
+    definition: A semicolon-separated sequence of proportional offsets into the simple duration.
+    source_refs:
+      - svg-animations-value-attributes
+  - id: term-key-splines
+    term: keySplines
+    definition: A semicolon-separated sequence of cubic Bezier control point quadruples.
+    source_refs:
+      - svg-animations-value-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: "`calcMode` must preserve recognized values `discrete`, `linear`, `paced`, and `spline` when specified."
+    applies_to:
+      - calcMode
+    source_refs:
+      - svg-animations-value-attributes
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`values` must be split at U+003B SEMICOLON, trim leading and trailing whitespace from each item, and ignore a final empty item after a trailing semicolon."
+    applies_to:
+      - values
+    source_refs:
+      - svg-animations-value-attributes
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`keyTimes` entries must parse as floating point values in the inclusive range from 0 to 1 when recognized."
+    applies_to:
+      - keyTimes
+    source_refs:
+      - svg-animations-value-attributes
+    testability: testable
+    notes:
+      - Full list-length and monotonicity validation is deferred.
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`keySplines` entries must parse as quadruples of floating point values in the inclusive range from 0 to 1 when recognized."
+    applies_to:
+      - keySplines
+    source_refs:
+      - svg-animations-value-attributes
+    testability: testable
+    notes:
+      - Full association with `keyTimes` and `calcMode` is deferred.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Parsed value-control attributes must not be reported as unknown attributes on animation element data.
+    applies_to:
+      - unknownAttributes
+    source_refs:
+      - svg-animations-value-attributes
+    testability: testable
+    notes: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `calcMode` token other than `discrete`, `linear`, `paced`, or `spline`.
+    source_behavior: invalid for calcMode.
+    required_behavior: Preserve the raw token as unresolved parser value-control data.
+    decision_required: false
+    source_refs:
+      - svg-animations-value-attributes
+  - id: I002
+    condition: A `keyTimes` list containing malformed numbers or values outside the range 0...1.
+    source_behavior: document fragment is in error.
+    required_behavior: Preserve the raw list items as unresolved parser value-control data.
+    decision_required: false
+    source_refs:
+      - svg-animations-value-attributes
+  - id: I003
+    condition: A `keySplines` list containing malformed control points, the wrong number of values, or values outside the range 0...1.
+    source_behavior: document fragment is in error.
+    required_behavior: Preserve the raw list items as unresolved parser value-control data.
+    decision_required: false
+    source_refs:
+      - svg-animations-value-attributes
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-only value-control representation
+    statement: The package may classify recognized value-control data and preserve invalid or deferred validation cases as unresolved raw strings.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+      - R004
+    source_refs:
+      - svg-animations-value-attributes
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-value-attributes
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-value-attributes
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-value-attributes
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg-animations-value-attributes
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg-animations-value-attributes
+    map_item_refs: []

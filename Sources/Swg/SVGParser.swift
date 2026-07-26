@@ -28,6 +28,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let animationTimingAttributeNames: Set<String> = [
 		"begin", "dur", "end", "min", "max", "restart", "repeatCount", "repeatDur"
 	]
+	private static let animationValueControlAttributeNames: Set<String> = [
+		"calcMode", "values", "keyTimes", "keySplines"
+	]
 	private static let namedColors: [String: Color] = [
 		"aliceblue": Color(240 / 255, 248 / 255, 1),
 		"antiquewhite": Color(250 / 255, 235 / 255, 215 / 255),
@@ -1813,8 +1816,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			toValue: attributes["to"],
 			byValue: attributes["by"],
 			timing: parseAnimationTiming(attributes),
+			valueControl: parseAnimationValueControl(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "from", "to", "by"], union: Self.animationTimingAttributeNames)
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames))
 		)))
 	}
 
@@ -1838,8 +1842,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			toValue: attributes["to"],
 			byValue: attributes["by"],
 			timing: parseAnimationTiming(attributes),
+			valueControl: parseAnimationValueControl(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "path", "keyPoints", "rotate", "origin", "from", "to", "by"], union: Self.animationTimingAttributeNames)
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "path", "keyPoints", "rotate", "origin", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames))
 		)))
 		animateMotionIndexStack.append(animations.count - 1)
 	}
@@ -1862,8 +1867,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			toValue: attributes["to"],
 			byValue: attributes["by"],
 			timing: parseAnimationTiming(attributes),
+			valueControl: parseAnimationValueControl(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "type", "from", "to", "by"], union: Self.animationTimingAttributeNames)
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "type", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames))
 		)))
 	}
 
@@ -1928,9 +1934,71 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			toValue: motion.toValue,
 			byValue: motion.byValue,
 			timing: motion.timing,
+			valueControl: motion.valueControl,
 			language: motion.language,
 			unknownAttributes: motion.unknownAttributes
 		))
+	}
+
+	private func parseAnimationValueControl(_ attributes: [String: String]) -> SVGAnimationValueControlData {
+		SVGAnimationValueControlData(
+			calcMode: attributes["calcMode"].map(parseAnimationCalcMode),
+			values: attributes["values"].map(parseAnimationValueList),
+			keyTimes: attributes["keyTimes"].map(parseAnimationKeyTimes),
+			keySplines: attributes["keySplines"].map(parseAnimationKeySplines)
+		)
+	}
+
+	private func parseAnimationCalcMode(_ value: String) -> SVGAnimationCalcMode {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		switch trimmed {
+		case "discrete":
+			return .discrete
+		case "linear":
+			return .linear
+		case "paced":
+			return .paced
+		case "spline":
+			return .spline
+		default:
+			return .unresolved(trimmed)
+		}
+	}
+
+	private func parseAnimationValueList(_ value: String) -> [String] {
+		var values = value.split(separator: ";", omittingEmptySubsequences: false)
+			.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+		if values.last == "" {
+			_ = values.popLast()
+		}
+		return values
+	}
+
+	private func parseAnimationKeyTimes(_ value: String) -> SVGAnimationKeyTimes {
+		let rawValues = parseAnimationValueList(value)
+		var times: [Double] = []
+		for rawValue in rawValues {
+			guard let time = SVGNumberParser.parse(rawValue), (0...1).contains(time) else {
+				return .unresolved(rawValues)
+			}
+			times.append(time)
+		}
+		return .values(times)
+	}
+
+	private func parseAnimationKeySplines(_ value: String) -> SVGAnimationKeySplines {
+		let rawValues = parseAnimationValueList(value)
+		var splines: [SVGAnimationKeySpline] = []
+		for rawValue in rawValues {
+			guard let coordinates = SVGListParser.parse(rawValue, itemParser: SVGNumberParser.parse), coordinates.count == 4 else {
+				return .unresolved(rawValues)
+			}
+			guard coordinates.allSatisfy({ (0...1).contains($0) }) else {
+				return .unresolved(rawValues)
+			}
+			splines.append(SVGAnimationKeySpline(x1: coordinates[0], y1: coordinates[1], x2: coordinates[2], y2: coordinates[3]))
+		}
+		return .values(splines)
 	}
 
 	private func parseAnimationTiming(_ attributes: [String: String]) -> SVGAnimationTimingData {

@@ -5598,6 +5598,55 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(odd.timing.repeatDur == .unresolved("forever"))
 }
 
+@Test func svgParserPreservesAnimationValueControlAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<rect id="box" width="10" height="10">
+			<animate id="fade" attributeName="opacity"
+				calcMode="spline"
+				values=" 0 ; 0.5 ; 1 ; "
+				keyTimes="0;0.4;1;"
+				keySplines=".42 0 1 1; 0, 0, .58, 1"
+				data-note="kept"/>
+			<animateMotion id="move"
+				calcMode="elastic"
+				values="M0 0; M10 0"
+				keyTimes="0; 1.25"
+				keySplines="0 0 1"/>
+		</rect>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	#expect(document.animations.count == 2)
+
+	guard case .animate(let fade) = document.animations[0] else {
+		Issue.record("Expected first animation to be animate")
+		return
+	}
+	#expect(fade.valueControl.calcMode == .spline)
+	#expect(fade.valueControl.values == ["0", "0.5", "1"])
+	#expect(fade.valueControl.keyTimes == .values([0, 0.4, 1]))
+	#expect(fade.valueControl.keySplines == .values([
+		SVGAnimationKeySpline(x1: 0.42, y1: 0, x2: 1, y2: 1),
+		SVGAnimationKeySpline(x1: 0, y1: 0, x2: 0.58, y2: 1)
+	]))
+	#expect(fade.unknownAttributes["calcMode"] == nil)
+	#expect(fade.unknownAttributes["values"] == nil)
+	#expect(fade.unknownAttributes["keyTimes"] == nil)
+	#expect(fade.unknownAttributes["keySplines"] == nil)
+	#expect(fade.unknownAttributes["data-note"] == "kept")
+
+	guard case .animateMotion(let move) = document.animations[1] else {
+		Issue.record("Expected second animation to be animateMotion")
+		return
+	}
+	#expect(move.valueControl.calcMode == .unresolved("elastic"))
+	#expect(move.valueControl.values == ["M0 0", "M10 0"])
+	#expect(move.valueControl.keyTimes == .unresolved(["0", "1.25"]))
+	#expect(move.valueControl.keySplines == .unresolved(["0 0 1"]))
+}
+
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
