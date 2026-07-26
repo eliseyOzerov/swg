@@ -147,7 +147,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Filters
 
-- [ ] `<filter>`.
+- [x] `<filter>`.
 - [ ] `filterUnits`.
 - [ ] `primitiveUnits`.
 - [ ] `<feGaussianBlur>`.

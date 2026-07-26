@@ -1,0 +1,165 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: filter-element
+  title: SVG filter element
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<filter>` definitions for URL references without treating the definition element as directly renderable scene content.
+  non_goals:
+    - Implementing filter region geometry from `x`, `y`, `width`, `height`, or `filterUnits`.
+    - Implementing primitive coordinate systems from `primitiveUnits`.
+    - Implementing full filter primitive semantics; each primitive is tracked as its own TODO item.
+    - Applying filter effects during rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-filter-element
+      title: "Filter Effects Module Level 1: SVG Filter Sources: the filter element"
+      url: https://www.w3.org/TR/filter-effects-1/#FilterElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - The specification defines `<filter>` as an SVG filter source whose content model contains descriptive elements, filter primitives, and animation/script/set elements.
+    - The specification lists `id`, core attributes, presentation attributes, `class`, `style`, `externalResourcesRequired`, `x`, `y`, `width`, `height`, `filterUnits`, and `primitiveUnits` on `<filter>`.
+    - The specification states that `<filter>` elements are never rendered directly and remain available for referencing even when `display` is `none`.
+
+scope:
+  includes:
+    - "`<filter>` XML elements with an `id`."
+    - Preserving supported parsed primitive children in document order inside `SVGFilterDef`.
+    - Excluding the `<filter>` definition itself from root renderable elements.
+    - Keeping a `<filter display=\"none\">` available through `SVGDocument.defs.filters`.
+  excludes:
+    - Filter region defaults and coordinate conversion.
+    - Primitive-specific parsing beyond existing supported primitive records.
+    - Rendering-time filter evaluation.
+  assumptions:
+    - Swg stores reusable filter definitions in `SVGDocument.defs.filters` keyed by local fragment ID.
+
+terminology:
+  - id: T001
+    term: filter element
+    definition: An SVG element that defines a filter effect graph for later reference by the `filter` property.
+    source_refs:
+      - filter-effects-filter-element
+  - id: T002
+    term: filter primitive
+    definition: A child operation inside a filter graph that contributes to the referenced filter effect.
+    source_refs:
+      - filter-effects-filter-element
+
+structures:
+  - id: S001
+    name: SVGFilterDef
+    kind: data-structure
+    source_refs:
+      - filter-effects-filter-element
+    fields:
+      - name: id
+        type: string
+        cardinality: exactly-one
+        position: definition-key
+        constraints:
+          - Identifies the filter definition for local URL references.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-filter-element
+      - name: primitives
+        type: array
+        cardinality: zero-or-more
+        position: child-content
+        constraints:
+          - Preserves supported parsed filter primitive children in source order.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-filter-element
+
+requirements:
+  - id: R001
+    title: Store filter definitions by id
+    statement: A parsed `<filter>` element with an `id` must be stored as a reusable definition keyed by that ID.
+    keywords:
+      - filter
+      - id
+      - definition
+    source_refs:
+      - filter-effects-filter-element
+    acceptance:
+      - "`SVGDocument.defs.filters` contains the parsed `<filter>` under its `id`."
+      - "The stored definition keeps the same `id` value."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement
+  - id: R002
+    title: Preserve supported primitive children
+    statement: Supported filter primitive child elements encountered inside a `<filter>` must be retained in document order on the stored filter definition.
+    keywords:
+      - filter
+      - filter primitive
+      - order
+    source_refs:
+      - filter-effects-filter-element
+    acceptance:
+      - "Supported child primitives are present in the stored definition."
+      - "Supported child primitives appear in the same order as the source XML."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement
+  - id: R003
+    title: Do not render filter definitions directly
+    statement: A `<filter>` definition must not be emitted as a root renderable SVG element.
+    keywords:
+      - filter
+      - rendering
+      - definition
+    source_refs:
+      - filter-effects-filter-element
+    acceptance:
+      - "A document containing a root-level `<filter>` and one visible shape only exposes the visible shape in `SVGDocument.elements`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement
+  - id: R004
+    title: Keep display none filters referenceable
+    statement: A `<filter>` element with `display=\"none\"` must still be stored as an available definition.
+    keywords:
+      - filter
+      - display
+      - reference
+    source_refs:
+      - filter-effects-filter-element
+    acceptance:
+      - "`<filter display=\"none\">` is present in `SVGDocument.defs.filters`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement
+
+traceability:
+  source_to_requirements:
+    filter-effects-filter-element:
+      - R001
+      - R002
+      - R003
+      - R004
+  requirement_to_tests:
+    R001:
+      - svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement
+    R002:
+      - svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement
+    R003:
+      - svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement
+    R004:
+      - svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement

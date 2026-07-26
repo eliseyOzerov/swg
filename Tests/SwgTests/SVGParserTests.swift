@@ -38,6 +38,38 @@ import Testing
 	#expect(path.attributes.strokeWidth == 2)
 }
 
+@Test func svgParserStoresFilterDefinitionsWithoutRenderingTheFilterElement() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="shadow" display="none">
+			<feGaussianBlur stdDeviation="2"/>
+			<feDropShadow dx="1" dy="2" stdDeviation="3" flood-color="#336699" flood-opacity="0.5"/>
+		</filter>
+		<rect id="painted" width="20" height="20"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["shadow"])
+
+	#expect(filter.id == "shadow")
+	#expect(document.elementIDs == ["painted"])
+	#expect(filter.primitives.count == 2)
+	guard case .gaussianBlur(let stdDeviation) = filter.primitives[0] else {
+		Issue.record("Expected first filter primitive to be feGaussianBlur")
+		return
+	}
+	#expect(stdDeviation == 2)
+	guard case .dropShadow(let dx, let dy, let shadowDeviation, let color) = filter.primitives[1] else {
+		Issue.record("Expected second filter primitive to be feDropShadow")
+		return
+	}
+	#expect(dx == 1)
+	#expect(dy == 2)
+	#expect(shadowDeviation == 3)
+	#expect(color == Color(0.2, 0.4, 0.6).withAlpha(0.5))
+}
+
 @Test func svgParserPreservesRadialGradientGeometryAndStops() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
