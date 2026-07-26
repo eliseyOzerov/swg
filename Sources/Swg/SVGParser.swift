@@ -3007,6 +3007,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseViewBox(_ value: String) -> Rect? {
 		let parts = SVGListParser.parse(value, itemParser: parseNumber) ?? []
 		guard parts.count == 4 else { return nil }
+		guard parts[2] >= 0, parts[3] >= 0 else { return nil }
 		return Rect(x: parts[0], y: parts[1], width: parts[2], height: parts[3])
 	}
 

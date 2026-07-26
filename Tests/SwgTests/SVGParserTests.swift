@@ -4101,6 +4101,34 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(document.defs.markers["invalid"]?.markerUnits == .strokeWidth)
 }
 
+@Test func svgParserPreservesMarkerViewBoxAndPreserveAspectRatio() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+		<defs>
+			<marker id="viewport" markerWidth="20" markerHeight="10" viewBox="0 0 100 50" preserveAspectRatio="xMaxYMid slice"/>
+			<marker id="none" viewBox="-10 -20 30 40" preserveAspectRatio="none"/>
+			<marker id="defaults"/>
+			<marker id="invalid" viewBox="0 0 -10 10" preserveAspectRatio="bogus"/>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let viewport = try #require(document.defs.markers["viewport"])
+	let none = try #require(document.defs.markers["none"])
+	let defaults = try #require(document.defs.markers["defaults"])
+	let invalid = try #require(document.defs.markers["invalid"])
+
+	#expect(viewport.viewBox == Rect(x: 0, y: 0, width: 100, height: 50))
+	#expect(viewport.preserveAspectRatio == SVGPreserveAspectRatio(align: .xMaxYMid, meetOrSlice: .slice))
+	#expect(none.viewBox == Rect(x: -10, y: -20, width: 30, height: 40))
+	#expect(none.preserveAspectRatio == SVGPreserveAspectRatio(align: .none, meetOrSlice: nil))
+	#expect(defaults.viewBox == nil)
+	#expect(defaults.preserveAspectRatio == .default)
+	#expect(invalid.viewBox == nil)
+	#expect(invalid.preserveAspectRatio == .default)
+}
+
 @Test func svgParserAppliesMarkerStartInitialInheritanceCascadeAndInvalidFallback() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">

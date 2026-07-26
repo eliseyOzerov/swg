@@ -1,0 +1,281 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: marker-viewbox
+  title: SVG marker viewBox attribute
+  domain: SVG 2 Painting
+  profile: null
+  summary: Requirements for parser-visible handling of the `<marker>` `viewBox` attribute and its paired `preserveAspectRatio` behavior.
+  non_goals:
+    - Computing the marker viewBox-to-viewport transform during rendering.
+    - Rendering markers onto CGPath output.
+    - Implementing marker placement for marker-start, marker-mid, or marker-end.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-marker-element
+      title: "SVG 2 Painting: The marker element"
+      url: https://www.w3.org/TR/SVG/painting.html#MarkerElement
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-viewbox-attribute
+      title: "SVG 2 Coordinates: viewBox attribute"
+      url: https://www.w3.org/TR/SVG/coords.html#ViewBoxAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-preserve-aspect-ratio-attribute
+      title: "SVG 2 Coordinates: preserveAspectRatio attribute"
+      url: https://www.w3.org/TR/SVG/coords.html#PreserveAspectRatioAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 lists `viewBox` and `preserveAspectRatio` as marker element attributes.
+    - SVG 2 defines `viewBox` as a list of four numbers, min-x, min-y, width, and height, that specify a rectangle in user space mapped to a viewport.
+    - SVG 2 defines negative width or height in viewBox as an error and zero width or height as disabling rendering of the element.
+    - SVG 2 defines `preserveAspectRatio` as controlling how viewBox content is fitted into the viewport.
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C marker element and coordinate attribute sections.
+
+scope:
+  includes:
+    - Parser output for `viewBox` on `<marker>`.
+    - Parser output for `preserveAspectRatio` on `<marker>` when paired with viewBox behavior.
+    - Valid viewBox min-x, min-y, width, and height values.
+    - Missing viewBox represented as absent.
+    - Invalid viewBox values represented as absent in parser output.
+    - Malformed preserveAspectRatio values falling back to the default value in parser output.
+  excludes:
+    - Runtime viewBox-to-marker-viewport transform computation.
+    - Zero-sized viewBox rendering behavior.
+    - Interaction with markerUnits, markerWidth, markerHeight, refX, or refY during rendering.
+  assumptions:
+    - The parser may represent malformed or negative-sized marker viewBox values as absent and leave rendering behavior for zero-sized viewBoxes to later renderer work.
+    - Existing package-wide preserveAspectRatio parsing rules apply to marker elements.
+
+terminology:
+  - id: term-viewbox
+    term: viewBox
+    definition: The attribute that defines the user-space rectangle mapped into an element viewport.
+    source_refs:
+      - svg2-viewbox-attribute
+  - id: term-preserve-aspect-ratio
+    term: preserveAspectRatio
+    definition: The attribute that controls alignment and scaling when a viewBox is mapped into a viewport.
+    source_refs:
+      - svg2-preserve-aspect-ratio-attribute
+  - id: term-marker-viewport
+    term: marker viewport
+    definition: The viewport established by marker geometry and optionally a marker viewBox.
+    source_refs:
+      - svg2-marker-element
+
+structures:
+  - id: S001
+    name: marker viewBox parser state
+    kind: structure
+    source_refs:
+      - svg2-marker-element
+      - svg2-viewbox-attribute
+    fields:
+      - name: viewBox
+        type: optional rectangle
+        cardinality: zero-or-one
+        position: null
+        constraints:
+          - Valid values contain four numbers.
+          - Width and height must not be negative.
+          - Missing or malformed values are absent in parser output.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-viewbox-attribute
+      - name: preserveAspectRatio
+        type: preserveAspectRatio value
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is the package-wide preserveAspectRatio default.
+          - Valid values preserve alignment and meet-or-slice mode.
+        requirement_refs:
+          - R004
+          - R005
+        source_refs:
+          - svg2-preserve-aspect-ratio-attribute
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: A marker `viewBox` attribute must accept four numeric values representing min-x, min-y, width, and height.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-marker-element
+      - svg2-viewbox-attribute
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A missing marker `viewBox` value must be represented as absent.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-marker-element
+      - svg2-viewbox-attribute
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Negative viewBox width or height is invalid and must not produce a valid marker viewBox in parser output.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-viewbox-attribute
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: A marker `preserveAspectRatio` attribute must preserve valid alignment and meet-or-slice values for later viewBox transform computation.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-marker-element
+      - svg2-preserve-aspect-ratio-attribute
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Missing or malformed marker `preserveAspectRatio` values must use the package-wide default preserveAspectRatio value in parser output.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-preserve-aspect-ratio-attribute
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: Marker viewBox and preserveAspectRatio state must be retained so a renderer can later map marker contents into the marker viewport.
+    applies_to:
+      - SVG marker rendering
+    source_refs:
+      - svg2-marker-element
+      - svg2-viewbox-attribute
+      - svg2-preserve-aspect-ratio-attribute
+    testability: reviewable
+    notes:
+      - Parser-visible coverage stores the state; actual marker viewport transforms are excluded from this bullet.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`viewBox` does not contain exactly four supported numeric values."
+    source_behavior: UNSPECIFIED
+    required_behavior: Parser output represents the marker viewBox as absent.
+    decision_required: false
+    source_refs:
+      - svg2-viewbox-attribute
+  - id: I002
+    condition: "`viewBox` width or height is negative."
+    source_behavior: Error.
+    required_behavior: Parser output represents the marker viewBox as absent.
+    decision_required: false
+    source_refs:
+      - svg2-viewbox-attribute
+  - id: I003
+    condition: "`preserveAspectRatio` is malformed."
+    source_behavior: UNSPECIFIED
+    required_behavior: Parser output uses the default preserveAspectRatio value.
+    decision_required: false
+    source_refs:
+      - svg2-preserve-aspect-ratio-attribute
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: Parser output for a marker must retain valid marker viewBox and preserveAspectRatio state before renderer geometry work can apply the marker viewport mapping.
+    derived_from:
+      - R001
+      - R004
+      - R006
+    reasoning: The marker element accepts these coordinate attributes, and the coordinates chapter defines them as the inputs to viewport mapping.
+    source_refs:
+      - svg2-marker-element
+      - svg2-viewbox-attribute
+      - svg2-preserve-aspect-ratio-attribute
+
+implementation_choices:
+  - id: IC001
+    topic: Invalid viewBox representation
+    statement: The parser may normalize malformed or negative-sized marker viewBox values to absence rather than preserving the malformed token.
+    allowed_by:
+      - R003
+    source_refs:
+      - svg2-viewbox-attribute
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG marker element
+    reason: The `viewBox` and `preserveAspectRatio` attributes are defined on SVG `<marker>` elements.
+    source_refs:
+      - svg2-marker-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+      - svg2-viewbox-attribute
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+      - svg2-viewbox-attribute
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-viewbox-attribute
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+      - svg2-preserve-aspect-ratio-attribute
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-preserve-aspect-ratio-attribute
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+      - svg2-viewbox-attribute
+      - svg2-preserve-aspect-ratio-attribute
+    map_item_refs: []
