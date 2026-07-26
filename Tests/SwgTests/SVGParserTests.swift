@@ -884,6 +884,35 @@ private func expectMorphology(
 	#expect(isPassThrough == expectedIsPassThrough)
 }
 
+@Test func svgParserPreservesOffsetPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="offset">
+			<feOffset/>
+			<feOffset in="SourceAlpha" dx="4.5" dy="-2"/>
+			<feOffset dx="bad" dy="bad"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["offset"])
+	#expect(filter.primitives.count == 3)
+	expectOffset(filter.primitives[0], input: nil, dx: 0, dy: 0)
+	expectOffset(filter.primitives[1], input: "SourceAlpha", dx: 4.5, dy: -2)
+	expectOffset(filter.primitives[2], input: nil, dx: 0, dy: 0)
+}
+
+private func expectOffset(_ primitive: SVGFilterPrimitive, input expectedInput: String?, dx expectedDX: Double, dy expectedDY: Double) {
+	guard case .offset(let input, let dx, let dy) = primitive else {
+		Issue.record("Expected parsed feOffset primitive")
+		return
+	}
+	#expect(input == expectedInput)
+	#expect(dx == expectedDX)
+	#expect(dy == expectedDY)
+}
+
 @Test func svgParserPreservesDistantLightAttributes() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

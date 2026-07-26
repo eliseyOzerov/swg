@@ -1023,6 +1023,7 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case image(href: String?, preserveAspectRatio: SVGPreserveAspectRatio = .default, crossOrigin: SVGCrossOriginMode? = nil)
 	case merge(inputs: [String?] = [])
 	case morphology(input: String?, operator: SVGMorphologyOperator = .erode, radiusX: Double = 0, radiusY: Double = 0, isPassThrough: Bool = true)
+	case offset(input: String?, dx: Double = 0, dy: Double = 0)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }

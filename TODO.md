@@ -169,7 +169,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feMerge>`.
 - [x] `<feMergeNode>`.
 - [x] `<feMorphology>`.
-- [ ] `<feOffset>`.
+- [x] `<feOffset>`.
 - [ ] `<fePointLight>`.
 - [ ] `<feSpecularLighting>`.
 - [ ] `<feSpotLight>`.

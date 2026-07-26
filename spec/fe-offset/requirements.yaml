@@ -1,0 +1,183 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-offset
+  title: SVG feOffset filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Requirements for preserving the feOffset primitive's input and displacement attributes from an SVG filter.
+  non_goals:
+    - Raster execution of the offset operation.
+    - Full DOM IDL reflection or animation support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-offset
+      title: Filter Effects Module Level 1, feOffset element
+      url: https://www.w3.org/TR/filter-effects-1/#feOffsetElement
+      version: Editor-independent W3C Working Draft snapshot
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C section.
+
+scope:
+  includes:
+    - feOffset element recognition inside SVG filters.
+    - The in, dx, and dy attributes.
+    - Numeric defaults for missing or malformed dx and dy values.
+  excludes:
+    - Filter image raster processing.
+    - Animation and DOM mutation behavior.
+    - Interactions with undeclared filter primitive standard attributes.
+  assumptions:
+    - Missing numeric attributes are represented with their initial value of 0.
+
+terminology:
+  - id: term-offset
+    term: Offset
+    definition: A filter operation that shifts an input image by a horizontal and vertical displacement.
+    source_refs:
+      - filter-effects-fe-offset
+
+structures:
+  - id: S001
+    name: feOffset
+    kind: element
+    source_refs:
+      - filter-effects-fe-offset
+    fields:
+      - name: in
+        type: string
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the input image for the primitive.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-offset
+      - name: dx
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-fe-offset
+      - name: dy
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+        requirement_refs:
+          - R003
+        source_refs:
+          - filter-effects-fe-offset
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The feOffset element has an input attribute corresponding to the filter primitive's input image.
+    applies_to:
+      - feOffset
+    source_refs:
+      - filter-effects-fe-offset
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The dx attribute is a number value corresponding to the horizontal offset and has an initial value of 0.
+    applies_to:
+      - feOffset.dx
+    source_refs:
+      - filter-effects-fe-offset
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: The dy attribute is a number value corresponding to the vertical offset and has an initial value of 0.
+    applies_to:
+      - feOffset.dy
+    source_refs:
+      - filter-effects-fe-offset
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Offset operation
+    kind: algorithm
+    summary: The primitive shifts the input image by the dx and dy displacement values.
+    steps: []
+    preconditions:
+      - An input image is available.
+    postconditions:
+      - The output image is displaced by dx and dy.
+    requirement_refs:
+      - R002
+      - R003
+    source_refs:
+      - filter-effects-fe-offset
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: dx or dy is syntactically malformed.
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - filter-effects-fe-offset
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Malformed numeric values
+    statement: A parser may fall back to the initial value for malformed numeric attributes when preserving a usable primitive representation.
+    allowed_by:
+      - I001
+    source_refs:
+      - filter-effects-fe-offset
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG filter primitive standard attributes
+    reason: feOffset includes the standard filter primitive attributes alongside its specific attributes.
+    source_refs:
+      - filter-effects-fe-offset
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-offset
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-offset
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-offset
+    map_item_refs: []

@@ -483,6 +483,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				radiusY: radius.second,
 				isPassThrough: radius.first <= 0 || radius.second <= 0
 			))
+		case "feOffset":
+			currentFilter?.primitives.append(.offset(
+				input: attributes["in"],
+				dx: attributes["dx"].flatMap(parseNumber) ?? 0,
+				dy: attributes["dy"].flatMap(parseNumber) ?? 0
+			))
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2
