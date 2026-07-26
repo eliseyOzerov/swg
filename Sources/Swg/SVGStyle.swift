@@ -1,6 +1,6 @@
 import Foundation
 
-/// Common SVG presentation attributes for fill, stroke, opacity, and transform.
+/// Common SVG presentation attributes for fill, stroke, markers, opacity, and transform.
 public struct SVGPaintAttributes: Equatable, Sendable {
 	public var color: Color
 	public var fill: SVGPaint
@@ -30,6 +30,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var filterID: String?
 	public var maskID: String?
 	public var vectorEffect: SVGVectorEffect
+	public var markerStart: SVGMarkerReference
 
 	public init(
 		color: Color = .black,
@@ -59,7 +60,8 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		clipPathID: String? = nil,
 		filterID: String? = nil,
 		maskID: String? = nil,
-		vectorEffect: SVGVectorEffect = .none
+		vectorEffect: SVGVectorEffect = .none,
+		markerStart: SVGMarkerReference = .none
 	) {
 		self.color = color
 		self.fill = fill
@@ -89,9 +91,23 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.filterID = filterID
 		self.maskID = maskID
 		self.vectorEffect = vectorEffect
+		self.markerStart = markerStart
 	}
 
 	public static let defaults = SVGPaintAttributes()
+}
+
+/// SVG marker property value for no marker or a local `<marker>` reference.
+public enum SVGMarkerReference: Equatable, Sendable, Hashable {
+	case none
+	case url(String)
+
+	public var localMarkerID: String? {
+		if case .url(let id) = self {
+			return id
+		}
+		return nil
+	}
 }
 
 /// SVG `clip-path` value for no clipping, URL references, basic shapes, or geometry boxes.

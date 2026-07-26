@@ -17,7 +17,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		"title", "tspan", "use", "view"
 	]
 	private static let globalAttributeNames: Set<String> = [
-		"class", "clip-path", "clip-rule", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "paint-order", "stroke",
+		"class", "clip-path", "clip-rule", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "marker-start", "mask", "opacity", "paint-order", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
 		"stroke-width", "style", "transform", "vector-effect", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
 		"zoomAndPan"
@@ -2431,6 +2431,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		result.textRendering = parent.textRendering
 		result.imageRendering = parent.imageRendering
 		result.visibility = parent.visibility
+		result.markerStart = parent.markerStart
 		return result
 	}
 
@@ -2630,6 +2631,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				result.vectorEffect = vectorEffect
 			}
 		}
+		if let value = attributes["marker-start"] {
+			if isInheritKeyword(value) {
+				result.markerStart = inherited.markerStart
+			} else if let marker = parseMarkerReference(value) {
+				result.markerStart = marker
+			}
+		}
 		if let transform = attributes["transform"] {
 			result.transform = isInheritKeyword(transform) ? inherited.transform : parseTransform(transform)
 		}
@@ -2826,6 +2834,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseURLID(_ value: String) -> String? {
 		SVGURLParser.parseFunctional(value)?.localFragmentID
+	}
+
+	private func parseMarkerReference(_ value: String) -> SVGMarkerReference? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed.lowercased() == "none" { return SVGMarkerReference.none }
+		guard let id = parseURLID(trimmed) else { return nil }
+		return .url(id)
 	}
 
 	private func parseClipPath(_ value: String) -> SVGClipPathValue? {

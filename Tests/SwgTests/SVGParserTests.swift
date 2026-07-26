@@ -4048,6 +4048,61 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(defaults.children.isEmpty)
 }
 
+@Test func svgParserAppliesMarkerStartInitialInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+		<style>
+			.css-marker { marker-start: url(#css-start); }
+			.invalid-marker { marker-start: bogus; }
+		</style>
+		<defs>
+			<marker id="parent-start"/>
+			<marker id="attribute-start"/>
+			<marker id="css-start"/>
+			<marker id="inline-start"/>
+		</defs>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" marker-start="url(#parent-start)">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="attribute" d="M0 0 L10 10" marker-start="url(#attribute-start)"/>
+			<path id="class-rule" class="css-marker" d="M0 0 L10 10"/>
+			<path id="inline" class="css-marker" d="M0 0 L10 10" style="marker-start: url(#inline-start)"/>
+			<path id="inherit" d="M0 0 L10 10" marker-start="inherit"/>
+			<path id="none" d="M0 0 L10 10" marker-start="none"/>
+			<path id="invalid-attribute" d="M0 0 L10 10" marker-start="bogus"/>
+			<path id="invalid-class" class="invalid-marker" d="M0 0 L10 10"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.markerStart == SVGMarkerReference.none)
+	#expect(paths["inherited"]?.attributes.markerStart == .url("parent-start"))
+	#expect(paths["attribute"]?.attributes.markerStart == .url("attribute-start"))
+	#expect(paths["class-rule"]?.attributes.markerStart == .url("css-start"))
+	#expect(paths["inline"]?.attributes.markerStart == .url("inline-start"))
+	#expect(paths["inherit"]?.attributes.markerStart == .url("parent-start"))
+	#expect(paths["none"]?.attributes.markerStart == SVGMarkerReference.none)
+	#expect(paths["invalid-attribute"]?.attributes.markerStart == .url("parent-start"))
+	#expect(paths["invalid-class"]?.attributes.markerStart == .url("parent-start"))
+}
+
 @Test func svgParserPreservesUseGeometryAndReferenceOverrides() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100">

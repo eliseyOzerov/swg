@@ -200,7 +200,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Markers
 
 - [x] `<marker>`.
-- [ ] `marker-start`.
+- [x] `marker-start`.
 - [ ] `marker-mid`.
 - [ ] `marker-end`.
 - [ ] `orient`.

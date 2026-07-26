@@ -1,0 +1,260 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: marker-start
+  title: SVG marker-start property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Requirements for parser-visible handling of the `marker-start` property as the vertex marker reference used for the first vertex of a shape.
+  non_goals:
+    - Implementing `marker-mid`, `marker-end`, or the `marker` shorthand.
+    - Computing marker geometry or rendering markers onto CGPath output.
+    - Resolving invalid marker references during rendering.
+    - Making URL values absolute beyond the package's current local-reference parser behavior.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-markers-overview
+      title: "SVG 2 Painting: Markers"
+      url: https://www.w3.org/TR/SVG/painting.html#Markers
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-vertex-marker-properties
+      title: "SVG 2 Painting: Vertex markers: the marker-start, marker-mid and marker-end properties"
+      url: https://www.w3.org/TR/SVG/painting.html#VertexMarkerProperties
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 states that `marker-start`, `marker-mid`, and `marker-end` reference `marker` elements.
+    - SVG 2 defines `marker-start`, `marker-mid`, and `marker-end` with value grammar `none | <marker-ref>`, initial value `none`, applies-to shapes, inherited yes, and computed URL values made absolute.
+    - SVG 2 defines `<marker-ref>` as `<url>`.
+    - SVG 2 states that `marker-start` specifies the marker drawn at the first vertex of a shape.
+    - SVG 2 states that an invalid marker reference results in no marker being drawn at the relevant vertex.
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C painting chapter marker sections.
+
+scope:
+  includes:
+    - Parser output for `marker-start` on SVG shape elements.
+    - Initial `marker-start` value of `none`.
+    - Local functional URL marker references such as `url(#arrow)`.
+    - Inheritance from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Explicit `inherit` and `none` handling.
+    - Malformed `marker-start` values leaving the inherited or default value unchanged.
+  excludes:
+    - Parser output for `marker-mid`, `marker-end`, or marker shorthand.
+    - Rendering the referenced marker at the first vertex.
+    - Vertex extraction from equivalent paths.
+    - Absolute URL computation for non-local references.
+  assumptions:
+    - The parser may expose a local marker identifier for `url(#id)` references and leave URL absolutization and invalid-reference drawing behavior to later renderer work.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+
+terminology:
+  - id: term-marker-start
+    term: marker-start
+    definition: The SVG property that selects the marker drawn at the first vertex of a shape.
+    source_refs:
+      - svg2-vertex-marker-properties
+  - id: term-marker-ref
+    term: marker-ref
+    definition: A URL value that references a marker element.
+    source_refs:
+      - svg2-vertex-marker-properties
+  - id: term-vertex-marker
+    term: vertex marker
+    definition: A marker placed at a vertex of a shape by one of the marker-start, marker-mid, or marker-end properties.
+    source_refs:
+      - svg2-markers-overview
+
+structures:
+  - id: S001
+    name: marker-start parser state
+    kind: structure
+    source_refs:
+      - svg2-vertex-marker-properties
+    fields:
+      - name: markerStart
+        type: none or marker URL reference
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is `none`.
+          - Valid marker references are URL values.
+          - The property is inherited.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-vertex-marker-properties
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `marker-start` property must accept `none` or a marker reference URL.
+    applies_to:
+      - SVG shapes
+    source_refs:
+      - svg2-vertex-marker-properties
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `marker-start` value must be `none`.
+    applies_to:
+      - SVG shapes
+    source_refs:
+      - svg2-vertex-marker-properties
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`marker-start` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+    source_refs:
+      - svg2-vertex-marker-properties
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`marker-start` specifies the marker drawn at the first vertex of the shape."
+    applies_to:
+      - SVG shapes
+    source_refs:
+      - svg2-vertex-marker-properties
+      - svg2-markers-overview
+    testability: reviewable
+    notes:
+      - Parser-visible coverage stores the selected marker reference; actual first-vertex drawing is excluded from this bullet.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: The `none` value must represent no marker symbol for the first vertex.
+    applies_to:
+      - SVG shapes
+    source_refs:
+      - svg2-vertex-marker-properties
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: A valid marker reference must identify the referenced marker element for later drawing at the first vertex.
+    applies_to:
+      - SVG shapes
+    source_refs:
+      - svg2-vertex-marker-properties
+      - svg2-markers-overview
+    testability: testable
+    notes:
+      - This bullet covers local `url(#id)` references.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`marker-start` is neither `none` nor a supported URL marker reference."
+    source_behavior: UNSPECIFIED
+    required_behavior: The parser-visible cascade ignores the malformed value and preserves the inherited or default marker-start value.
+    decision_required: false
+    source_refs:
+      - svg2-vertex-marker-properties
+  - id: I002
+    condition: "`marker-start` references a marker that does not exist or is not valid."
+    source_behavior: No marker is drawn at the first vertex.
+    required_behavior: Rendering behavior for invalid marker references is outside this parser-focused bullet.
+    decision_required: false
+    source_refs:
+      - svg2-vertex-marker-properties
+  - id: I003
+    condition: "`marker-start` uses a non-local URL that would require absolute URL computation."
+    source_behavior: Computed URL values are made absolute.
+    required_behavior: Non-local URL absolutization is outside this bullet.
+    decision_required: false
+    source_refs:
+      - svg2-vertex-marker-properties
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: Parser output for a shape must retain enough `marker-start` state for a renderer to later draw the referenced marker at the shape's first vertex.
+    derived_from:
+      - R004
+      - R006
+    reasoning: The spec defines `marker-start` as the marker drawn at the first vertex, so parser output must preserve the property value before renderer geometry work can apply it.
+    source_refs:
+      - svg2-vertex-marker-properties
+      - svg2-markers-overview
+
+implementation_choices:
+  - id: IC001
+    topic: Local marker reference representation
+    statement: The parser may represent `url(#id)` as a local marker identifier rather than retaining the full CSS URL token.
+    allowed_by:
+      - R001
+      - R006
+    source_refs:
+      - svg2-vertex-marker-properties
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG marker element
+    reason: "`marker-start` references graphics defined by `<marker>` elements."
+    source_refs:
+      - svg2-markers-overview
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-vertex-marker-properties
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-vertex-marker-properties
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-vertex-marker-properties
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-vertex-marker-properties
+      - svg2-markers-overview
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-vertex-marker-properties
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-vertex-marker-properties
+      - svg2-markers-overview
+    map_item_refs: []
