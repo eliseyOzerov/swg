@@ -1,0 +1,222 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: color
+  title: Color property
+  domain: SVG 2 Painting and CSS Color 3
+  profile: null
+  summary: Capture parser-visible handling of the `color` property as inherited state used by `currentColor`, including CSS Color 3 basic syntaxes.
+  non_goals:
+    - Device color management and gamut mapping beyond normalized sRGB component storage.
+    - CSS Color 4 syntax.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-color-property-effect
+      title: "SVG 2 Painting: The effect of the color property"
+      url: https://www.w3.org/TR/SVG/painting.html#ColorProperty
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: css-color-3-color-property
+      title: "CSS Color Module Level 3: Foreground color: the color property"
+      url: https://www.w3.org/TR/css-color-3/#foreground
+      version: W3C Recommendation 18 January 2022
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 says the `color` property provides the indirect `currentColor` value for SVG paint-related properties and otherwise has no SVG-specific effect.
+    - SVG 2 requires SVG color values to support CSS Color Module Level 3 syntaxes, including rgb(), rgba(), hsl(), hsla(), extended color keywords, and currentColor.
+    - CSS Color 3 defines the `color` property as accepting `<color>` or `inherit`, with inheritance yes and initial value depending on the user agent.
+    - CSS Color 3 states that `currentColor` on the `color` property itself is treated like `color: inherit`.
+    - SVG presentation attributes participate in styling, so `color` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `color` property on SVG elements.
+    - Inheritance from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - "`currentColor` on `color` behaving as inheritance."
+    - Hex colors, basic and extended named colors, `transparent`, `rgb()`, `rgba()`, `hsl()`, and `hsla()`.
+    - Malformed `color` values leaving the current inherited or default value unchanged.
+  excludes:
+    - System colors.
+    - CSS Color 4 space-separated slash-alpha syntax and device color spaces.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The package's initial standalone SVG `color` value remains its existing black default because CSS Color 3 leaves the initial value user-agent dependent.
+    - Colors are stored as normalized sRGB RGBA components.
+
+terminology:
+  - id: term-color-property
+    term: color
+    definition: The inherited CSS foreground color property that SVG uses as the source of `currentColor`.
+    source_refs:
+      - svg2-color-property-effect
+      - css-color-3-color-property
+  - id: term-currentcolor
+    term: currentColor
+    definition: A color keyword that resolves through the inherited `color` property; on the `color` property itself it behaves as inherit.
+    source_refs:
+      - svg2-color-property-effect
+      - css-color-3-color-property
+
+structures:
+  - id: S001
+    name: Color parser state
+    kind: structure
+    source_refs:
+      - css-color-3-color-property
+    fields:
+      - name: color
+        type: normalized RGBA color
+        cardinality: one
+        position: null
+        constraints:
+          - The property is inherited.
+          - "`currentColor` on `color` resolves to the inherited color."
+          - Invalid values leave the current inherited or default value unchanged.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-color-property-effect
+          - css-color-3-color-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: The `color` property must inherit from parent elements.
+    applies_to:
+      - SVG elements
+    source_refs:
+      - css-color-3-color-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser-visible `color` property must provide the color value used by `currentColor` on supported SVG paint properties.
+    applies_to:
+      - SVG paint properties accepting `currentColor`
+    source_refs:
+      - svg2-color-property-effect
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`currentColor` specified on the `color` property itself must behave as `inherit`."
+    applies_to:
+      - SVG elements
+    source_refs:
+      - css-color-3-color-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: Supported `<color>` parsing must include hex colors, named colors, `transparent`, `rgb()`, `rgba()`, `hsl()`, and `hsla()` from CSS Color 3.
+    applies_to:
+      - SVG color values
+    source_refs:
+      - svg2-color-property-effect
+      - css-color-3-color-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `color` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-color-property-effect
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `color` value is malformed or unsupported.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - css-color-3-color-property
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Initial color
+    statement: The package may continue using black as its standalone SVG user-agent default for `color`.
+    allowed_by:
+      - CSS Color 3 leaves the initial `color` value user-agent dependent.
+    source_refs:
+      - css-color-3-color-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`color` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - css-color-3-color-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-color-property-effect
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-color-3-color-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-color-property-effect
+      - css-color-3-color-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-color-property-effect
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - css-color-3-color-property
+    map_item_refs: []

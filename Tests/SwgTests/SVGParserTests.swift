@@ -388,7 +388,7 @@ import Testing
 	#expect(paths["url"]?.attributes.stroke == .urlWithFallback("paint", .color(.blue)))
 	#expect(paths["current"]?.attributes.stroke == .currentColor)
 	#expect(paths["context"]?.attributes.stroke == .contextStroke)
-	#expect(paths["inline"]?.attributes.stroke == .color(.green))
+	#expect(paths["inline"]?.attributes.stroke == .color(Color(0, 128 / 255, 0)))
 	#expect(paths["invalid"]?.attributes.stroke == .color(.red))
 }
 
@@ -1177,6 +1177,64 @@ import Testing
 	#expect(inlineInherit.attributes.color == .blue)
 	#expect(inlineInherit.attributes.fill == .currentColor)
 	#expect(inlineInherit.attributes.stroke == .urlWithFallback("missing", .currentColor))
+}
+
+@Test func svgParserAppliesColorPropertyWithCSSColorSyntaxesInheritanceAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.rgb-percent { color: rgb(100%, 50%, 0%); }
+			.rgba { color: rgba(0, 0, 255, 0.25); }
+			.hsl { color: hsl(120, 100%, 25%); }
+			.hsla { color: hsla(240, 100%, 50%, 0.5); }
+			.current { color: currentColor; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" color="blue">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="rgb" d="M0 0 L10 10" color="rgb(255, 128, 0)"/>
+			<path id="rgb-percent" class="rgb-percent" d="M0 0 L10 10"/>
+			<path id="rgba" class="rgba" d="M0 0 L10 10"/>
+			<path id="hsl" class="hsl" d="M0 0 L10 10"/>
+			<path id="hsla" class="hsla" d="M0 0 L10 10"/>
+			<path id="extended-name" d="M0 0 L10 10" color="aliceblue"/>
+			<path id="transparent" d="M0 0 L10 10" color="transparent"/>
+			<path id="inline" class="rgba" d="M0 0 L10 10" style="color: #336699"/>
+			<path id="current" class="current" d="M0 0 L10 10"/>
+			<path id="invalid" d="M0 0 L10 10" color="not-a-color"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	expectColorApproximately(paths["initial"]?.attributes.color, .black)
+	expectColorApproximately(paths["inherited"]?.attributes.color, .blue)
+	expectColorApproximately(paths["rgb"]?.attributes.color, Color(1, 128 / 255, 0))
+	expectColorApproximately(paths["rgb-percent"]?.attributes.color, Color(1, 0.5, 0))
+	expectColorApproximately(paths["rgba"]?.attributes.color, Color(0, 0, 1, 0.25))
+	expectColorApproximately(paths["hsl"]?.attributes.color, Color(0, 0.5, 0))
+	expectColorApproximately(paths["hsla"]?.attributes.color, Color(0, 0, 1, 0.5))
+	expectColorApproximately(paths["extended-name"]?.attributes.color, Color(240 / 255, 248 / 255, 1))
+	expectColorApproximately(paths["transparent"]?.attributes.color, .clear)
+	expectColorApproximately(paths["inline"]?.attributes.color, Color(0.2, 0.4, 0.6))
+	expectColorApproximately(paths["current"]?.attributes.color, .blue)
+	expectColorApproximately(paths["invalid"]?.attributes.color, .blue)
 }
 
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
@@ -2667,4 +2725,15 @@ private func expectTransformApproximately(_ actual: Transform, _ expected: Trans
 	#expect(abs(actual.d - expected.d) < tolerance, sourceLocation: sourceLocation)
 	#expect(abs(actual.tx - expected.tx) < tolerance, sourceLocation: sourceLocation)
 	#expect(abs(actual.ty - expected.ty) < tolerance, sourceLocation: sourceLocation)
+}
+
+private func expectColorApproximately(_ actual: Color?, _ expected: Color, tolerance: Double = 0.000001, sourceLocation: SourceLocation = #_sourceLocation) {
+	guard let actual else {
+		Issue.record("Expected color \(expected), got nil", sourceLocation: sourceLocation)
+		return
+	}
+	#expect(abs(actual.red - expected.red) < tolerance, sourceLocation: sourceLocation)
+	#expect(abs(actual.green - expected.green) < tolerance, sourceLocation: sourceLocation)
+	#expect(abs(actual.blue - expected.blue) < tolerance, sourceLocation: sourceLocation)
+	#expect(abs(actual.alpha - expected.alpha) < tolerance, sourceLocation: sourceLocation)
 }

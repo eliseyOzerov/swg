@@ -110,7 +110,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `stroke-dasharray`.
 - [x] `stroke-dashoffset`.
 - [x] `paint-order`.
-- [ ] `color`.
+- [x] `color`.
 - [ ] `color-interpolation`.
 - [ ] `color-rendering`.
 - [ ] `shape-rendering`.

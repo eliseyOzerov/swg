@@ -25,6 +25,155 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let basicShapeGeometryPropertyNames: Set<String> = [
 		"x", "y", "cx", "cy", "r", "rx", "ry", "width", "height"
 	]
+	private static let namedColors: [String: Color] = [
+		"aliceblue": Color(240 / 255, 248 / 255, 1),
+		"antiquewhite": Color(250 / 255, 235 / 255, 215 / 255),
+		"aqua": Color(0, 1, 1),
+		"aquamarine": Color(127 / 255, 1, 212 / 255),
+		"azure": Color(240 / 255, 1, 1),
+		"beige": Color(245 / 255, 245 / 255, 220 / 255),
+		"bisque": Color(1, 228 / 255, 196 / 255),
+		"black": .black,
+		"blanchedalmond": Color(1, 235 / 255, 205 / 255),
+		"blue": .blue,
+		"blueviolet": Color(138 / 255, 43 / 255, 226 / 255),
+		"brown": Color(165 / 255, 42 / 255, 42 / 255),
+		"burlywood": Color(222 / 255, 184 / 255, 135 / 255),
+		"cadetblue": Color(95 / 255, 158 / 255, 160 / 255),
+		"chartreuse": Color(127 / 255, 1, 0),
+		"chocolate": Color(210 / 255, 105 / 255, 30 / 255),
+		"coral": Color(1, 127 / 255, 80 / 255),
+		"cornflowerblue": Color(100 / 255, 149 / 255, 237 / 255),
+		"cornsilk": Color(1, 248 / 255, 220 / 255),
+		"crimson": Color(220 / 255, 20 / 255, 60 / 255),
+		"cyan": Color(0, 1, 1),
+		"darkblue": Color(0, 0, 139 / 255),
+		"darkcyan": Color(0, 139 / 255, 139 / 255),
+		"darkgoldenrod": Color(184 / 255, 134 / 255, 11 / 255),
+		"darkgray": Color(169 / 255, 169 / 255, 169 / 255),
+		"darkgreen": Color(0, 100 / 255, 0),
+		"darkgrey": Color(169 / 255, 169 / 255, 169 / 255),
+		"darkkhaki": Color(189 / 255, 183 / 255, 107 / 255),
+		"darkmagenta": Color(139 / 255, 0, 139 / 255),
+		"darkolivegreen": Color(85 / 255, 107 / 255, 47 / 255),
+		"darkorange": Color(1, 140 / 255, 0),
+		"darkorchid": Color(153 / 255, 50 / 255, 204 / 255),
+		"darkred": Color(139 / 255, 0, 0),
+		"darksalmon": Color(233 / 255, 150 / 255, 122 / 255),
+		"darkseagreen": Color(143 / 255, 188 / 255, 143 / 255),
+		"darkslateblue": Color(72 / 255, 61 / 255, 139 / 255),
+		"darkslategray": Color(47 / 255, 79 / 255, 79 / 255),
+		"darkslategrey": Color(47 / 255, 79 / 255, 79 / 255),
+		"darkturquoise": Color(0, 206 / 255, 209 / 255),
+		"darkviolet": Color(148 / 255, 0, 211 / 255),
+		"deeppink": Color(1, 20 / 255, 147 / 255),
+		"deepskyblue": Color(0, 191 / 255, 1),
+		"dimgray": Color(105 / 255, 105 / 255, 105 / 255),
+		"dimgrey": Color(105 / 255, 105 / 255, 105 / 255),
+		"dodgerblue": Color(30 / 255, 144 / 255, 1),
+		"firebrick": Color(178 / 255, 34 / 255, 34 / 255),
+		"floralwhite": Color(1, 250 / 255, 240 / 255),
+		"forestgreen": Color(34 / 255, 139 / 255, 34 / 255),
+		"fuchsia": Color(1, 0, 1),
+		"gainsboro": Color(220 / 255, 220 / 255, 220 / 255),
+		"ghostwhite": Color(248 / 255, 248 / 255, 1),
+		"gold": Color(1, 215 / 255, 0),
+		"goldenrod": Color(218 / 255, 165 / 255, 32 / 255),
+		"gray": .gray,
+		"green": Color(0, 128 / 255, 0),
+		"greenyellow": Color(173 / 255, 1, 47 / 255),
+		"grey": .gray,
+		"honeydew": Color(240 / 255, 1, 240 / 255),
+		"hotpink": Color(1, 105 / 255, 180 / 255),
+		"indianred": Color(205 / 255, 92 / 255, 92 / 255),
+		"indigo": Color(75 / 255, 0, 130 / 255),
+		"ivory": Color(1, 1, 240 / 255),
+		"khaki": Color(240 / 255, 230 / 255, 140 / 255),
+		"lavender": Color(230 / 255, 230 / 255, 250 / 255),
+		"lavenderblush": Color(1, 240 / 255, 245 / 255),
+		"lawngreen": Color(124 / 255, 252 / 255, 0),
+		"lemonchiffon": Color(1, 250 / 255, 205 / 255),
+		"lightblue": Color(173 / 255, 216 / 255, 230 / 255),
+		"lightcoral": Color(240 / 255, 128 / 255, 128 / 255),
+		"lightcyan": Color(224 / 255, 1, 1),
+		"lightgoldenrodyellow": Color(250 / 255, 250 / 255, 210 / 255),
+		"lightgray": Color(211 / 255, 211 / 255, 211 / 255),
+		"lightgreen": Color(144 / 255, 238 / 255, 144 / 255),
+		"lightgrey": Color(211 / 255, 211 / 255, 211 / 255),
+		"lightpink": Color(1, 182 / 255, 193 / 255),
+		"lightsalmon": Color(1, 160 / 255, 122 / 255),
+		"lightseagreen": Color(32 / 255, 178 / 255, 170 / 255),
+		"lightskyblue": Color(135 / 255, 206 / 255, 250 / 255),
+		"lightslategray": Color(119 / 255, 136 / 255, 153 / 255),
+		"lightslategrey": Color(119 / 255, 136 / 255, 153 / 255),
+		"lightsteelblue": Color(176 / 255, 196 / 255, 222 / 255),
+		"lightyellow": Color(1, 1, 224 / 255),
+		"lime": Color(0, 1, 0),
+		"limegreen": Color(50 / 255, 205 / 255, 50 / 255),
+		"linen": Color(250 / 255, 240 / 255, 230 / 255),
+		"magenta": Color(1, 0, 1),
+		"maroon": Color(128 / 255, 0, 0),
+		"mediumaquamarine": Color(102 / 255, 205 / 255, 170 / 255),
+		"mediumblue": Color(0, 0, 205 / 255),
+		"mediumorchid": Color(186 / 255, 85 / 255, 211 / 255),
+		"mediumpurple": Color(147 / 255, 112 / 255, 219 / 255),
+		"mediumseagreen": Color(60 / 255, 179 / 255, 113 / 255),
+		"mediumslateblue": Color(123 / 255, 104 / 255, 238 / 255),
+		"mediumspringgreen": Color(0, 250 / 255, 154 / 255),
+		"mediumturquoise": Color(72 / 255, 209 / 255, 204 / 255),
+		"mediumvioletred": Color(199 / 255, 21 / 255, 133 / 255),
+		"midnightblue": Color(25 / 255, 25 / 255, 112 / 255),
+		"mintcream": Color(245 / 255, 1, 250 / 255),
+		"mistyrose": Color(1, 228 / 255, 225 / 255),
+		"moccasin": Color(1, 228 / 255, 181 / 255),
+		"navajowhite": Color(1, 222 / 255, 173 / 255),
+		"navy": Color(0, 0, 128 / 255),
+		"oldlace": Color(253 / 255, 245 / 255, 230 / 255),
+		"olive": Color(128 / 255, 128 / 255, 0),
+		"olivedrab": Color(107 / 255, 142 / 255, 35 / 255),
+		"orange": Color(1, 165 / 255, 0),
+		"orangered": Color(1, 69 / 255, 0),
+		"orchid": Color(218 / 255, 112 / 255, 214 / 255),
+		"palegoldenrod": Color(238 / 255, 232 / 255, 170 / 255),
+		"palegreen": Color(152 / 255, 251 / 255, 152 / 255),
+		"paleturquoise": Color(175 / 255, 238 / 255, 238 / 255),
+		"palevioletred": Color(219 / 255, 112 / 255, 147 / 255),
+		"papayawhip": Color(1, 239 / 255, 213 / 255),
+		"peachpuff": Color(1, 218 / 255, 185 / 255),
+		"peru": Color(205 / 255, 133 / 255, 63 / 255),
+		"pink": Color(1, 192 / 255, 203 / 255),
+		"plum": Color(221 / 255, 160 / 255, 221 / 255),
+		"powderblue": Color(176 / 255, 224 / 255, 230 / 255),
+		"purple": Color(128 / 255, 0, 128 / 255),
+		"red": .red,
+		"rosybrown": Color(188 / 255, 143 / 255, 143 / 255),
+		"royalblue": Color(65 / 255, 105 / 255, 225 / 255),
+		"saddlebrown": Color(139 / 255, 69 / 255, 19 / 255),
+		"salmon": Color(250 / 255, 128 / 255, 114 / 255),
+		"sandybrown": Color(244 / 255, 164 / 255, 96 / 255),
+		"seagreen": Color(46 / 255, 139 / 255, 87 / 255),
+		"seashell": Color(1, 245 / 255, 238 / 255),
+		"sienna": Color(160 / 255, 82 / 255, 45 / 255),
+		"silver": Color(192 / 255, 192 / 255, 192 / 255),
+		"skyblue": Color(135 / 255, 206 / 255, 235 / 255),
+		"slateblue": Color(106 / 255, 90 / 255, 205 / 255),
+		"slategray": Color(112 / 255, 128 / 255, 144 / 255),
+		"slategrey": Color(112 / 255, 128 / 255, 144 / 255),
+		"snow": Color(1, 250 / 255, 250 / 255),
+		"springgreen": Color(0, 1, 127 / 255),
+		"steelblue": Color(70 / 255, 130 / 255, 180 / 255),
+		"tan": Color(210 / 255, 180 / 255, 140 / 255),
+		"teal": Color(0, 128 / 255, 128 / 255),
+		"thistle": Color(216 / 255, 191 / 255, 216 / 255),
+		"tomato": Color(1, 99 / 255, 71 / 255),
+		"turquoise": Color(64 / 255, 224 / 255, 208 / 255),
+		"violet": Color(238 / 255, 130 / 255, 238 / 255),
+		"wheat": Color(245 / 255, 222 / 255, 179 / 255),
+		"white": .white,
+		"whitesmoke": Color(245 / 255, 245 / 255, 245 / 255),
+		"yellow": Color(1, 1, 0),
+		"yellowgreen": Color(154 / 255, 205 / 255, 50 / 255)
+	]
 
 	private let supportedExtensions: Set<String>
 	private let languagePreferences: [String]
@@ -1547,9 +1696,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseColor(_ value: String) -> Color? {
-		if value.hasPrefix("#") { return hexColor(value) }
-		if value.hasPrefix("rgb") { return rgbColor(value) }
-		return namedColor(value)
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		let lower = trimmed.lowercased()
+		if trimmed.hasPrefix("#") { return hexColor(trimmed) }
+		if lower.hasPrefix("rgba(") { return rgbColor(trimmed, allowsAlpha: true) }
+		if lower.hasPrefix("rgb(") { return rgbColor(trimmed, allowsAlpha: false) }
+		if lower.hasPrefix("hsla(") { return hslColor(trimmed, allowsAlpha: true) }
+		if lower.hasPrefix("hsl(") { return hslColor(trimmed, allowsAlpha: false) }
+		if lower == "transparent" { return .clear }
+		return namedColor(lower)
 	}
 
 	private func hexColor(_ hex: String) -> Color? {
@@ -1560,34 +1715,90 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return Color(Double((value >> 16) & 0xFF) / 255, Double((value >> 8) & 0xFF) / 255, Double(value & 0xFF) / 255)
 	}
 
-	private func rgbColor(_ value: String) -> Color? {
-		let inner = value.drop { $0 != "(" }.dropFirst().prefix { $0 != ")" }
-		guard let parts = SVGListParser.parse(String(inner), itemParser: parseNumber) else { return nil }
-		guard parts.count >= 3 else { return nil }
-		return Color(parts[0] / 255, parts[1] / 255, parts[2] / 255)
+	private func rgbColor(_ value: String, allowsAlpha: Bool) -> Color? {
+		guard let parts = functionalColorParts(value) else { return nil }
+		guard parts.count == (allowsAlpha ? 4 : 3) else { return nil }
+		let components = parts.prefix(3)
+		let usesPercentages = components.map { $0.hasSuffix("%") }
+		guard usesPercentages.allSatisfy({ $0 == usesPercentages[0] }) else { return nil }
+		guard let red = rgbComponent(String(parts[0])),
+			let green = rgbComponent(String(parts[1])),
+			let blue = rgbComponent(String(parts[2]))
+		else { return nil }
+		let alpha = allowsAlpha ? alphaComponent(String(parts[3])) : 1
+		guard let alpha else { return nil }
+		return Color(red, green, blue, alpha)
+	}
+
+	private func hslColor(_ value: String, allowsAlpha: Bool) -> Color? {
+		guard let parts = functionalColorParts(value) else { return nil }
+		guard parts.count == (allowsAlpha ? 4 : 3) else { return nil }
+		guard let hue = parseNumber(String(parts[0])),
+			let saturation = percentComponent(String(parts[1])),
+			let lightness = percentComponent(String(parts[2]))
+		else { return nil }
+		let alpha = allowsAlpha ? alphaComponent(String(parts[3])) : 1
+		guard let alpha else { return nil }
+		return hslToRGB(hue: hue, saturation: saturation, lightness: lightness, alpha: alpha)
+	}
+
+	private func functionalColorParts(_ value: String) -> [String]? {
+		guard let open = value.firstIndex(of: "("), value.hasSuffix(")") else { return nil }
+		let inner = value[value.index(after: open)..<value.index(before: value.endIndex)]
+		let parts = inner.split(separator: ",", omittingEmptySubsequences: false).map {
+			String($0).trimmingCharacters(in: .whitespacesAndNewlines)
+		}
+		return parts.contains("") ? nil : parts
+	}
+
+	private func rgbComponent(_ value: String) -> Double? {
+		if value.hasSuffix("%") {
+			return percentComponent(value)
+		}
+		guard let number = parseNumber(value) else { return nil }
+		return min(max(number, 0), 255) / 255
+	}
+
+	private func percentComponent(_ value: String) -> Double? {
+		guard value.hasSuffix("%") else { return nil }
+		let numberText = String(value.dropLast())
+		guard let number = parseNumber(numberText) else { return nil }
+		return min(max(number / 100, 0), 1)
+	}
+
+	private func alphaComponent(_ value: String) -> Double? {
+		guard let number = parseNumber(value) else { return nil }
+		return min(max(number, 0), 1)
+	}
+
+	private func hslToRGB(hue: Double, saturation: Double, lightness: Double, alpha: Double) -> Color {
+		let normalizedHue = ((hue.truncatingRemainder(dividingBy: 360)) + 360).truncatingRemainder(dividingBy: 360)
+		let chroma = (1 - abs((2 * lightness) - 1)) * saturation
+		let huePrime = normalizedHue / 60
+		let x = chroma * (1 - abs(huePrime.truncatingRemainder(dividingBy: 2) - 1))
+		let red: Double
+		let green: Double
+		let blue: Double
+		switch huePrime {
+		case 0..<1:
+			(red, green, blue) = (chroma, x, 0)
+		case 1..<2:
+			(red, green, blue) = (x, chroma, 0)
+		case 2..<3:
+			(red, green, blue) = (0, chroma, x)
+		case 3..<4:
+			(red, green, blue) = (0, x, chroma)
+		case 4..<5:
+			(red, green, blue) = (x, 0, chroma)
+		default:
+			(red, green, blue) = (chroma, 0, x)
+		}
+		let match = lightness - chroma / 2
+		return Color(red + match, green + match, blue + match, alpha)
 	}
 
 	private func namedColor(_ value: String) -> Color? {
-		switch value.lowercased() {
-		case "black": .black
-		case "white": .white
-		case "red": .red
-		case "green": .green
-		case "blue": .blue
-		case "yellow": Color(1, 1, 0)
-		case "cyan", "aqua": Color(0, 1, 1)
-		case "magenta", "fuchsia": Color(1, 0, 1)
-		case "orange": Color(1, 0.647, 0)
-		case "gray", "grey": Color(0.5, 0.5, 0.5)
-		case "silver": Color(0.753, 0.753, 0.753)
-		case "maroon": Color(0.5, 0, 0)
-		case "purple": Color(0.5, 0, 0.5)
-		case "navy": Color(0, 0, 0.5)
-		case "teal": Color(0, 0.5, 0.5)
-		case "olive": Color(0.5, 0.5, 0)
-		case "lime": Color(0, 1, 0)
-		default: nil
-		}
+		Self.namedColors[value]
 	}
 
 	private func parseLineCap(_ value: String) -> LineCap? {
