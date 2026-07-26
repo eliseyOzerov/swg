@@ -803,7 +803,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				style.currentColor = parsed
 			}
 		}
-		if let opacity = properties["stop-opacity"].flatMap(parseNumber) {
+		if let opacity = properties["stop-opacity"].flatMap(parseAlphaValue) {
 			style.opacity = opacity
 		}
 		if let stopColor = properties["stop-color"].flatMap({ parseGradientStopColor($0, opacity: &style.opacity) }) {

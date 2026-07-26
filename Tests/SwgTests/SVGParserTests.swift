@@ -152,6 +152,41 @@ import Testing
 	#expect(stops[5].opacity == 0)
 }
 
+@Test func svgParserAppliesGradientStopOpacityCascadePercentagesAndClamping() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.classed { stop-opacity: 25%; }
+			.invalid { stop-opacity: definitely-not-opacity; }
+		</style>
+		<defs>
+			<linearGradient id="opacity" stop-opacity="0.2">
+				<stop offset="0"/>
+				<stop offset=".15" stop-opacity="0.5"/>
+				<stop offset=".3" class="classed" stop-opacity="0.75"/>
+				<stop offset=".45" class="classed" style="stop-opacity: 60%"/>
+				<stop offset=".6" stop-opacity="-10%"/>
+				<stop offset=".75" stop-opacity="2"/>
+				<stop offset=".9" class="invalid"/>
+			</linearGradient>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let stops = try #require(document.defs.linearGradients["opacity"]?.stops)
+
+	#expect(stops.map(\.opacity) == [
+		1,
+		0.5,
+		0.25,
+		0.6,
+		0,
+		1,
+		1
+	])
+}
+
 @Test func svgParserMultipliesTransformListsFromLeftToRight() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
