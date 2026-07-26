@@ -647,6 +647,30 @@ import Testing
 	#expect(paths["invalidMask"]?.attributes.maskID == nil)
 }
 
+@Test func svgParserPreservesMaskUnits() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<mask id="defaultUnits">
+			<path id="defaultChild" d="M0 0 L10 0 L10 10 Z"/>
+		</mask>
+		<mask id="objectBox" maskUnits="objectBoundingBox"/>
+		<mask id="userSpace" maskUnits="userSpaceOnUse">
+			<path id="userSpaceChild" d="M0 0 L10 0 L10 10 Z"/>
+		</mask>
+		<mask id="invalidUnits" maskUnits="definitelyNotUnits"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.masks["defaultUnits"]?.maskUnits == .objectBoundingBox)
+	#expect(document.defs.masks["objectBox"]?.maskUnits == .objectBoundingBox)
+	#expect(document.defs.masks["userSpace"]?.maskUnits == .userSpaceOnUse)
+	#expect(document.defs.masks["invalidUnits"]?.maskUnits == .objectBoundingBox)
+	#expect(document.defs.masks["defaultUnits"]?.children.flatMap { $0.collectIDs() } == ["defaultChild"])
+	#expect(document.defs.masks["userSpace"]?.children.flatMap { $0.collectIDs() } == ["userSpaceChild"])
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

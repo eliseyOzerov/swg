@@ -200,6 +200,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var currentFilter: SVGFilterDef?
 	private var inMask = false
 	private var currentMaskID: String?
+	private var currentMaskUnits: SVGMaskUnits = .objectBoundingBox
 	private var maskElements: [SVGElement] = []
 	private var inClipPath = false
 	private var currentClipPathID: String?
@@ -381,6 +382,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "mask":
 			inMask = true
 			currentMaskID = attributes["id"]
+			currentMaskUnits = parseMaskUnits(attributes["maskUnits"])
 			maskElements = []
 		case "use":
 			parseUse(attributes)
@@ -509,10 +511,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentFilter = nil
 		case "mask":
 			if let id = currentMaskID {
-				defs.masks[id] = SVGMaskDef(id: id, children: maskElements)
+				defs.masks[id] = SVGMaskDef(id: id, maskUnits: currentMaskUnits, children: maskElements)
 			}
 			inMask = false
 			currentMaskID = nil
+			currentMaskUnits = .objectBoundingBox
 		case "text":
 			finalizeText()
 		case "tspan":
@@ -555,6 +558,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		currentFilter = nil
 		inMask = false
 		currentMaskID = nil
+		currentMaskUnits = .objectBoundingBox
 		maskElements = []
 		inClipPath = false
 		currentClipPathID = nil
@@ -954,6 +958,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseClipPathUnits(_ value: String?) -> SVGClipPathUnits {
 		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
+	}
+
+	private func parseMaskUnits(_ value: String?) -> SVGMaskUnits {
+		value == "userSpaceOnUse" ? .userSpaceOnUse : .objectBoundingBox
 	}
 
 	private func parseGradientSpreadMethod(_ value: String?) -> SVGGradientSpreadMethod? {

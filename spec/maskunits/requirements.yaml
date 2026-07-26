@@ -1,0 +1,127 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: maskunits
+  title: SVG maskUnits attribute
+  domain: CSS Masking Level 1 / SVG
+  profile: null
+  summary: Preserve the coordinate-system selection for SVG `<mask>` region attributes using the `maskUnits` attribute.
+  non_goals:
+    - Parsing `maskContentUnits`; it is tracked as a separate TODO bullet.
+    - Resolving mask region `x`, `y`, `width`, and `height` values.
+    - Applying masks during rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-masking-mask-element
+      title: "CSS Masking Module Level 1: The mask element"
+      url: https://www.w3.org/TR/css-masking-1/#elementdef-mask
+      version: Candidate Recommendation Draft, 5 August 2021
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - CSS Masking defines `maskUnits` on `<mask>` with allowed values `userSpaceOnUse` and `objectBoundingBox`.
+    - If `maskUnits` is omitted, the effect is as if `objectBoundingBox` were specified.
+
+scope:
+  includes:
+    - "`maskUnits=\"userSpaceOnUse\"`."
+    - "`maskUnits=\"objectBoundingBox\"`."
+    - Default and invalid-value fallback behavior.
+  excludes:
+    - "`maskContentUnits`."
+    - Animation of `maskUnits`.
+    - Render-time coordinate conversion.
+  assumptions:
+    - The parser preserves the selected units on each mask definition for downstream renderers.
+
+terminology:
+  - id: T001
+    term: maskUnits
+    definition: An attribute on `<mask>` that selects the coordinate system used for `x`, `y`, `width`, and `height`.
+    source_refs:
+      - css-masking-mask-element
+
+structures:
+  - id: S001
+    name: SVG mask definition units
+    kind: field
+    source_refs:
+      - css-masking-mask-element
+    fields:
+      - name: maskUnits
+        type: enum<objectBoundingBox,userSpaceOnUse>
+        cardinality: exactly-one
+        position: mask-definition
+        constraints:
+          - Defaults to `objectBoundingBox`.
+          - Invalid values fall back to `objectBoundingBox`.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - css-masking-mask-element
+
+requirements:
+  - id: R001
+    title: Parse explicit maskUnits values
+    statement: The parser must preserve both valid `maskUnits` values on a mask definition.
+    keywords:
+      - maskUnits
+      - userSpaceOnUse
+      - objectBoundingBox
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - "`maskUnits=\"userSpaceOnUse\"` stores `userSpaceOnUse`."
+      - "`maskUnits=\"objectBoundingBox\"` stores `objectBoundingBox`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMaskUnits
+  - id: R002
+    title: Default maskUnits to objectBoundingBox
+    statement: When `maskUnits` is omitted, the mask definition must behave as if `objectBoundingBox` were specified.
+    keywords:
+      - maskUnits
+      - default
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - A mask without `maskUnits` stores `objectBoundingBox`.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMaskUnits
+  - id: R003
+    title: Ignore invalid maskUnits values
+    statement: Invalid `maskUnits` values must not select a non-standard coordinate system.
+    keywords:
+      - maskUnits
+      - invalid
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - A mask with an unknown `maskUnits` value stores `objectBoundingBox`.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMaskUnits
+
+coverage:
+  status: test-required
+  test_files:
+    - Tests/SwgTests/SVGParserTests.swift
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesMaskUnits
+    R002:
+      - svgParserPreservesMaskUnits
+    R003:
+      - svgParserPreservesMaskUnits
