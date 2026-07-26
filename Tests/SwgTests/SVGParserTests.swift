@@ -5297,6 +5297,44 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(move.byValue == "4")
 }
 
+@Test func svgParserPreservesAnimateMotionElementsAsAnimationData() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+		<path id="ship" d="M0 0 L10 0">
+			<animateMotion id="patrol" path="M0,0 C20,20 40,20 60,0" keyPoints="0;0.5;1" rotate="auto" origin="default" dur="3s"/>
+		</path>
+		<animateMotion id="nudge" href="#ship" from="0,0" to="10,20" by="3,4"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["ship"])
+	#expect(document.animations.count == 2)
+
+	guard case .animateMotion(let patrol) = document.animations[0] else {
+		Issue.record("Expected first animation to be animateMotion")
+		return
+	}
+	#expect(patrol.id == "patrol")
+	#expect(patrol.target == .parent(id: "ship"))
+	#expect(patrol.path == "M0,0 C20,20 40,20 60,0")
+	#expect(patrol.keyPoints == "0;0.5;1")
+	#expect(patrol.rotate == "auto")
+	#expect(patrol.origin == "default")
+	#expect(patrol.unknownAttributes["dur"] == "3s")
+
+	guard case .animateMotion(let nudge) = document.animations[1] else {
+		Issue.record("Expected second animation to be animateMotion")
+		return
+	}
+	#expect(nudge.id == "nudge")
+	#expect(nudge.target == .href("#ship"))
+	#expect(nudge.fromValue == "0,0")
+	#expect(nudge.toValue == "10,20")
+	#expect(nudge.byValue == "3,4")
+}
+
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">

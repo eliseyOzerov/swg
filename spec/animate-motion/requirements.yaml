@@ -1,0 +1,356 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: animate-motion
+  title: SVG animateMotion element
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for recognizing SVG `<animateMotion>` elements and preserving their target relationship plus motion path attributes for later motion evaluation.
+  non_goals:
+    - Motion playback, path distance evaluation, transform application, or SwiftUI animation.
+    - "`<mpath>` child reference preservation."
+    - Full timing, keyframe interpolation, additive, or cumulative behavior.
+    - Validation that a motion target is animatable.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-target-element
+      title: SVG Animations Level 2, Attributes to identify the target element for an animation
+      url: https://svgwg.org/specs/animations/#TargetElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-value-attributes
+      title: SVG Animations Level 2, Attributes that define animation values over time
+      url: https://svgwg.org/specs/animations/#ValueAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-animate-motion-element
+      title: SVG Animations Level 2, The animateMotion element
+      url: https://svgwg.org/specs/animations/#AnimateMotionElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C SVG Animations draft.
+
+scope:
+  includes:
+    - Recognition of `<animateMotion>` as an SVG animation element.
+    - Preservation of each parsed `<animateMotion>` outside the normal renderable element tree.
+    - Preservation of the target relationship from `href` or, when omitted, the immediate parent element.
+    - Preservation of motion-specific `path`, `keyPoints`, `rotate`, and `origin` attributes as raw strings.
+    - Preservation of basic coordinate value endpoint attributes `from`, `to`, and `by` as raw strings.
+    - Preservation of language and uninterpreted non-namespace attributes for later animation bullets.
+  excludes:
+    - Parsing or storing an `<mpath>` child; that has a separate checklist item.
+    - Evaluating motion paths, supplemental transforms, or rotation matrices.
+    - Applying the specified override order among `mpath`, `path`, `values`, `from`, `by`, and `to`.
+    - Parsing `values`, `keyTimes`, `keySplines`, `calcMode`, `additive`, or `accumulate`.
+  assumptions:
+    - Parser output may store motion animation elements in the document-level animation collection used for other SVG animation elements.
+    - Raw string preservation is sufficient for this bullet because motion interpolation and `<mpath>` resolution are covered later.
+
+terminology:
+  - id: term-motion-animation
+    term: motion animation
+    definition: An animation that causes a referenced element to move along a motion path.
+    source_refs:
+      - svg-animations-animate-motion-element
+  - id: term-target-element
+    term: target element
+    definition: The element whose presentation is modified over time by an animation element.
+    source_refs:
+      - svg-animations-target-element
+
+structures:
+  - id: S001
+    name: animateMotion
+    kind: element
+    source_refs:
+      - svg-animations-animate-motion-element
+    fields:
+      - name: id
+        type: string
+        cardinality: optional
+        position: core-attribute
+        constraints:
+          - Identifies the motion animation element.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg-animations-animate-motion-element
+      - name: href
+        type: URL
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Explicitly identifies the target element when provided.
+          - If omitted, the immediate parent element is the target.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg-animations-target-element
+      - name: path
+        type: path-data
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Defines the motion path when no overriding `mpath` child is used.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg-animations-animate-motion-element
+      - name: keyPoints
+        type: list
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Provides precise control of velocity along the motion path.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg-animations-animate-motion-element
+      - name: rotate
+        type: auto-or-angle
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Controls whether and how the target rotates along the motion path.
+        requirement_refs:
+          - R007
+        source_refs:
+          - svg-animations-animate-motion-element
+      - name: origin
+        type: string
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Applies only for compatibility with SMIL Animation and has no effect in SVG.
+        requirement_refs:
+          - R008
+        source_refs:
+          - svg-animations-animate-motion-element
+      - name: from
+        type: coordinate-pair
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Provides a coordinate endpoint for the motion animation function.
+        requirement_refs:
+          - R009
+        source_refs:
+          - svg-animations-value-attributes
+      - name: to
+        type: coordinate-pair
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Provides a coordinate endpoint for the motion animation function.
+        requirement_refs:
+          - R009
+        source_refs:
+          - svg-animations-value-attributes
+      - name: by
+        type: coordinate-pair
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Provides a relative coordinate endpoint for the motion animation function.
+        requirement_refs:
+          - R009
+        source_refs:
+          - svg-animations-value-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must recognize `<animateMotion>` as an SVG animation element.
+    applies_to:
+      - animateMotion
+    source_refs:
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A parsed `<animateMotion>` element must be preserved as animation data and must not be emitted as a directly rendered SVG element.
+    applies_to:
+      - animateMotion
+    source_refs:
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` is present on `<animateMotion>`, its URL reference must be preserved as the explicit animation target reference.
+    applies_to:
+      - animateMotion href
+    source_refs:
+      - svg-animations-target-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` and `xlink:href` are both omitted, the animation target must be represented as the immediate parent element.
+    applies_to:
+      - animateMotion implicit target
+    source_refs:
+      - svg-animations-target-element
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: structure
+    statement: The `path` attribute must be preserved so later processing can define the motion path.
+    applies_to:
+      - animateMotion path
+    source_refs:
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: structure
+    statement: The `keyPoints` attribute must be preserved so later processing can control progress along the motion path.
+    applies_to:
+      - animateMotion keyPoints
+    source_refs:
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: structure
+    statement: The `rotate` attribute must be preserved so later processing can determine auto-rotation or angle-based rotation.
+    applies_to:
+      - animateMotion rotate
+    source_refs:
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+  - id: R008
+    normative_strength: MUST
+    kind: behavior
+    statement: The `origin` attribute must be accepted for compatibility and preserved without affecting parser-only output.
+    applies_to:
+      - animateMotion origin
+    source_refs:
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+  - id: R009
+    normative_strength: MUST
+    kind: structure
+    statement: The `<animateMotion>` value endpoint attributes `from`, `to`, and `by` must be preserved when specified.
+    applies_to:
+      - animateMotion values
+    source_refs:
+      - svg-animations-value-attributes
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Motion-path data or coordinate endpoint values are syntactically invalid.
+    source_behavior: INVALID_ANIMATION_VALUE
+    required_behavior: Preserve raw values and leave validation or no-effect handling to later animation processing.
+    decision_required: false
+    source_refs:
+      - svg-animations-animate-motion-element
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The parser may store `<animateMotion>` elements in `SVGDocument` animation data rather than as drawable `SVGElement` cases.
+    allowed_by:
+      - R001
+      - R002
+    source_refs:
+      - svg-animations-animate-motion-element
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: work-item
+    title: mpath
+    reason: The `<mpath>` child overrides the `path` attribute and needs separate child-reference preservation.
+    source_refs:
+      - svg-animations-animate-motion-element
+  - id: DEP002
+    kind: work-item
+    title: Animation interpolation attributes
+    reason: The `values`, `keyTimes`, `keySplines`, and `calcMode` attributes determine motion animation timing and interpolation after this element is recognized.
+    source_refs:
+      - svg-animations-animate-motion-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-motion-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-motion-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-element
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-motion-element
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-motion-element
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-motion-element
+    map_item_refs: []
+  - item_id: R008
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-motion-element
+    map_item_refs: []
+  - item_id: R009
+    item_type: requirement
+    source_refs:
+      - svg-animations-value-attributes
+      - svg-animations-animate-motion-element
+    map_item_refs: []
