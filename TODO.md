@@ -115,7 +115,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `color-rendering`.
 - [x] `shape-rendering`.
 - [x] `text-rendering`.
-- [ ] `image-rendering`.
+- [x] `image-rendering`.
 
 ## Gradients and Patterns
 

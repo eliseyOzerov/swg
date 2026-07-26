@@ -19,6 +19,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var colorRendering: SVGColorRendering
 	public var shapeRendering: SVGShapeRendering
 	public var textRendering: SVGTextRendering
+	public var imageRendering: SVGImageRendering
 	public var opacity: Double
 	public var transform: Transform
 	public var visibility: SVGVisibility
@@ -46,6 +47,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		colorRendering: SVGColorRendering = .auto,
 		shapeRendering: SVGShapeRendering = .auto,
 		textRendering: SVGTextRendering = .auto,
+		imageRendering: SVGImageRendering = .auto,
 		opacity: Double = 1,
 		transform: Transform = .identity,
 		visibility: SVGVisibility = .visible,
@@ -72,6 +74,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.colorRendering = colorRendering
 		self.shapeRendering = shapeRendering
 		self.textRendering = textRendering
+		self.imageRendering = imageRendering
 		self.opacity = opacity
 		self.transform = transform
 		self.visibility = visibility
@@ -148,6 +151,13 @@ public enum SVGTextRendering: Equatable, Sendable, Hashable {
 	case optimizeSpeed
 	case optimizeLegibility
 	case geometricPrecision
+}
+
+/// SVG `image-rendering` hint for raster image speed and quality tradeoffs.
+public enum SVGImageRendering: Equatable, Sendable, Hashable {
+	case auto
+	case optimizeQuality
+	case optimizeSpeed
 }
 
 /// SVG visibility property value.
