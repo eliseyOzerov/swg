@@ -17,8 +17,9 @@ struct FeatureExample {
 }
 
 let duotoneLight = "#e5e7eb"
+let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "duotone-stroked-fills"
+let galleryAssetVersion = "transform-before-after"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -206,25 +207,25 @@ let pathExamples = [
 
 let transformExamples = [
 	example("transform-matrix", "matrix()", "Coordinate Systems and Transforms", .rendered, "Matrix transforms are applied before painting.") {
-		##"<rect x="30" y="24" width="46" height="30" transform="matrix(1 0.18 -0.25 1 14 -4)" fill="#38bdf8" stroke="#075985" stroke-width="4"/>"##
+		##"<rect x="30" y="24" width="46" height="30" fill="#d1d5db"/><rect x="30" y="24" width="46" height="30" transform="matrix(1 0.18 -0.25 1 14 -4)" fill="#111827"/>"##
 	},
 	example("transform-translate", "translate()", "Coordinate Systems and Transforms", .rendered, "Translation moves rendered geometry.") {
-		##"<rect x="18" y="22" width="40" height="34" fill="#cbd5e1"/><rect x="18" y="22" width="40" height="34" transform="translate(42 0)" fill="#22c55e" stroke="#14532d" stroke-width="4"/>"##
+		##"<rect x="18" y="22" width="40" height="34" fill="#d1d5db"/><rect x="18" y="22" width="40" height="34" transform="translate(42 0)" fill="#111827"/>"##
 	},
 	example("transform-scale", "scale()", "Coordinate Systems and Transforms", .rendered, "Scaling affects the painted path.") {
-		##"<rect x="34" y="26" width="26" height="20" transform="scale(1.55 1.25)" fill="#a855f7" stroke="#581c87" stroke-width="3"/>"##
+		##"<rect x="34" y="26" width="26" height="20" fill="#d1d5db"/><rect x="34" y="26" width="26" height="20" transform="scale(1.55 1.25)" fill="#111827"/>"##
 	},
 	example("transform-rotate", "rotate(angle)", "Coordinate Systems and Transforms", .rendered, "Rotation around the origin is applied.") {
-		##"<rect x="34" y="16" width="44" height="30" transform="rotate(18)" fill="#facc15" stroke="#713f12" stroke-width="4"/>"##
+		##"<rect x="34" y="16" width="44" height="30" fill="#d1d5db"/><rect x="34" y="16" width="44" height="30" transform="rotate(18)" fill="#111827"/>"##
 	},
 	example("transform-rotate-center", "rotate(angle cx cy)", "Coordinate Systems and Transforms", .rendered, "Centered rotation is applied around the provided pivot.") {
-		##"<rect x="36" y="24" width="48" height="32" transform="rotate(24 60 40)" fill="#fb7185" stroke="#881337" stroke-width="4"/>"##
+		##"<rect x="36" y="24" width="48" height="32" fill="#d1d5db"/><rect x="36" y="24" width="48" height="32" transform="rotate(24 60 40)" fill="#111827"/>"##
 	},
 	example("transform-skew-x", "skewX()", "Coordinate Systems and Transforms", .rendered, "Horizontal skew transforms paint.") {
-		##"<rect x="34" y="22" width="52" height="36" transform="skewX(-18)" fill="#60a5fa" stroke="#1d4ed8" stroke-width="4"/>"##
+		##"<rect x="34" y="22" width="52" height="36" fill="#d1d5db"/><rect x="34" y="22" width="52" height="36" transform="skewX(-18)" fill="#111827"/>"##
 	},
 	example("transform-skew-y", "skewY()", "Coordinate Systems and Transforms", .rendered, "Vertical skew transforms paint.") {
-		##"<rect x="34" y="22" width="52" height="36" transform="skewY(14)" fill="#34d399" stroke="#047857" stroke-width="4"/>"##
+		##"<rect x="34" y="22" width="52" height="36" fill="#d1d5db"/><rect x="34" y="22" width="52" height="36" transform="skewY(14)" fill="#111827"/>"##
 	},
 	example("vector-effect", "vector-effect", "Coordinate Systems and Transforms", .modelOnly, "Vector-effect is parsed but the renderer does not keep strokes non-scaling.") {
 		##"<path d="M24 40 H96" transform="scale(1 2)" vector-effect="non-scaling-stroke" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>"##
@@ -577,6 +578,9 @@ func replacingHexColors(in source: String, pattern: String, replacement: (String
 }
 
 func duotoneFill(for hexColor: String) -> String {
+	if hexColor.lowercased() == transformOriginalLight {
+		return transformOriginalLight
+	}
 	let hex = String(hexColor.dropFirst())
 	guard hex.count == 6, let value = Int(hex, radix: 16) else { return duotoneDark }
 	let red = Double((value >> 16) & 0xff) / 255
