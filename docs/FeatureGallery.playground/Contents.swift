@@ -532,7 +532,31 @@ func normalizedPalette(_ source: String, slug: String) -> String {
 	normalized = replacingHexColors(in: normalized, pattern: "flood-color=\"(#[0-9A-Fa-f]{6})\"") { _ in "flood-color=\"\(duotoneDark)\"" }
 	normalized = replacingHexColors(in: normalized, pattern: "fill:(#[0-9A-Fa-f]{6})") { "fill:\(duotoneFill(for: $0))" }
 	normalized = replacingHexColors(in: normalized, pattern: "stroke:(#[0-9A-Fa-f]{6})") { _ in "stroke:\(duotoneDark)" }
+	normalized = emphasizingStrokedFills(in: normalized)
 	return normalized
+}
+
+func emphasizingStrokedFills(in source: String) -> String {
+	let regex = try! NSRegularExpression(pattern: "<[^>]+>")
+	let matches = regex.matches(in: source, range: NSRange(source.startIndex..<source.endIndex, in: source))
+	guard !matches.isEmpty else { return source }
+	var result = ""
+	var lastIndex = source.startIndex
+	for match in matches {
+		guard let range = Range(match.range(at: 0), in: source) else { continue }
+		result += source[lastIndex..<range.lowerBound]
+		var tag = String(source[range])
+		if tag.contains("stroke=\"\(duotoneDark)\"") {
+			tag = tag.replacingOccurrences(of: "fill=\"\(duotoneDark)\"", with: "fill=\"\(duotoneLight)\"")
+		}
+		if tag.contains("stroke:\(duotoneDark)") {
+			tag = tag.replacingOccurrences(of: "fill:\(duotoneDark)", with: "fill:\(duotoneLight)")
+		}
+		result += tag
+		lastIndex = range.upperBound
+	}
+	result += source[lastIndex...]
+	return result
 }
 
 func replacingHexColors(in source: String, pattern: String, replacement: (String) -> String) -> String {

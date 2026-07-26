@@ -16,7 +16,7 @@ The matrix below shows one SVG example per visual feature. Each source SVG is pa
 
 These images are generated from one SVG per visual feature by `docs/FeatureGallery.playground/Contents.swift`. The playground writes the source SVGs to `docs/feature-gallery/svg`, parses them with `swg`, renders them through the public `SVG` SwiftUI view, and writes PNGs to `docs/feature-gallery/png`.
 
-The examples use a neutral light/dark duotone palette by default so shape, transform, layout, and paint mechanics are easier to compare without interpreting arbitrary colors. Pale source colors become the light tone and darker source colors become the dark tone, so foreground geometry remains visible. Examples stay colorful only when the feature itself is about color or opacity-specific paint, including fills, strokes, gradients, patterns, and color-bearing filter properties.
+The examples use a neutral light/dark duotone palette by default so shape, transform, layout, and paint mechanics are easier to compare without interpreting arbitrary colors. Filled-and-stroked elements use a light fill with a dark stroke; foreground-only fills stay dark when that makes the feature easier to see. Examples stay colorful only when the feature itself is about color or opacity-specific paint, including fills, strokes, gradients, patterns, and color-bearing filter properties.
 
 The parser/model checklist remains in [TODO.md](TODO.md). This matrix is specifically the native SwiftUI renderer truth table: 133 visual examples, 59 currently render through `SVG`, and 74 are intentionally left blank because the feature is parsed/modelled but not actually painted yet.
 
