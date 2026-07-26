@@ -24,6 +24,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var transform: Transform
 	public var visibility: SVGVisibility
 	public var display: SVGDisplay
+	public var clipPath: SVGClipPathValue
 	public var clipPathID: String?
 	public var filterID: String?
 	public var maskID: String?
@@ -52,6 +53,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		transform: Transform = .identity,
 		visibility: SVGVisibility = .visible,
 		display: SVGDisplay = .inline,
+		clipPath: SVGClipPathValue = .none,
 		clipPathID: String? = nil,
 		filterID: String? = nil,
 		maskID: String? = nil,
@@ -79,6 +81,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.transform = transform
 		self.visibility = visibility
 		self.display = display
+		self.clipPath = clipPath
 		self.clipPathID = clipPathID
 		self.filterID = filterID
 		self.maskID = maskID
@@ -86,6 +89,32 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	}
 
 	public static let defaults = SVGPaintAttributes()
+}
+
+/// SVG `clip-path` value for no clipping, URL references, basic shapes, or geometry boxes.
+public enum SVGClipPathValue: Equatable, Sendable {
+	case none
+	case url(String)
+	case basicShape(String, geometryBox: SVGGeometryBox?)
+	case geometryBox(SVGGeometryBox)
+
+	public var localClipPathID: String? {
+		if case .url(let id) = self {
+			return id
+		}
+		return nil
+	}
+}
+
+/// Reference box used by SVG and CSS clipping geometry.
+public enum SVGGeometryBox: String, Equatable, Sendable, Hashable {
+	case contentBox = "content-box"
+	case paddingBox = "padding-box"
+	case borderBox = "border-box"
+	case marginBox = "margin-box"
+	case fillBox = "fill-box"
+	case strokeBox = "stroke-box"
+	case viewBox = "view-box"
 }
 
 /// SVG paint value for solid colors, inherited current color, none, or URL references.

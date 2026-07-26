@@ -1659,7 +1659,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let value = attributes["display"] {
 			result.display = isInheritKeyword(value) ? inherited.display : value == "none" ? .none : .inline
 		}
-		if let value = attributes["clip-path"] { result.clipPathID = isInheritKeyword(value) ? inherited.clipPathID : parseURLID(value) }
+		if let value = attributes["clip-path"] {
+			if isInheritKeyword(value) {
+				result.clipPath = inherited.clipPath
+				result.clipPathID = inherited.clipPathID
+			} else if let clipPath = parseClipPath(value) {
+				result.clipPath = clipPath
+				result.clipPathID = clipPath.localClipPathID
+			}
+		}
 		if let value = attributes["filter"] { result.filterID = isInheritKeyword(value) ? inherited.filterID : parseURLID(value) }
 		if let value = attributes["mask"] { result.maskID = isInheritKeyword(value) ? inherited.maskID : parseURLID(value) }
 		if let value = attributes["vector-effect"] {
@@ -1854,6 +1862,84 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseURLID(_ value: String) -> String? {
 		SVGURLParser.parseFunctional(value)?.localFragmentID
+	}
+
+	private func parseClipPath(_ value: String) -> SVGClipPathValue? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed.lowercased() == "none" { return SVGClipPathValue.none }
+		if let reference = SVGURLParser.parseFunctional(trimmed), let id = reference.localFragmentID {
+			return .url(id)
+		}
+
+		let parts = splitClipPathValue(trimmed)
+		if parts.count == 1, let box = parseGeometryBox(parts[0]) {
+			return .geometryBox(box)
+		}
+		if parts.count == 1, isBasicShape(parts[0]) {
+			return .basicShape(parts[0], geometryBox: nil)
+		}
+		if parts.count == 2, isBasicShape(parts[0]), let box = parseGeometryBox(parts[1]) {
+			return .basicShape(parts[0], geometryBox: box)
+		}
+		return nil
+	}
+
+	private func splitClipPathValue(_ value: String) -> [String] {
+		var parts: [String] = []
+		var current = ""
+		var depth = 0
+
+		for character in value {
+			if character == "(" {
+				depth += 1
+				current.append(character)
+			} else if character == ")" {
+				depth = max(0, depth - 1)
+				current.append(character)
+			} else if isWhitespace(character), depth == 0 {
+				if !current.isEmpty {
+					parts.append(current)
+					current = ""
+				}
+			} else {
+				current.append(character)
+			}
+		}
+
+		if !current.isEmpty {
+			parts.append(current)
+		}
+		return parts
+	}
+
+	private func parseGeometryBox(_ value: String) -> SVGGeometryBox? {
+		SVGGeometryBox(rawValue: value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+	}
+
+	private func isBasicShape(_ value: String) -> Bool {
+		let lowercased = value.lowercased()
+		let supportedPrefixes = ["inset(", "circle(", "ellipse(", "polygon(", "path(", "rect(", "xywh("]
+		guard supportedPrefixes.contains(where: { lowercased.hasPrefix($0) }), value.hasSuffix(")") else {
+			return false
+		}
+		return parenthesesAreBalanced(value)
+	}
+
+	private func parenthesesAreBalanced(_ value: String) -> Bool {
+		var depth = 0
+		for character in value {
+			if character == "(" {
+				depth += 1
+			} else if character == ")" {
+				depth -= 1
+				if depth < 0 { return false }
+			}
+		}
+		return depth == 0
+	}
+
+	private func isWhitespace(_ character: Character) -> Bool {
+		character.unicodeScalars.allSatisfy { CharacterSet.whitespacesAndNewlines.contains($0) }
 	}
 
 	private func parseSVGRoot(_ attributes: [String: String]) {

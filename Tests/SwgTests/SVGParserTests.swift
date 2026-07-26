@@ -434,6 +434,50 @@ import Testing
 	#expect(path.d == "M0 0 L20 0 L20 20 Z")
 }
 
+@Test func svgParserParsesClipPathPropertyValues() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.basic { clip-path: circle(40% at 50% 50%) fill-box; }
+			.box { clip-path: stroke-box; }
+			.invalid { clip-path: url(#a) url(#b); }
+		</style>
+		<g id="parent" clip-path="url(#clip)">
+			<path id="inherited" d="M0 0 L1 1" clip-path="inherit"/>
+			<path id="none" d="M0 0 L1 1" clip-path="none"/>
+			<path id="basic" class="basic" d="M0 0 L1 1"/>
+			<path id="box" class="box" d="M0 0 L1 1"/>
+			<path id="invalid" class="invalid" d="M0 0 L1 1"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let group) = document.elements.first else {
+		Issue.record("Expected parent group")
+		return
+	}
+
+	var paths: [String: SVGPathData] = [:]
+	for child in group.children {
+		if case .path(let path) = child {
+			paths[path.id] = path
+		}
+	}
+
+	#expect(group.attributes.clipPath == .url("clip"))
+	#expect(group.attributes.clipPathID == "clip")
+	#expect(paths["inherited"]?.attributes.clipPath == .url("clip"))
+	#expect(paths["inherited"]?.attributes.clipPathID == "clip")
+	#expect(paths["none"]?.attributes.clipPath == SVGClipPathValue.none)
+	#expect(paths["none"]?.attributes.clipPathID == nil)
+	#expect(paths["basic"]?.attributes.clipPath == .basicShape("circle(40% at 50% 50%)", geometryBox: .fillBox))
+	#expect(paths["basic"]?.attributes.clipPathID == nil)
+	#expect(paths["box"]?.attributes.clipPath == .geometryBox(.strokeBox))
+	#expect(paths["invalid"]?.attributes.clipPath == SVGClipPathValue.none)
+	#expect(paths["invalid"]?.attributes.clipPathID == nil)
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

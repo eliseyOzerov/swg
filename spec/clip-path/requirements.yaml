@@ -1,0 +1,202 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: clip-path
+  title: CSS Masking clip-path property for SVG
+  domain: CSS Masking Level 1 / SVG
+  profile: null
+  summary: Preserve SVG `clip-path` presentation attribute and CSS property values that identify clipping sources, basic clipping shapes, geometry boxes, or `none`.
+  non_goals:
+    - Evaluating or rendering clipping.
+    - Implementing `clip-rule`; it is tracked as a separate TODO bullet.
+    - Implementing `clipPathUnits`; it is tracked as a separate TODO bullet.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-masking-clip-path-property
+      title: "CSS Masking Module Level 1: clip-path property"
+      url: https://www.w3.org/TR/css-masking-1/#the-clip-path
+      version: Candidate Recommendation Draft, 5 August 2021
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-masking-removed
+      title: "SVG 2: Removed Clipping, Masking and Compositing chapter"
+      url: https://www.w3.org/TR/SVG/masking.html
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: descriptive
+  source_notes:
+    - SVG 2 delegates clipping path definitions to CSS Masking Module Level 1.
+
+scope:
+  includes:
+    - "`clip-path: none`."
+    - "`clip-path: url(#id)` references to SVG `<clipPath>` sources."
+    - Basic shape values with optional geometry boxes.
+    - Geometry-box-only values.
+    - Presentation attribute and CSS declaration parsing.
+  excludes:
+    - External resource loading.
+    - Applying a clip during rendering.
+    - Hit testing or pointer-event behavior in clipped-out regions.
+  assumptions:
+    - Preserving a local fragment ID for URL references is sufficient for this parser-level bullet.
+    - Basic shape payloads may be preserved as authored strings for later CSS shape interpretation.
+
+terminology:
+  - id: T001
+    term: clip-path
+    definition: A property that specifies a basic shape or references a clipPath element to create a clipping path.
+    source_refs:
+      - css-masking-clip-path-property
+  - id: T002
+    term: geometry box
+    definition: A reference box such as fill-box, stroke-box, or view-box used to size or define a clipping shape.
+    source_refs:
+      - css-masking-clip-path-property
+
+structures:
+  - id: S001
+    name: Clip path value
+    kind: value
+    source_refs:
+      - css-masking-clip-path-property
+    fields:
+      - name: kind
+        type: enumeration
+        cardinality: required
+        position: null
+        constraints:
+          - Values include none, URL clip source, basic shape with optional geometry box, or geometry box.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - css-masking-clip-path-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: default
+    statement: The initial value of `clip-path` is `none`.
+    applies_to:
+      - clip-path
+    source_refs:
+      - css-masking-clip-path-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: reference
+    statement: A URL clip source value must identify a clipping source such as an SVG `<clipPath>` element.
+    applies_to:
+      - clip-path
+    source_refs:
+      - css-masking-clip-path-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: shape
+    statement: A basic shape value must be preserved as a valid `clip-path` value, with any accompanying geometry box.
+    applies_to:
+      - clip-path
+    source_refs:
+      - css-masking-clip-path-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: geometry-box
+    statement: A geometry box by itself must be preserved as a clipping path that uses the specified box edges.
+    applies_to:
+      - clip-path
+    source_refs:
+      - css-masking-clip-path-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: inheritance
+    statement: The `clip-path` property is not inherited, but CSS-wide `inherit` must use the parent computed value.
+    applies_to:
+      - clip-path
+    source_refs:
+      - css-masking-clip-path-property
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: rendering
+    statement: If a URI reference is invalid or does not identify a clipPath element, no clipping is applied.
+    applies_to:
+      - clip-path
+    source_refs:
+      - css-masking-clip-path-property
+    testability: reviewable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Malformed `clip-path` value.
+    source_behavior: invalid property value
+    required_behavior: Preserve the previous or initial computed value.
+    decision_required: false
+    source_refs:
+      - css-masking-clip-path-property
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Basic shape parsing depth
+    statement: Parser-level support may preserve valid basic shape functions as strings and defer geometric interpretation to later rendering work.
+    allowed_by:
+      - R003
+    source_refs:
+      - css-masking-clip-path-property
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: CSS Shapes Module
+    reason: Defines basic shape function syntax referenced by `clip-path`.
+    source_refs:
+      - css-masking-clip-path-property
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-path-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-path-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-path-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-path-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-path-property
+    map_item_refs: []
