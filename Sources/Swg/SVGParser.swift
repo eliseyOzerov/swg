@@ -495,6 +495,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				y: attributes["y"].flatMap(parseNumber) ?? 0,
 				z: attributes["z"].flatMap(parseNumber) ?? 0
 			))
+		case "feSpecularLighting":
+			let kernelUnitLength = parsePositiveNumberOptionalNumber(attributes["kernelUnitLength"])
+			currentFilter?.primitives.append(.specularLighting(
+				input: attributes["in"],
+				surfaceScale: attributes["surfaceScale"].flatMap(parseNumber) ?? 1,
+				specularConstant: attributes["specularConstant"].flatMap(parseNonNegativeNumber) ?? 1,
+				specularExponent: attributes["specularExponent"].flatMap(parseNumber) ?? 1,
+				kernelUnitLengthX: kernelUnitLength.x,
+				kernelUnitLengthY: kernelUnitLength.y
+			))
+			currentLightingPrimitiveIndex = currentFilter?.primitives.indices.last
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2
@@ -641,7 +652,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentFilter = nil
 		case "feComponentTransfer":
 			currentComponentTransferIndex = nil
-		case "feDiffuseLighting":
+		case "feDiffuseLighting", "feSpecularLighting":
 			currentLightingPrimitiveIndex = nil
 		case "feMerge":
 			currentMergePrimitiveIndex = nil
@@ -1254,6 +1265,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				input: input,
 				surfaceScale: surfaceScale,
 				diffuseConstant: diffuseConstant,
+				kernelUnitLengthX: kernelUnitLengthX,
+				kernelUnitLengthY: kernelUnitLengthY,
+				lightSource: lightSource
+			)
+		case .specularLighting(let input, let surfaceScale, let specularConstant, let specularExponent, let kernelUnitLengthX, let kernelUnitLengthY, _):
+			filter.primitives[index] = .specularLighting(
+				input: input,
+				surfaceScale: surfaceScale,
+				specularConstant: specularConstant,
+				specularExponent: specularExponent,
 				kernelUnitLengthX: kernelUnitLengthX,
 				kernelUnitLengthY: kernelUnitLengthY,
 				lightSource: lightSource

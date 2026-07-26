@@ -1,0 +1,291 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-specular-lighting
+  title: SVG feSpecularLighting filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Requirements for preserving feSpecularLighting primitive attributes and its child light source.
+  non_goals:
+    - Raster execution of the Blinn-Phong specular lighting algorithm.
+    - Full DOM IDL reflection or animation support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-specular-lighting
+      title: Filter Effects Module Level 1, feSpecularLighting element
+      url: https://www.w3.org/TR/filter-effects-1/#feSpecularLightingElement
+      version: Editor-independent W3C Working Draft snapshot
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C section.
+
+scope:
+  includes:
+    - feSpecularLighting element recognition inside SVG filters.
+    - The in, surfaceScale, specularConstant, specularExponent, and kernelUnitLength attributes.
+    - The exactly-one-light-source content requirement.
+    - Preservation of a parsed child light source.
+  excludes:
+    - Pixel-level lighting calculations.
+    - lighting-color presentation property support.
+    - Animation and DOM mutation behavior.
+  assumptions:
+    - A parser may preserve a specular primitive even when no light source child was parsed, leaving render-time behavior to downstream code.
+
+terminology:
+  - id: term-specular-lighting
+    term: Specular lighting
+    definition: A filter operation that uses the input alpha channel as a bump map and produces the specular reflection component of a lighting calculation.
+    source_refs:
+      - filter-effects-fe-specular-lighting
+
+structures:
+  - id: S001
+    name: feSpecularLighting
+    kind: element
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    fields:
+      - name: in
+        type: string
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the input image for the primitive.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-specular-lighting
+      - name: surfaceScale
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 1.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-fe-specular-lighting
+      - name: specularConstant
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 1.
+          - The value can be any non-negative number.
+        requirement_refs:
+          - R003
+        source_refs:
+          - filter-effects-fe-specular-lighting
+      - name: specularExponent
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 1.
+        requirement_refs:
+          - R004
+        source_refs:
+          - filter-effects-fe-specular-lighting
+      - name: kernelUnitLength
+        type: number-optional-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - The first number is the dx value.
+          - The second number is the dy value.
+          - If dy is omitted, it defaults to the dx value.
+          - Values are expressed in the coordinate system established by primitiveUnits.
+        requirement_refs:
+          - R005
+        source_refs:
+          - filter-effects-fe-specular-lighting
+      - name: lightSource
+        type: element
+        cardinality: exactly-one
+        position: child
+        constraints:
+          - Must be one of feDistantLight, fePointLight, or feSpotLight.
+        requirement_refs:
+          - R006
+        source_refs:
+          - filter-effects-fe-specular-lighting
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The feSpecularLighting element has an input attribute corresponding to the filter primitive's input image.
+    applies_to:
+      - feSpecularLighting
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The surfaceScale attribute is a number representing surface height when the input alpha is 1 and has an initial value of 1.
+    applies_to:
+      - feSpecularLighting.surfaceScale
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: range
+    statement: The specularConstant attribute is a non-negative number and has an initial value of 1.
+    applies_to:
+      - feSpecularLighting.specularConstant
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: The specularExponent attribute is a number controlling the specular term and has an initial value of 1.
+    applies_to:
+      - feSpecularLighting.specularExponent
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: structure
+    statement: The kernelUnitLength attribute is a number-optional-number where a missing second value defaults to the first value.
+    applies_to:
+      - feSpecularLighting.kernelUnitLength
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: structure
+    statement: feSpecularLighting has exactly one child light source element, chosen from feDistantLight, fePointLight, or feSpotLight.
+    applies_to:
+      - feSpecularLighting
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Specular lighting output
+    kind: algorithm
+    summary: The primitive computes an RGBA specular reflection image using the Blinn-Phong model, input alpha as a bump map, light color, light position, and surface geometry.
+    steps: []
+    preconditions:
+      - An input image and one light source are available.
+    postconditions:
+      - The output contains the specular reflection component and uses the maximum color component as alpha.
+    requirement_refs:
+      - R002
+      - R003
+      - R004
+      - R006
+    source_refs:
+      - filter-effects-fe-specular-lighting
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: specularConstant is negative.
+    source_behavior: invalid
+    required_behavior: The value must not be accepted as a valid specularConstant.
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-specular-lighting
+  - id: I002
+    condition: kernelUnitLength has a non-positive component.
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - filter-effects-fe-specular-lighting
+  - id: I003
+    condition: no child light source is provided.
+    source_behavior: invalid content model
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - filter-effects-fe-specular-lighting
+
+recommendations:
+  - id: N001
+    normative_strength: SHOULD
+    statement: Authors should provide kernelUnitLength for consistency across display media and user agents.
+    source_refs:
+      - filter-effects-fe-specular-lighting
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Missing light source
+    statement: A parser may preserve the primitive without a parsed light source and let downstream renderers decide whether to render, skip, or report it.
+    allowed_by:
+      - I003
+    source_refs:
+      - filter-effects-fe-specular-lighting
+  - id: IC002
+    topic: Malformed numeric values
+    statement: A parser may fall back to initial numeric values for malformed attributes when preserving a usable primitive representation.
+    allowed_by:
+      - I002
+    source_refs:
+      - filter-effects-fe-specular-lighting
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG light source elements
+    reason: feSpecularLighting requires one light source child element.
+    source_refs:
+      - filter-effects-fe-specular-lighting
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-specular-lighting
+    map_item_refs: []

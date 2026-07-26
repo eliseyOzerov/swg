@@ -1024,6 +1024,7 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case merge(inputs: [String?] = [])
 	case morphology(input: String?, operator: SVGMorphologyOperator = .erode, radiusX: Double = 0, radiusY: Double = 0, isPassThrough: Bool = true)
 	case offset(input: String?, dx: Double = 0, dy: Double = 0)
+	case specularLighting(input: String?, surfaceScale: Double = 1, specularConstant: Double = 1, specularExponent: Double = 1, kernelUnitLengthX: Double? = nil, kernelUnitLengthY: Double? = nil, lightSource: SVGFilterLightSource? = nil)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }

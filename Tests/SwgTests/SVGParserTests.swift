@@ -1012,6 +1012,90 @@ private func expectOffset(_ primitive: SVGFilterPrimitive, input expectedInput: 
 	)
 }
 
+@Test func svgParserPreservesSpecularLightingPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="specular">
+			<feSpecularLighting/>
+			<feSpecularLighting in="SourceAlpha" surfaceScale="2.5" specularConstant="3" specularExponent="12" kernelUnitLength="4">
+				<fePointLight x="1" y="2" z="3"/>
+			</feSpecularLighting>
+			<feSpecularLighting kernelUnitLength="4 5">
+				<feDistantLight azimuth="45" elevation="30"/>
+			</feSpecularLighting>
+			<feSpecularLighting surfaceScale="bad" specularConstant="-1" specularExponent="bad" kernelUnitLength="-2 3"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["specular"])
+	#expect(filter.primitives.count == 4)
+	expectSpecularLighting(
+		filter.primitives[0],
+		input: nil,
+		surfaceScale: 1,
+		specularConstant: 1,
+		specularExponent: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: nil
+	)
+	expectSpecularLighting(
+		filter.primitives[1],
+		input: "SourceAlpha",
+		surfaceScale: 2.5,
+		specularConstant: 3,
+		specularExponent: 12,
+		kernelUnitLengthX: 4,
+		kernelUnitLengthY: 4,
+		lightSource: .pointLight(x: 1, y: 2, z: 3)
+	)
+	expectSpecularLighting(
+		filter.primitives[2],
+		input: nil,
+		surfaceScale: 1,
+		specularConstant: 1,
+		specularExponent: 1,
+		kernelUnitLengthX: 4,
+		kernelUnitLengthY: 5,
+		lightSource: .distantLight(azimuth: 45, elevation: 30)
+	)
+	expectSpecularLighting(
+		filter.primitives[3],
+		input: nil,
+		surfaceScale: 1,
+		specularConstant: 1,
+		specularExponent: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: nil
+	)
+}
+
+private func expectSpecularLighting(
+	_ primitive: SVGFilterPrimitive,
+	input expectedInput: String?,
+	surfaceScale expectedSurfaceScale: Double,
+	specularConstant expectedSpecularConstant: Double,
+	specularExponent expectedSpecularExponent: Double,
+	kernelUnitLengthX expectedKernelUnitLengthX: Double?,
+	kernelUnitLengthY expectedKernelUnitLengthY: Double?,
+	lightSource expectedLightSource: SVGFilterLightSource?
+) {
+	guard case .specularLighting(let input, let surfaceScale, let specularConstant, let specularExponent, let kernelUnitLengthX, let kernelUnitLengthY, let lightSource) = primitive else {
+		Issue.record("Expected parsed feSpecularLighting primitive")
+		return
+	}
+	#expect(input == expectedInput)
+	#expect(surfaceScale == expectedSurfaceScale)
+	#expect(specularConstant == expectedSpecularConstant)
+	#expect(specularExponent == expectedSpecularExponent)
+	#expect(kernelUnitLengthX == expectedKernelUnitLengthX)
+	#expect(kernelUnitLengthY == expectedKernelUnitLengthY)
+	#expect(lightSource == expectedLightSource)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")
