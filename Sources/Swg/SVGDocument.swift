@@ -795,6 +795,7 @@ public struct SVGTextData: Equatable, Sendable {
 	public let yValues: [Double]
 	public let dxValues: [Double]
 	public let dyValues: [Double]
+	public let rotateValues: [Double]
 	public let fontSize: Double
 	public let fontFamily: String
 	public let fontWeight: String
@@ -804,7 +805,7 @@ public struct SVGTextData: Equatable, Sendable {
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, x: Double, y: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, spans: [SVGTextSpan], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, x: Double, y: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, spans: [SVGTextSpan], language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -812,6 +813,7 @@ public struct SVGTextData: Equatable, Sendable {
 		self.yValues = yValues
 		self.dxValues = dxValues
 		self.dyValues = dyValues
+		self.rotateValues = rotateValues
 		self.fontSize = fontSize
 		self.fontFamily = fontFamily
 		self.fontWeight = fontWeight
@@ -834,6 +836,7 @@ public struct SVGTextSpan: Equatable, Sendable {
 	public let yValues: [Double]
 	public let dxValues: [Double]
 	public let dyValues: [Double]
+	public let rotateValues: [Double]
 	public let fontSize: Double?
 	public let fontWeight: String?
 	public let attributes: SVGPaintAttributes?
@@ -841,7 +844,7 @@ public struct SVGTextSpan: Equatable, Sendable {
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], fontSize: Double?, fontWeight: String?, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double?, fontWeight: String?, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.text = text
 		self.x = x
 		self.y = y
@@ -851,6 +854,7 @@ public struct SVGTextSpan: Equatable, Sendable {
 		self.yValues = yValues
 		self.dxValues = dxValues
 		self.dyValues = dyValues
+		self.rotateValues = rotateValues
 		self.fontSize = fontSize
 		self.fontWeight = fontWeight
 		self.attributes = attributes

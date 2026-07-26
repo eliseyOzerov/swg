@@ -1631,6 +1631,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let yValues = parseTextCoordinateList(attributes["y"], percentageBasis: .vertical) ?? [0]
 		let dxValues = parseTextCoordinateList(attributes["dx"], percentageBasis: .horizontal) ?? []
 		let dyValues = parseTextCoordinateList(attributes["dy"], percentageBasis: .vertical) ?? []
+		let rotateValues = parseTextRotateList(attributes["rotate"]) ?? []
 		textBuilder = SVGTextBuilder(
 			id: id,
 			x: xValues.first ?? 0,
@@ -1639,13 +1640,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			yValues: yValues,
 			dxValues: dxValues,
 			dyValues: dyValues,
+			rotateValues: rotateValues,
 			fontSize: double(attributes["font-size"]),
 			fontFamily: attributes["font-family"] ?? "",
 			fontWeight: attributes["font-weight"] ?? "normal",
 			textAnchor: parseTextAnchor(attributes["text-anchor"]),
 			attributes: attrs,
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "font-size", "font-family", "font-weight", "text-anchor"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "font-size", "font-family", "font-weight", "text-anchor"])
 		)
 	}
 
@@ -1670,7 +1672,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			yValues: parseTextCoordinateList(attributes["y"], percentageBasis: .vertical) ?? [],
 			dxValues: parseTextCoordinateList(attributes["dx"], percentageBasis: .horizontal) ?? [],
 			dyValues: parseTextCoordinateList(attributes["dy"], percentageBasis: .vertical) ?? [],
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy"])
+			rotateValues: parseTextRotateList(attributes["rotate"]) ?? [],
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate"])
 		)
 	}
 
@@ -1679,6 +1682,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return SVGListParser.parse(value) { token in
 			parseDimension(token, context: currentViewportContext, percentageBasis: percentageBasis)
 		}
+	}
+
+	private func parseTextRotateList(_ value: String?) -> [Double]? {
+		guard let value else { return nil }
+		return SVGListParser.parse(value, itemParser: parseNumber)
 	}
 
 	private func parseTitleStart(_ attributes: [String: String]) {
@@ -1837,6 +1845,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				yValues: textBuilder.yValues,
 				dxValues: textBuilder.dxValues,
 				dyValues: textBuilder.dyValues,
+				rotateValues: textBuilder.rotateValues,
 				fontSize: fontSize,
 				fontFamily: textBuilder.fontFamily,
 				fontWeight: textBuilder.fontWeight,
@@ -1868,6 +1877,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			yValues: positioning.yValues,
 			dxValues: positioning.dxValues,
 			dyValues: positioning.dyValues,
+			rotateValues: positioning.rotateValues,
 			fontSize: nil,
 			fontWeight: nil,
 			attributes: attributes,
@@ -3234,6 +3244,7 @@ private final class SVGTextBuilder {
 	let yValues: [Double]
 	let dxValues: [Double]
 	let dyValues: [Double]
+	let rotateValues: [Double]
 	let fontSize: Double
 	let fontFamily: String
 	let fontWeight: String
@@ -3243,7 +3254,7 @@ private final class SVGTextBuilder {
 	let unknownAttributes: [String: String]
 	var spans: [SVGTextSpan] = []
 
-	init(id: String, x: Double, y: Double, xValues: [Double], yValues: [Double], dxValues: [Double], dyValues: [Double], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
+	init(id: String, x: Double, y: Double, xValues: [Double], yValues: [Double], dxValues: [Double], dyValues: [Double], rotateValues: [Double], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -3251,6 +3262,7 @@ private final class SVGTextBuilder {
 		self.yValues = yValues
 		self.dxValues = dxValues
 		self.dyValues = dyValues
+		self.rotateValues = rotateValues
 		self.fontSize = fontSize
 		self.fontFamily = fontFamily
 		self.fontWeight = fontWeight
@@ -3263,12 +3275,13 @@ private final class SVGTextBuilder {
 
 /// Mutable tspan positioning collected before the text run is finalized.
 private struct SVGTextSpanPositioning {
-	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], unknownAttributes: [:])
+	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], unknownAttributes: [:])
 
 	let xValues: [Double]
 	let yValues: [Double]
 	let dxValues: [Double]
 	let dyValues: [Double]
+	let rotateValues: [Double]
 	let unknownAttributes: [String: String]
 }
 

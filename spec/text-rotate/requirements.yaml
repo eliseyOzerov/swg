@@ -1,0 +1,175 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: text-rotate
+  title: SVG text rotate attribute
+  domain: SVG Text
+  profile: null
+  summary: Requirements for preserving supplemental rotation lists on SVG text and tspan elements.
+  non_goals:
+    - Applying rotations to glyph layout.
+    - x, y, dx, and dy positioning behavior.
+    - Bidirectional text reordering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-text-rotate
+      title: SVG 2, Text chapter, rotate attribute
+      url: https://www.w3.org/TR/SVG/text.html#TSpanAttributes
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C text chapter.
+
+scope:
+  includes:
+    - Recognition of rotate on text and tspan.
+    - Preservation of comma- or space-separated numeric rotation lists.
+    - Preservation of absent rotate as no parsed rotation values.
+  excludes:
+    - Applying supplemental rotation during glyph rendering.
+    - Continuing the final rotate value to subsequent characters during layout.
+  assumptions:
+    - Parser-level conformance can preserve rotate lists for a later text layout phase.
+    - Values are stored in degrees, matching the SVG attribute definition.
+
+terminology:
+  - id: term-supplemental-rotation
+    term: supplemental rotation
+    definition: A rotation in degrees about the current text position applied to glyphs for corresponding characters.
+    source_refs:
+      - svg2-text-rotate
+
+structures:
+  - id: S001
+    name: rotate
+    kind: attribute
+    source_refs:
+      - svg2-text-rotate
+    fields:
+      - name: values
+        type: list-of-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Values are numbers in degrees.
+          - The initial value is none.
+          - The attribute is animatable but non-additive.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-text-rotate
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The rotate attribute on text and tspan accepts a comma- or space-separated list of numbers.
+    applies_to:
+      - text.rotate
+      - tspan.rotate
+    source_refs:
+      - svg2-text-rotate
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Each rotate number represents supplemental rotation in degrees for glyphs corresponding to characters within the element or its descendants.
+    applies_to:
+      - text.rotate
+      - tspan.rotate
+    source_refs:
+      - svg2-text-rotate
+    testability: reviewable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: If fewer rotate values exist than characters, the final rotate value applies to subsequent characters during layout.
+    applies_to:
+      - text.rotate
+      - tspan.rotate
+    source_refs:
+      - svg2-text-rotate
+    testability: reviewable
+    notes:
+      - Parser preservation enables later layout to apply this continuation rule.
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The rotate attribute has no initial value when absent.
+    applies_to:
+      - text.rotate
+      - tspan.rotate
+    source_refs:
+      - svg2-text-rotate
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Malformed rotate list syntax.
+    source_behavior: UNSPECIFIED
+    required_behavior: Preserve no parsed rotate values for that malformed attribute.
+    decision_required: false
+    source_refs:
+      - svg2-text-rotate
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: A parser may store rotate as an ordered array of numeric degree values for later glyph layout.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+    source_refs:
+      - svg2-text-rotate
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG list syntax
+    reason: The rotate attribute accepts comma- or space-separated lists.
+    source_refs:
+      - svg2-text-rotate
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-text-rotate
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-text-rotate
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-text-rotate
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-text-rotate
+    map_item_refs: []

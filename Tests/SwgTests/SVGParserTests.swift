@@ -4999,6 +4999,24 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(span.dyValues == [7, -8])
 }
 
+@Test func svgParserPreservesTextRotateLists() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+		<text id="label" x="10" y="30" rotate="0 15,30">AB<tspan rotate="-45 90">CD</tspan></text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected parsed text element")
+		return
+	}
+	#expect(text.rotateValues == [0, 15, 30])
+	#expect(text.spans.map(\.text) == ["AB", "CD"])
+	#expect(text.spans[0].rotateValues == [])
+	#expect(text.spans[1].rotateValues == [-45, 90])
+}
+
 @Test func svgParserNormalizesDefaultTextWhitespace() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
