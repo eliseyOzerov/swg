@@ -9,7 +9,7 @@ Use fixture-backed raster comparisons for SVG features that affect rendered outp
 - Focused parser and model tests prove that an SVG feature is recognized, normalized, inherited, preserved, or converted into the expected Swift value.
 - Visual tests prove that render-affecting features produce the expected pixel-level output for a bounded fixture.
 
-The SVG coverage checklist is test-gated. A feature can be checked when it has focused tests. Visual fixtures are an additional requirement for features whose behavior should be visible in the eventual `CGPath` and SwiftUI rendering pipeline.
+The SVG coverage checklist is test-gated. A feature can be checked when it has focused tests. Visual fixtures are an additional requirement for features whose behavior should be visible through `CGPath` conversion or the SwiftUI rendering pipeline.
 
 ## Feature Gallery
 

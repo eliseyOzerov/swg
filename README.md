@@ -1,6 +1,6 @@
 # swg
 
-Swift Vector Graphics. `swg` is an independent Swift package for parsing SVG files into a strongly typed model that can feed `CGPath` conversion and, over time, an `SWG` SwiftUI view.
+Swift Vector Graphics. `swg` is an independent Swift package for parsing SVG files into a strongly typed model, converting supported geometry into `CGPath`, editing the parsed document tree, and displaying SVG content with `SVGView`/`SWGView` in SwiftUI.
 
 The package has no third-party dependencies. XML parsing uses Foundation's `XMLParser`, with `FoundationXML` imported on platforms where that module is split out.
 
@@ -8,7 +8,9 @@ The package has no third-party dependencies. XML parsing uses Foundation's `XMLP
 
 The parser is built around the SVG 2 specification and is tracked by a test-gated checklist in [TODO.md](TODO.md). A checklist item is checked only when there is a focused test for that feature.
 
-Current coverage is parser/model coverage, not full browser-equivalent rendering. The gallery below shows the visual TODO groups with SVG examples that are parsed by `swg` and rasterized to PNG by a Swift playground.
+Current coverage is strongest in parser/model behavior. The native SwiftUI renderer displays the shape/path/container subset that can already map through `CGPath`; browser-equivalent rendering for text, gradients, filters, masks, clipping, markers, images, and animation is still renderer work in progress even though much of that structure is parsed and modeled.
+
+The gallery below shows visual TODO groups with SVG examples that are parsed by `swg` and rasterized to PNG by a Swift playground.
 
 ## Supported Feature Gallery
 
@@ -128,6 +130,53 @@ Then add the product to your target:
 )
 ```
 
+## Displaying SVG
+
+Use `SVGView` when you already have an `SVGDocument`, or `SWGView` if you prefer the package-flavored alias:
+
+```swift
+import SwiftUI
+import Swg
+
+struct IconPreview: View {
+	let document: SVGDocument
+
+	var body: some View {
+		SWGView(document)
+			.frame(width: 120, height: 120)
+	}
+}
+```
+
+You can also construct a view directly from SVG source:
+
+```swift
+let source = """
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+	<circle id="dot" cx="12" cy="12" r="6" fill="#336699"/>
+</svg>
+"""
+
+if let view = SVGView(svg: source) {
+	view.frame(width: 48, height: 48)
+}
+```
+
+`SVGRenderOptions` controls SwiftUI layout and root mapping:
+
+```swift
+SVGView(
+	document,
+	options: SVGRenderOptions(
+		contentMode: .fit,
+		preserveAspectRatio: .default,
+		opacity: 0.8
+	)
+)
+```
+
+The current renderer supports native drawing for paths, rectangles, circles, ellipses, lines, polygons, polylines, groups, links, nested SVG viewports, `switch`, `foreignObject` SVG children, unknown SVG containers, and simple `use` references. Unsupported visual paint servers and advanced effects are preserved in the model but skipped by the SwiftUI renderer for now.
+
 ## Parsing
 
 Use `SVGParser` to turn SVG XML into an `SVGDocument`:
@@ -151,6 +200,34 @@ print(document.elementIDs)
 
 `SVGDocument` exposes the root view box, root elements, definitions, metadata, animation records, scripts, and preserved unknown attributes. The element tree is represented by `SVGElement`, with typed data records for shapes, containers, text, images, links, definitions, filters, gradients, patterns, masks, clips, and other SVG constructs.
 
+## Controlling the Document
+
+`SVGDocument` is regular Swift data. You can look up elements by `id`, map the tree, and edit presentation attributes before rendering:
+
+```swift
+let highlighted = document.modifyingElement(id: "mark") { element in
+	element.modifyingAttributes { attributes in
+		attributes.stroke = .color(.red)
+		attributes.strokeWidth = 3
+		attributes.transform = attributes.transform.scaledBy(x: 1.15, y: 1.15)
+	}
+}
+
+SWGView(highlighted)
+```
+
+For broad changes, map every element recursively:
+
+```swift
+let muted = document.mapElements { element in
+	element.modifyingAttributes { attributes in
+		attributes.opacity *= 0.5
+	}
+}
+```
+
+This is the intended control surface for stateful SwiftUI usage: keep the source SVG as a parsed document, derive edited copies from app state, then render the copy with `SVGView`.
+
 ## Paths
 
 SVG path data is parsed into the package's editable `Path` model:
@@ -165,11 +242,12 @@ Shape data types that have direct geometry can also expose equivalent paths:
 ```swift
 if case .rect(let rect) = document.elements.first {
 	let path = rect.path
-	print(path.commands)
+	let cgPath = path.cgPath
+	print(cgPath.boundingBox)
 }
 ```
 
-These helpers are the bridge toward platform renderers. The package model is platform-neutral; CoreGraphics conversion currently lives in tests as validation scaffolding rather than public API.
+These helpers are the geometry bridge used by the SwiftUI renderer and by callers that want to feed SVG geometry into CoreGraphics directly.
 
 ## Styling
 
@@ -183,36 +261,7 @@ Run the package's iOS simulator test gate with:
 xcodebuild test -scheme swg -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 ```
 
-The suite contains focused parser/model tests plus fixture-backed visual tests.
-
-## Visual Tests
-
-Visual validation lives in `Tests/SwgTests/SVGVisualValidationTests.swift`. Each visual case pairs an SVG fixture with a text golden:
-
-| Test | Expected raster |
-| --- | --- |
-| `basic-paint` | ![Basic paint expected raster](docs/visual-tests/basic-paint-preview.svg) |
-| `transforms` | ![Transforms expected raster](docs/visual-tests/transforms-preview.svg) |
-
-```text
-Tests/SwgTests/VisualFixtures/basic-paint.svg
-Tests/SwgTests/VisualFixtures/basic-paint.golden.txt
-```
-
-The test rasterizer parses the SVG, renders the supported visual subset into a deterministic CoreGraphics bitmap with antialiasing disabled, then compares the output against the golden rows. Golden files are written top-to-bottom in SVG/user-space order.
-
-Golden symbols:
-
-```text
-. transparent
-W white
-R red
-G green
-B blue
-? opaque color outside the named buckets
-```
-
-Current starter fixtures cover basic paint and transform behavior. The supported feature gallery above is generated from larger documentation examples; these visual tests stay intentionally tiny so they are easy to diff as regression fixtures. As rendering support grows, render-affecting spec items should receive visual fixtures in addition to their focused parser tests. Purely structural or metadata features can stay parser-only unless they affect rendered output.
+The suite contains focused parser/model tests, public rendering API tests, document-control tests, and fixture-backed visual tests.
 
 ## Documentation
 
