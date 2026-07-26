@@ -165,8 +165,9 @@ if let view = SVG(source: source) {
 Or let the view load SVG XML after it appears:
 
 ```swift
+SVG("checkmark")
+SVG("Icons/checkmark.svg", bundle: .main)
 SVG(url: URL(string: "https://example.com/icons/check.svg")!)
-SVG(asset: "checkmark", bundle: .main)
 SVG(file: cachedSVGURL)
 ```
 

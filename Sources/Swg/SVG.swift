@@ -67,6 +67,20 @@ public struct SVG: View {
 		self.init(document, options: options)
 	}
 
+	/// Creates a SwiftUI SVG view that loads SVG XML from a bundled resource path.
+	///
+	/// This mirrors SwiftUI's `Image` initializer for the common bundled-asset case. Pass `"checkmark"` for `checkmark.svg`, or a relative path such as `"Icons/checkmark.svg"` for a resource in a bundle subdirectory.
+	///
+	/// - Parameters:
+	///   - assetPath: The bundled SVG resource name or relative path.
+	///   - bundle: The bundle that contains the SVG resource.
+	///   - document: An optional binding that receives the parsed document after loading.
+	///   - options: Rendering and layout options for the root drawing pass.
+	public init(_ assetPath: String, bundle: Bundle = .main, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
+		let url = SVGBundleResource.url(for: assetPath, in: bundle)
+		self.init(initialDocument: nil, boundDocument: document, loadSource: url.map(SVGLoadSource.file), options: options)
+	}
+
 	/// Creates a SwiftUI SVG view that loads SVG XML from a network URL.
 	///
 	/// - Parameters:
@@ -220,6 +234,23 @@ enum SVGDocumentLoader {
 			data = try Data(contentsOf: url)
 		}
 		return SVGParser().parse(data)
+	}
+}
+
+enum SVGBundleResource {
+	static func url(for path: String, in bundle: Bundle) -> URL? {
+		let filePath = path as NSString
+		let fileExtension = filePath.pathExtension.isEmpty ? "svg" : filePath.pathExtension
+		let pathWithoutExtension = filePath.pathExtension.isEmpty ? path : filePath.deletingPathExtension
+		let resourcePath = pathWithoutExtension as NSString
+		let name = resourcePath.lastPathComponent
+		let directory = resourcePath.deletingLastPathComponent
+		let subdirectory = directory.isEmpty || directory == "." ? nil : directory
+
+		return bundle.url(forResource: name, withExtension: fileExtension, subdirectory: subdirectory)
+			?? bundle.url(forResource: pathWithoutExtension, withExtension: fileExtension)
+			?? bundle.url(forResource: name, withExtension: fileExtension)
+			?? bundle.url(forResource: path, withExtension: nil)
 	}
 }
 

@@ -33,10 +33,11 @@ Use ``SVG/init(url:document:options:)`` to load SVG XML from a network URL:
 SVG(url: URL(string: "https://example.com/icons/check.svg")!)
 ```
 
-Use ``SVG/init(asset:bundle:fileExtension:subdirectory:document:options:)`` to load a bundled SVG resource:
+Use ``SVG/init(_:bundle:document:options:)`` to load a bundled SVG resource by name or relative path:
 
 ```swift
-SVG(asset: "checkmark", bundle: .main)
+SVG("checkmark")
+SVG("Icons/checkmark.svg", bundle: .main)
 ```
 
 Use the file URL or filesystem path initializers to load cached or downloaded SVG XML from the app's filesystem:

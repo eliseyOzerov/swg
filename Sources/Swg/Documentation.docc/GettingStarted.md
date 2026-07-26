@@ -45,8 +45,9 @@ let view = SVG(source: source)
 You can also load SVG XML after the view appears:
 
 ```swift
+SVG("checkmark")
+SVG("Icons/checkmark.svg", bundle: .main)
 SVG(url: URL(string: "https://example.com/icons/check.svg")!)
-SVG(asset: "checkmark", bundle: .main)
 SVG(file: cachedSVGURL)
 ```
 
@@ -54,6 +55,7 @@ Use a document binding when your app wants to keep the parsed document and custo
 
 ```swift
 struct RemoteIcon: View {
+	let iconURL: URL
 	@State private var document: SVGDocument?
 
 	var body: some View {
