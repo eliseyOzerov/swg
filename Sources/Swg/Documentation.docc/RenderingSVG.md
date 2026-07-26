@@ -87,7 +87,7 @@ The native renderer currently draws:
 - Simple ``SVGUseData`` references to reusable elements and symbols.
 - Solid fill and stroke paint, fill opacity, stroke opacity, fill rules, stroke width, line caps, line joins, dash arrays, paint order, opacity, display, visibility, and transforms.
 
-The parser also preserves text, gradients, patterns, masks, clipping, filters, markers, images, metadata, scripts, and animation records. Basic linear gradients, radial gradients, and pattern fills render natively; the rest remains available in the model even when the SwiftUI renderer skips or simplifies the visual behavior.
+The parser also preserves text, gradients, patterns, masks, clipping, filters, markers, images, metadata, scripts, and animation records. Basic linear gradients, radial gradients, spread methods, and pattern fills render natively; the rest remains available in the model even when the SwiftUI renderer skips or simplifies the visual behavior.
 
 ## Use CoreGraphics Directly
 

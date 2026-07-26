@@ -19,7 +19,7 @@ struct FeatureExample {
 let duotoneLight = "#e5e7eb"
 let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "paint-servers"
+let galleryAssetVersion = "paint-spread"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -329,10 +329,10 @@ let gradientAndPatternExamples = [
 	example("gradient-spread-pad", "spreadMethod pad", "Gradients and Patterns", .rendered, "Pad spread extends endpoint colors natively.") {
 		##"<defs><linearGradient id="g" x2=".35" spreadMethod="pad"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect x="22" y="18" width="76" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-spread-reflect", "spreadMethod reflect", "Gradients and Patterns", .modelOnly, "Reflect spread is model-only today.") {
+	example("gradient-spread-reflect", "spreadMethod reflect", "Gradients and Patterns", .rendered, "Reflect spread mirrors gradient stops natively.") {
 		##"<defs><linearGradient id="g" x2=".35" spreadMethod="reflect"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect x="22" y="18" width="76" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-spread-repeat", "spreadMethod repeat", "Gradients and Patterns", .modelOnly, "Repeat spread is model-only today.") {
+	example("gradient-spread-repeat", "spreadMethod repeat", "Gradients and Patterns", .rendered, "Repeat spread tiles gradient stops natively.") {
 		##"<defs><linearGradient id="g" x2=".35" spreadMethod="repeat"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect x="22" y="18" width="76" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
 	example("pattern", "<pattern>", "Gradients and Patterns", .rendered, "Simple pattern paint servers tile native SVG children.") {

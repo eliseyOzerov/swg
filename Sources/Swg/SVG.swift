@@ -482,37 +482,78 @@ private struct SVGCanvasRenderer {
 	}
 
 	private func linearGradientShading(_ gradient: SVGLinearGradientDef, opacity: Double, bounds: Rect) -> GraphicsContext.Shading? {
-		let stops = gradientStops(gradient.stops, opacity: opacity)
-		guard !stops.isEmpty else { return nil }
+		let stops = gradientStops(gradient.stops, opacity: opacity, padEndpoints: gradient.spreadMethod != .pad)
+		guard let firstStop = stops.first else { return nil }
 		let start = gradientPoint(x: gradient.x1, y: gradient.y1, units: gradient.gradientUnits, bounds: bounds)
 			.applying(gradient.gradientTransform)
 		let end = gradientPoint(x: gradient.x2, y: gradient.y2, units: gradient.gradientUnits, bounds: bounds)
 			.applying(gradient.gradientTransform)
+		guard let spread = spreadStops(stops, method: gradient.spreadMethod, lowerBound: linearGradientLowerBound(start: start, end: end, bounds: bounds), upperBound: linearGradientUpperBound(start: start, end: end, bounds: bounds)) else {
+			return .color(firstStop.color)
+		}
+		let vector = end - start
+		let spreadStart = start + vector * spread.lowerBound
+		let spreadEnd = start + vector * spread.upperBound
 		return .linearGradient(
-			Gradient(stops: stops),
-			startPoint: start.cgPoint,
-			endPoint: end.cgPoint
+			Gradient(stops: spread.stops),
+			startPoint: spreadStart.cgPoint,
+			endPoint: spreadEnd.cgPoint
 		)
 	}
 
 	private func radialGradientShading(_ gradient: SVGRadialGradientDef, opacity: Double, bounds: Rect) -> GraphicsContext.Shading? {
-		let stops = gradientStops(gradient.stops, opacity: opacity)
-		guard !stops.isEmpty else { return nil }
+		let stops = gradientStops(gradient.stops, opacity: opacity, padEndpoints: gradient.spreadMethod != .pad)
+		guard let firstStop = stops.first else { return nil }
 		let center = gradientPoint(x: gradient.cx, y: gradient.cy, units: gradient.gradientUnits, bounds: bounds)
 			.applying(gradient.gradientTransform)
 		let radius = gradientRadius(gradient.r, units: gradient.gradientUnits, bounds: bounds)
 		let startRadius = gradientRadius(gradient.fr, units: gradient.gradientUnits, bounds: bounds)
+		let radiusDelta = radius - startRadius
+		guard let spread = spreadStops(stops, method: gradient.spreadMethod, lowerBound: 0, upperBound: radialGradientUpperBound(center: center, startRadius: startRadius, radiusDelta: radiusDelta, bounds: bounds)) else {
+			return .color(firstStop.color)
+		}
 		return .radialGradient(
-			Gradient(stops: stops),
+			Gradient(stops: spread.stops),
 			center: center.cgPoint,
-			startRadius: CGFloat(startRadius),
-			endRadius: CGFloat(radius)
+			startRadius: CGFloat(max(0, startRadius + spread.lowerBound * radiusDelta)),
+			endRadius: CGFloat(max(0, startRadius + spread.upperBound * radiusDelta))
 		)
 	}
 
-	private func gradientStops(_ stops: [SVGGradientStop], opacity: Double) -> [Gradient.Stop] {
-		stops.map { stop in
-			Gradient.Stop(color: swiftUIColor(from: stop.color, opacity: opacity * stop.opacity), location: stop.offset)
+	private func gradientStops(_ stops: [SVGGradientStop], opacity: Double, padEndpoints: Bool = false) -> [GradientPaintStop] {
+		var paintStops = stops.map { stop in
+			GradientPaintStop(color: swiftUIColor(from: stop.color, opacity: opacity * stop.opacity), offset: stop.offset)
+		}.sorted { $0.offset < $1.offset }
+		if padEndpoints, let first = paintStops.first, first.offset > 0 {
+			paintStops.insert(GradientPaintStop(color: first.color, offset: 0), at: 0)
+		}
+		if padEndpoints, let last = paintStops.last, last.offset < 1 {
+			paintStops.append(GradientPaintStop(color: last.color, offset: 1))
+		}
+		return paintStops
+	}
+
+	private func spreadStops(_ stops: [GradientPaintStop], method: SVGGradientSpreadMethod, lowerBound: Double?, upperBound: Double?) -> SpreadGradientStops? {
+		guard let lowerBound, let upperBound, lowerBound.isFinite, upperBound.isFinite, upperBound > lowerBound else { return nil }
+		switch method {
+		case .pad:
+			return SpreadGradientStops(lowerBound: 0, upperBound: 1, stops: stops.map(\.gradientStop))
+		case .repeat, .reflect:
+			let firstCycle = floor(lowerBound)
+			let lastCycle = ceil(upperBound)
+			let cycleCount = Int(lastCycle - firstCycle)
+			guard cycleCount > 0, cycleCount <= 512 else { return nil }
+			let denominator = lastCycle - firstCycle
+			let spreadStops = (0..<cycleCount).flatMap { cycleIndex in
+				let cycle = firstCycle + Double(cycleIndex)
+				let reflectedCycle = method == .reflect && Int(cycle) % 2 != 0
+				let cycleStops = reflectedCycle ? Array(stops.reversed()) : stops
+				return cycleStops.map { stop in
+					let offset = reflectedCycle ? 1 - stop.offset : stop.offset
+					return Gradient.Stop(color: stop.color, location: (cycle + offset - firstCycle) / denominator)
+				}
+			}.sorted { $0.location < $1.location }
+			return SpreadGradientStops(lowerBound: firstCycle, upperBound: lastCycle, stops: spreadStops)
 		}
 	}
 
@@ -532,6 +573,31 @@ private struct SVGCanvasRenderer {
 		case .objectBoundingBox:
 			radius * max(bounds.width, bounds.height)
 		}
+	}
+
+	private func linearGradientLowerBound(start: Point, end: Point, bounds: Rect) -> Double? {
+		linearGradientProjections(start: start, end: end, bounds: bounds)?.min()
+	}
+
+	private func linearGradientUpperBound(start: Point, end: Point, bounds: Rect) -> Double? {
+		linearGradientProjections(start: start, end: end, bounds: bounds)?.max()
+	}
+
+	private func linearGradientProjections(start: Point, end: Point, bounds: Rect) -> [Double]? {
+		let vector = end - start
+		let lengthSquared = vector.x * vector.x + vector.y * vector.y
+		guard lengthSquared > 0 else { return nil }
+		return [bounds.topLeft, bounds.topRight, bounds.bottomRight, bounds.bottomLeft].map { point in
+			let relative = point - start
+			return (relative.x * vector.x + relative.y * vector.y) / lengthSquared
+		}
+	}
+
+	private func radialGradientUpperBound(center: Point, startRadius: Double, radiusDelta: Double, bounds: Rect) -> Double? {
+		guard radiusDelta > 0 else { return nil }
+		return [bounds.topLeft, bounds.topRight, bounds.bottomRight, bounds.bottomLeft]
+			.map { (max(0, $0.distance(to: center) - startRadius)) / radiusDelta }
+			.max()
 	}
 
 	private func patternID(from paint: SVGPaint) -> String? {
@@ -560,6 +626,23 @@ private struct SVGCanvasRenderer {
 	private func swiftUIColor(from color: Color, opacity: Double) -> SwiftUI.Color {
 		SwiftUI.Color(red: color.red, green: color.green, blue: color.blue, opacity: color.alpha * opacity)
 	}
+}
+
+/// A native SwiftUI gradient stop prepared from an SVG `<stop>` element.
+private struct GradientPaintStop {
+	var color: SwiftUI.Color
+	var offset: Double
+
+	var gradientStop: Gradient.Stop {
+		Gradient.Stop(color: color, location: offset)
+	}
+}
+
+/// A synthesized stop list and coordinate span for a spread gradient.
+private struct SpreadGradientStops {
+	var lowerBound: Double
+	var upperBound: Double
+	var stops: [Gradient.Stop]
 }
 
 private extension Rect {
