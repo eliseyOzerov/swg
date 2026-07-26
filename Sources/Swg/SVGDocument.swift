@@ -890,6 +890,7 @@ public enum SVGGradientUnits: Sendable, Equatable, Hashable {
 /// Behavior for extending a gradient outside its defined vector or circles.
 public enum SVGGradientSpreadMethod: Sendable, Equatable, Hashable {
 	case pad
+	case reflect
 }
 
 /// A parsed SVG `<filter>` definition.

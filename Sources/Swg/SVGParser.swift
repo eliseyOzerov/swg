@@ -875,6 +875,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		switch value {
 		case "pad":
 			.pad
+		case "reflect":
+			.reflect
 		default:
 			nil
 		}
