@@ -195,7 +195,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Reuse and Linking
 
 - [x] `href`.
-- [ ] `xlink:href`.
+- [x] `xlink:href`.
 
 ## Markers
 

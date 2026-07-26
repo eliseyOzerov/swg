@@ -1,0 +1,190 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: xlink-href
+  title: SVG deprecated xlink:href URL reference attribute
+  domain: SVG Linking
+  profile: null
+  summary: Requirements for backwards-compatible preservation of the deprecated XLink `xlink:href` URL reference attribute.
+  non_goals:
+    - Preferring `xlink:href` over unnamespaced `href` when both are present.
+    - Implementing full XLink semantics beyond the SVG compatibility attribute.
+    - Network fetching, CORS, security mode, or external resource loading.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-deprecated-xlink-url-reference-attributes
+      title: SVG 2, Linking - Deprecated XLink URL reference attributes
+      url: https://www.w3.org/TR/SVG/linking.html#XLinkRefAttrs
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-valid-url-targets
+      title: SVG 2, Linking - Valid URL targets
+      url: https://www.w3.org/TR/SVG/linking.html#ValidURLTargets
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C linking chapter.
+
+scope:
+  includes:
+    - Recognition of deprecated `xlink:href` as a backwards-compatible URL reference attribute.
+    - Preservation of `xlink:href` on supported SVG resource-reference elements when unnamespaced `href` is absent.
+    - Use of an explicit XLink namespace declaration in test fixtures.
+  excludes:
+    - Modern unnamespaced `href`, covered by the adjacent checklist item.
+    - Complete XLink processing.
+    - Fetching or validating referenced resources.
+  assumptions:
+    - Parser output may map `xlink:href` into the same internal reference fields used for `href` when no unnamespaced `href` value is present.
+
+terminology:
+  - id: term-xlink-href
+    term: xlink:href
+    definition: The deprecated XLink-namespaced SVG URL reference attribute retained for backwards compatibility with earlier SVG content.
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+
+structures:
+  - id: S001
+    name: xlink:href
+    kind: attribute
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+    fields:
+      - name: value
+        type: URL
+        cardinality: optional
+        position: XLink-namespaced attribute
+        constraints:
+          - Deprecated in SVG 2.
+          - Requires an explicit XLink namespace declaration when used.
+          - Preserves backwards compatibility for URL references.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-deprecated-xlink-url-reference-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must support deprecated `xlink:href` URL reference attributes for backwards compatibility when the unnamespaced `href` attribute is absent.
+    applies_to:
+      - xlink:href
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: conformance
+    statement: Content using deprecated `xlink:href` must provide an explicit XLink namespace declaration.
+    applies_to:
+      - xlink:href
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must preserve `xlink:href` URL reference values on supported elements that reference linked destinations or resources.
+    applies_to:
+      - a
+      - image
+      - linearGradient
+      - radialGradient
+      - pattern
+      - textPath
+      - use
+      - feImage
+    source_refs:
+      - svg2-valid-url-targets
+      - svg2-deprecated-xlink-url-reference-attributes
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: SHOULD
+    kind: recommendation
+    statement: New SVG content should use unnamespaced `href` instead of deprecated `xlink:href`.
+    applies_to:
+      - authoring
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+    testability: reviewable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`xlink:href` is present without an explicit XLink namespace declaration."
+    source_behavior: INVALID
+    required_behavior: Parser behavior is not expanded in this bullet; fixtures and conforming input must include the XLink namespace declaration.
+    decision_required: false
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+
+recommendations:
+  - id: N001
+    normative_strength: RECOMMENDED
+    statement: Prefer unnamespaced `href` for new SVG 2 content.
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Internal representation
+    statement: The parser may store `xlink:href` fallback values in the same model fields used for `href` while separate tests cover precedence when both attributes are present.
+    allowed_by:
+      - R001
+      - R003
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: external-spec
+    title: XML Linking Language XLink namespace
+    reason: Deprecated attributes are in the XLink namespace and require namespace declaration.
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-valid-url-targets
+      - svg2-deprecated-xlink-url-reference-attributes
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-deprecated-xlink-url-reference-attributes
+    map_item_refs: []
