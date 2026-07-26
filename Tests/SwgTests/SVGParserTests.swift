@@ -589,7 +589,8 @@ private func expectConvolveMatrix(
 		surfaceScale: 1,
 		diffuseConstant: 1,
 		kernelUnitLengthX: nil,
-		kernelUnitLengthY: nil
+		kernelUnitLengthY: nil,
+		lightSource: nil
 	)
 	expectDiffuseLighting(
 		filter.primitives[1],
@@ -597,7 +598,8 @@ private func expectConvolveMatrix(
 		surfaceScale: 2.5,
 		diffuseConstant: 0,
 		kernelUnitLengthX: 0.25,
-		kernelUnitLengthY: 0.25
+		kernelUnitLengthY: 0.25,
+		lightSource: nil
 	)
 	expectDiffuseLighting(
 		filter.primitives[2],
@@ -605,7 +607,8 @@ private func expectConvolveMatrix(
 		surfaceScale: -3,
 		diffuseConstant: 4.5,
 		kernelUnitLengthX: 0.25,
-		kernelUnitLengthY: 0.5
+		kernelUnitLengthY: 0.5,
+		lightSource: nil
 	)
 	expectDiffuseLighting(
 		filter.primitives[3],
@@ -613,7 +616,8 @@ private func expectConvolveMatrix(
 		surfaceScale: 1,
 		diffuseConstant: 1,
 		kernelUnitLengthX: nil,
-		kernelUnitLengthY: nil
+		kernelUnitLengthY: nil,
+		lightSource: nil
 	)
 }
 
@@ -623,9 +627,10 @@ private func expectDiffuseLighting(
 	surfaceScale expectedSurfaceScale: Double,
 	diffuseConstant expectedDiffuseConstant: Double,
 	kernelUnitLengthX expectedKernelUnitLengthX: Double?,
-	kernelUnitLengthY expectedKernelUnitLengthY: Double?
+	kernelUnitLengthY expectedKernelUnitLengthY: Double?,
+	lightSource expectedLightSource: SVGFilterLightSource?
 ) {
-	guard case .diffuseLighting(let input, let surfaceScale, let diffuseConstant, let kernelUnitLengthX, let kernelUnitLengthY) = primitive else {
+	guard case .diffuseLighting(let input, let surfaceScale, let diffuseConstant, let kernelUnitLengthX, let kernelUnitLengthY, let lightSource) = primitive else {
 		Issue.record("Expected parsed feDiffuseLighting primitive")
 		return
 	}
@@ -634,6 +639,7 @@ private func expectDiffuseLighting(
 	#expect(diffuseConstant == expectedDiffuseConstant)
 	#expect(kernelUnitLengthX == expectedKernelUnitLengthX)
 	#expect(kernelUnitLengthY == expectedKernelUnitLengthY)
+	#expect(lightSource == expectedLightSource)
 }
 
 @Test func svgParserPreservesDisplacementMapPrimitiveAttributes() throws {
@@ -702,6 +708,55 @@ private func expectDisplacementMap(
 	#expect(scale == expectedScale)
 	#expect(xChannelSelector == expectedXChannelSelector)
 	#expect(yChannelSelector == expectedYChannelSelector)
+}
+
+@Test func svgParserPreservesDistantLightAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="distant">
+			<feDiffuseLighting>
+				<feDistantLight/>
+			</feDiffuseLighting>
+			<feDiffuseLighting>
+				<feDistantLight azimuth="45.5" elevation="-20"/>
+			</feDiffuseLighting>
+			<feDiffuseLighting>
+				<feDistantLight azimuth="bad" elevation="bad"/>
+			</feDiffuseLighting>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["distant"])
+	#expect(filter.primitives.count == 3)
+	expectDiffuseLighting(
+		filter.primitives[0],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .distantLight(azimuth: 0, elevation: 0)
+	)
+	expectDiffuseLighting(
+		filter.primitives[1],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .distantLight(azimuth: 45.5, elevation: -20)
+	)
+	expectDiffuseLighting(
+		filter.primitives[2],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .distantLight(azimuth: 0, elevation: 0)
+	)
 }
 
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {

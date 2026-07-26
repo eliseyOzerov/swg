@@ -1,0 +1,203 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-distant-light
+  title: SVG feDistantLight light source
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feDistantLight>` light source elements inside lighting filter primitives, including azimuth and elevation attributes.
+  non_goals:
+    - Computing light vectors from azimuth and elevation.
+    - Rendering diffuse or specular lighting.
+    - Parsing point or spot light sources.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-distant-light
+      title: "Filter Effects Module Level 1: Light source feDistantLight"
+      url: https://www.w3.org/TR/filter-effects-1/#feDistantLightElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-distant-light-interface
+      title: "Filter Effects Module Level 1: Interface SVGFEDistantLightElement"
+      url: https://www.w3.org/TR/filter-effects-1/#InterfaceSVGFEDistantLightElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-fe-diffuse-lighting
+      title: "Filter Effects Module Level 1: Filter primitive feDiffuseLighting"
+      url: https://www.w3.org/TR/filter-effects-1/#feDiffuseLightingElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`<feDistantLight>` is a light source element."
+    - "The `feDiffuseLighting` content model requires exactly one light source child; `feDistantLight` is one allowed light source."
+    - "`azimuth` is a number, measured clockwise in degrees from the x axis on the XY plane, and initially `0`."
+    - "`elevation` is a number, measured in degrees from the XY plane toward the Z axis, and initially `0`."
+    - "The DOM interface exposes `azimuth` and `elevation` attributes for the element."
+
+scope:
+  includes:
+    - "`<feDistantLight>` child elements inside lighting filter primitives."
+    - "`azimuth` and `elevation` attributes."
+  excludes:
+    - "Light vector math and rendering."
+    - "`<fePointLight>` and `<feSpotLight>`."
+    - "Specular lighting primitive storage before the `<feSpecularLighting>` TODO bullet."
+  assumptions:
+    - Swg stores parsed light sources as `SVGFilterLightSource` values attached to lighting primitives.
+    - Malformed numeric attributes fall back to their initial values.
+    - Negative azimuth and elevation values are preserved because both attributes are plain numbers.
+
+terminology:
+  - id: T001
+    term: feDistantLight
+    definition: An SVG light source that represents an infinite directional light described by azimuth and elevation angles.
+    source_refs:
+      - filter-effects-fe-distant-light
+  - id: T002
+    term: azimuth
+    definition: Direction angle for the light source on the XY plane, measured clockwise in degrees from the x axis.
+    source_refs:
+      - filter-effects-fe-distant-light
+  - id: T003
+    term: elevation
+    definition: Direction angle for the light source from the XY plane toward the Z axis, measured in degrees.
+    source_refs:
+      - filter-effects-fe-distant-light
+
+structures:
+  - id: S001
+    name: SVGFilterLightSource.distantLight
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-distant-light
+      - filter-effects-distant-light-interface
+    fields:
+      - name: azimuth
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+          - Preserves numeric degree values.
+        requirement_refs:
+          - R001
+      - name: elevation
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+          - Preserves numeric degree values.
+        requirement_refs:
+          - R002
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: "`azimuth` must parse as a number and default to `0` when omitted or malformed."
+    applies_to:
+      - SVGFilterLightSource.distantLight
+    source_refs:
+      - filter-effects-fe-distant-light
+      - filter-effects-distant-light-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDistantLightAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`elevation` must parse as a number and default to `0` when omitted or malformed."
+    applies_to:
+      - SVGFilterLightSource.distantLight
+    source_refs:
+      - filter-effects-fe-distant-light
+      - filter-effects-distant-light-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDistantLightAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feDistantLight>` must be representable as a light source child of a lighting filter primitive."
+    applies_to:
+      - SVGFilterPrimitive.diffuseLighting
+      - SVGFilterLightSource.distantLight
+    source_refs:
+      - filter-effects-fe-distant-light
+      - filter-effects-fe-diffuse-lighting
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDistantLightAttributes
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`azimuth` or `elevation` is malformed."
+    source_behavior: UNSPECIFIED
+    required_behavior: "Use the initial value `0`."
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-distant-light
+
+recommendations: []
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Specular-lighting attachment
+    statement: "Attaching light sources to `<feSpecularLighting>` is deferred until that primitive is implemented."
+    allowed_by:
+      - R003
+    source_refs:
+      - filter-effects-fe-distant-light
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: "Filter primitive feDiffuseLighting"
+    reason: "`<feDistantLight>` is meaningful as a child of lighting filter primitives."
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-distant-light
+      - filter-effects-distant-light-interface
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-distant-light
+      - filter-effects-distant-light-interface
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-distant-light
+      - filter-effects-fe-diffuse-lighting
+    map_item_refs: []

@@ -199,6 +199,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var patternElementStack: [SVGElementBuilder] = []
 	private var currentFilter: SVGFilterDef?
 	private var currentComponentTransferIndex: Int?
+	private var currentLightingPrimitiveIndex: Int?
 	private var inMask = false
 	private var currentMaskID: String?
 	private var currentMaskUnits: SVGMaskUnits = .objectBoundingBox
@@ -428,6 +429,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				kernelUnitLengthX: kernelUnitLength.x,
 				kernelUnitLengthY: kernelUnitLength.y
 			))
+			currentLightingPrimitiveIndex = currentFilter?.primitives.indices.last
 		case "feDisplacementMap":
 			currentFilter?.primitives.append(.displacementMap(
 				input: attributes["in"],
@@ -435,6 +437,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				scale: attributes["scale"].flatMap(parseNumber) ?? 0,
 				xChannelSelector: parseFilterChannelSelector(attributes["xChannelSelector"]),
 				yChannelSelector: parseFilterChannelSelector(attributes["yChannelSelector"])
+			))
+		case "feDistantLight":
+			setFilterLightSource(.distantLight(
+				azimuth: attributes["azimuth"].flatMap(parseNumber) ?? 0,
+				elevation: attributes["elevation"].flatMap(parseNumber) ?? 0
 			))
 		case "feFuncR":
 			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .red)
@@ -597,6 +604,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentFilter = nil
 		case "feComponentTransfer":
 			currentComponentTransferIndex = nil
+		case "feDiffuseLighting":
+			currentLightingPrimitiveIndex = nil
 		case "mask":
 			if let id = currentMaskID {
 				defs.masks[id] = SVGMaskDef(id: id, maskUnits: currentMaskUnits, maskContentUnits: currentMaskContentUnits, children: maskElements)
@@ -646,6 +655,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		patternElementStack = []
 		currentFilter = nil
 		currentComponentTransferIndex = nil
+		currentLightingPrimitiveIndex = nil
 		inMask = false
 		currentMaskID = nil
 		currentMaskUnits = .objectBoundingBox
@@ -1188,6 +1198,29 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		else { return }
 		functions[channel] = function
 		filter.primitives[index] = .componentTransfer(input: input, functions: functions)
+		currentFilter = filter
+	}
+
+	private func setFilterLightSource(_ lightSource: SVGFilterLightSource) {
+		guard
+			let index = currentLightingPrimitiveIndex,
+			var filter = currentFilter,
+			filter.primitives.indices.contains(index)
+		else { return }
+
+		switch filter.primitives[index] {
+		case .diffuseLighting(let input, let surfaceScale, let diffuseConstant, let kernelUnitLengthX, let kernelUnitLengthY, _):
+			filter.primitives[index] = .diffuseLighting(
+				input: input,
+				surfaceScale: surfaceScale,
+				diffuseConstant: diffuseConstant,
+				kernelUnitLengthX: kernelUnitLengthX,
+				kernelUnitLengthY: kernelUnitLengthY,
+				lightSource: lightSource
+			)
+		default:
+			return
+		}
 		currentFilter = filter
 	}
 
