@@ -370,6 +370,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "set":
 			parseSet(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .animation
+		case "discard":
+			parseDiscard(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .animation
 		case "style":
 			inStyleElement = true
 			styleMediaApplies = styleMediaMatches(attributes["media"])
@@ -1864,6 +1867,24 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			toValue: attributes["to"],
 			language: currentLanguage,
 			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "to"])
+		)))
+	}
+
+	private func parseDiscard(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "Discard")
+		setCurrentParsedElementID(id)
+		let target: SVGAnimationTarget?
+		if let raw = attributes["href"], let reference = SVGURLParser.parse(raw) {
+			target = .href(reference.rawValue)
+		} else {
+			target = currentAnimationParent()
+		}
+		animations.append(.discard(SVGDiscardData(
+			id: id,
+			target: target,
+			begin: attributes["begin"] ?? "0s",
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "begin"])
 		)))
 	}
 

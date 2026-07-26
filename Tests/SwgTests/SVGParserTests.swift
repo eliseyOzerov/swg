@@ -5414,6 +5414,49 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(hide.toValue == "none")
 }
 
+@Test func svgParserPreservesDiscardElementsAsAnimationData() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
+		<g id="layer">
+			<rect id="tile" width="10" height="10"/>
+			<discard id="drop" begin="2s"/>
+			<discard id="legacy" xlink:href="#tile"/>
+		</g>
+		<discard id="clear" href="#tile"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["layer", "tile"])
+	#expect(document.animations.count == 3)
+
+	guard case .discard(let drop) = document.animations[0] else {
+		Issue.record("Expected first animation to be discard")
+		return
+	}
+	#expect(drop.id == "drop")
+	#expect(drop.target == .parent(id: "layer"))
+	#expect(drop.begin == "2s")
+
+	guard case .discard(let legacy) = document.animations[1] else {
+		Issue.record("Expected second animation to be discard")
+		return
+	}
+	#expect(legacy.id == "legacy")
+	#expect(legacy.target == .parent(id: "layer"))
+	#expect(legacy.begin == "0s")
+	#expect(legacy.unknownAttributes["xlink:href"] == "#tile")
+
+	guard case .discard(let clear) = document.animations[2] else {
+		Issue.record("Expected third animation to be discard")
+		return
+	}
+	#expect(clear.id == "clear")
+	#expect(clear.target == .href("#tile"))
+	#expect(clear.begin == "0s")
+}
+
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">

@@ -1,0 +1,252 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: discard
+  title: SVG discard element
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for recognizing SVG `<discard>` elements and preserving their target relationship plus raw activation time for later timed removal behavior.
+  non_goals:
+    - Removing elements from parser output or implementing runtime discard behavior.
+    - Timeline playback, seeking behavior, or memory management.
+    - Full `begin` value-list parsing beyond preserving the raw attribute value.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-wd-discard-element
+      title: SVG 2 Working Draft 9 July 2015, The discard element
+      url: https://www.w3.org/TR/2015/WD-SVG2-20150709/struct.html#DiscardElement
+      version: W3C Working Draft 9 July 2015
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-target-element
+      title: SVG Animations Level 2, Attributes to identify the target element for an animation
+      url: https://svgwg.org/specs/animations/#TargetElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - The current SVG Animations Level 2 draft does not include a `<discard>` element section; this artifact uses the SVG 2 Working Draft section that defines it and references the current animation target rules where applicable.
+
+scope:
+  includes:
+    - Recognition of `<discard>` as an SVG animation/timed element.
+    - Preservation of each parsed `<discard>` outside the normal renderable element tree.
+    - Preservation of the target relationship from unnamespaced `href` or, when omitted, the immediate parent element.
+    - Preservation of the `begin` activation time as a raw string with its `0s` initial value.
+    - Preservation of language and uninterpreted non-namespace attributes.
+  excludes:
+    - Removing the target element or the discard element from the parsed document.
+    - Re-insertion or seeking semantics.
+    - Deprecated `xlink:href` target support; `<discard>` does not support it.
+  assumptions:
+    - Parser output may store discard elements in the document-level animation collection for later timeline processing.
+    - Parser-only processing should retain the original target element in `document.elements`.
+
+terminology:
+  - id: term-discard
+    term: discard
+    definition: A timed SVG element that specifies when another element is discarded from the document tree.
+    source_refs:
+      - svg2-wd-discard-element
+  - id: term-target-element
+    term: target element
+    definition: The element identified for removal by a `<discard>` element.
+    source_refs:
+      - svg2-wd-discard-element
+
+structures:
+  - id: S001
+    name: discard
+    kind: element
+    source_refs:
+      - svg2-wd-discard-element
+    fields:
+      - name: id
+        type: string
+        cardinality: optional
+        position: core-attribute
+        constraints:
+          - Identifies the discard element.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-wd-discard-element
+      - name: href
+        type: URL
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the target element to discard.
+          - If omitted, the immediate parent element is the target.
+          - Deprecated `xlink:href` is not supported on `<discard>`.
+        requirement_refs:
+          - R003
+          - R004
+          - R005
+        source_refs:
+          - svg2-wd-discard-element
+      - name: begin
+        type: begin-value-list
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Indicates when the target element will be discarded.
+          - Initial value is 0s.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-wd-discard-element
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must recognize `<discard>` as SVG timed discard data.
+    applies_to:
+      - discard
+    source_refs:
+      - svg2-wd-discard-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A parsed `<discard>` element must be preserved as animation data and must not be emitted as a directly rendered SVG element.
+    applies_to:
+      - discard
+    source_refs:
+      - svg2-wd-discard-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: If unnamespaced `href` is present on `<discard>`, its URL reference must be preserved as the explicit discard target reference.
+    applies_to:
+      - discard href
+    source_refs:
+      - svg2-wd-discard-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` is omitted, the discard target must be represented as the immediate parent element.
+    applies_to:
+      - discard implicit target
+    source_refs:
+      - svg2-wd-discard-element
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Deprecated `xlink:href` must not be interpreted as a `<discard>` target.
+    applies_to:
+      - discard xlink:href
+    source_refs:
+      - svg2-wd-discard-element
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: structure
+    statement: The `begin` value must be preserved and must default to `0s` when omitted.
+    applies_to:
+      - discard begin
+    source_refs:
+      - svg2-wd-discard-element
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: Parser-only processing must retain the target element in the document tree rather than applying removal immediately.
+    applies_to:
+      - discard parser output
+    source_refs:
+      - svg2-wd-discard-element
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: The `href` target is missing, invalid, or outside the current SVG document fragment.
+    source_behavior: REMOVE_DISCARD_ELEMENT_AFTER_ACTIVATION
+    required_behavior: Preserve the parsed discard record and leave activation behavior to later timeline processing.
+    decision_required: false
+    source_refs:
+      - svg2-wd-discard-element
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The parser may store `<discard>` elements in `SVGDocument` animation data rather than as drawable `SVGElement` cases.
+    allowed_by:
+      - R001
+      - R002
+      - R007
+    source_refs:
+      - svg2-wd-discard-element
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: work-item
+    title: Animation timing attributes
+    reason: The `begin` value-list needs typed timing parsing in a separate checklist item.
+    source_refs:
+      - svg2-wd-discard-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-wd-discard-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-wd-discard-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-wd-discard-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-wd-discard-element
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-wd-discard-element
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-wd-discard-element
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-wd-discard-element
+    map_item_refs: []

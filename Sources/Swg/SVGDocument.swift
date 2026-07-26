@@ -72,6 +72,7 @@ public enum SVGAnimationElement: Equatable, Sendable {
 	case animateMotion(SVGAnimateMotionData)
 	case animateTransform(SVGAnimateTransformData)
 	case set(SVGSetData)
+	case discard(SVGDiscardData)
 }
 
 /// The target relationship for an SVG animation element.
@@ -171,6 +172,23 @@ public struct SVGSetData: Equatable, Sendable {
 		self.target = target
 		self.attributeName = attributeName
 		self.toValue = toValue
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<discard>` element that removes a target after activation.
+public struct SVGDiscardData: Equatable, Sendable {
+	public let id: String
+	public let target: SVGAnimationTarget?
+	public let begin: String
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, target: SVGAnimationTarget? = nil, begin: String = "0s", language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.target = target
+		self.begin = begin
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
