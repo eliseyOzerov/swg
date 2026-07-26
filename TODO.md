@@ -212,7 +212,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<animate>`.
 - [x] `<animateMotion>`.
 - [x] `<animateTransform>`.
-- [ ] `<set>`.
+- [x] `<set>`.
 - [ ] `<discard>`.
 - [ ] `<mpath>`.
 - [ ] `begin`, `dur`, `end`, `min`, `max`.

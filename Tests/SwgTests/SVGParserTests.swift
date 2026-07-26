@@ -5376,6 +5376,44 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(slide.byValue == "10,20")
 }
 
+@Test func svgParserPreservesSetElementsAsAnimationData() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+		<text id="label" x="0" y="12">
+			Ready
+			<set id="show" attributeName="visibility" to="visible" begin="1s" additive="sum" accumulate="sum"/>
+		</text>
+		<set id="hide" href="#label" attributeName="display" to="none"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["label"])
+	#expect(document.animations.count == 2)
+
+	guard case .set(let show) = document.animations[0] else {
+		Issue.record("Expected first animation to be set")
+		return
+	}
+	#expect(show.id == "show")
+	#expect(show.target == .parent(id: "label"))
+	#expect(show.attributeName == "visibility")
+	#expect(show.toValue == "visible")
+	#expect(show.unknownAttributes["begin"] == "1s")
+	#expect(show.unknownAttributes["additive"] == "sum")
+	#expect(show.unknownAttributes["accumulate"] == "sum")
+
+	guard case .set(let hide) = document.animations[1] else {
+		Issue.record("Expected second animation to be set")
+		return
+	}
+	#expect(hide.id == "hide")
+	#expect(hide.target == .href("#label"))
+	#expect(hide.attributeName == "display")
+	#expect(hide.toValue == "none")
+}
+
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">

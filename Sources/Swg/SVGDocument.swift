@@ -71,6 +71,7 @@ public enum SVGAnimationElement: Equatable, Sendable {
 	case animate(SVGAnimateData)
 	case animateMotion(SVGAnimateMotionData)
 	case animateTransform(SVGAnimateTransformData)
+	case set(SVGSetData)
 }
 
 /// The target relationship for an SVG animation element.
@@ -151,6 +152,25 @@ public struct SVGAnimateTransformData: Equatable, Sendable {
 		self.fromValue = fromValue
 		self.toValue = toValue
 		self.byValue = byValue
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<set>` element that assigns one attribute or property value over time.
+public struct SVGSetData: Equatable, Sendable {
+	public let id: String
+	public let target: SVGAnimationTarget?
+	public let attributeName: String?
+	public let toValue: String?
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, toValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.target = target
+		self.attributeName = attributeName
+		self.toValue = toValue
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}

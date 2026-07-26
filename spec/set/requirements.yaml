@@ -1,0 +1,268 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: set
+  title: SVG set element
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for recognizing SVG `<set>` elements and preserving their target relationship, target attribute/property, and raw assigned value.
+  non_goals:
+    - Animation playback, scheduling, event dispatch, or rendering.
+    - Full timing attribute parsing for `begin`, `dur`, `end`, `min`, `max`, `restart`, `repeatCount`, `repeatDur`, or animation `fill`.
+    - Additive or cumulative animation behavior; `<set>` is non-additive and those attributes are ignored if specified.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-target-element
+      title: SVG Animations Level 2, Attributes to identify the target element for an animation
+      url: https://svgwg.org/specs/animations/#TargetElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-target-attribute
+      title: SVG Animations Level 2, Attributes to identify the target attribute or property for an animation
+      url: https://svgwg.org/specs/animations/#TargetAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-set-element
+      title: SVG Animations Level 2, The set element
+      url: https://svgwg.org/specs/animations/#SetElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C SVG Animations draft.
+
+scope:
+  includes:
+    - Recognition of `<set>` as an SVG animation element.
+    - Preservation of each parsed `<set>` outside the normal renderable element tree.
+    - Preservation of the target relationship from `href` or, when omitted, the immediate parent element.
+    - Preservation of the target `attributeName`.
+    - Preservation of the `to` assigned value as a raw string.
+    - Preservation of language and uninterpreted non-namespace attributes for later animation bullets.
+  excludes:
+    - Applying the assigned value to CGPath output or SwiftUI rendering.
+    - Validating that `to` matches the target attribute type.
+    - Parsing timing attributes or event attributes.
+    - Interpreting `additive` or `accumulate`.
+  assumptions:
+    - Parser output may store set animation elements in the document-level animation collection used for other SVG animation elements.
+    - Raw string preservation is sufficient for this bullet because typed value application belongs to later animation processing.
+
+terminology:
+  - id: term-set-animation
+    term: set animation
+    definition: A non-additive animation element that sets an attribute value for a specified duration.
+    source_refs:
+      - svg-animations-set-element
+  - id: term-target-element
+    term: target element
+    definition: The element whose attribute or property value is modified by an animation element.
+    source_refs:
+      - svg-animations-target-element
+
+structures:
+  - id: S001
+    name: set
+    kind: element
+    source_refs:
+      - svg-animations-set-element
+    fields:
+      - name: id
+        type: string
+        cardinality: optional
+        position: core-attribute
+        constraints:
+          - Identifies the set animation element.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg-animations-set-element
+      - name: href
+        type: URL
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Explicitly identifies the target element when provided.
+          - If omitted, the immediate parent element is the target.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg-animations-target-element
+      - name: attributeName
+        type: Name
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the target attribute or property.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg-animations-target-attribute
+      - name: to
+        type: value
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Specifies the value for the target attribute during the duration of the `<set>` element.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg-animations-set-element
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must recognize `<set>` as an SVG animation element.
+    applies_to:
+      - set
+    source_refs:
+      - svg-animations-set-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A parsed `<set>` element must be preserved as animation data and must not be emitted as a directly rendered SVG element.
+    applies_to:
+      - set
+    source_refs:
+      - svg-animations-set-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` is present on `<set>`, its URL reference must be preserved as the explicit animation target reference.
+    applies_to:
+      - set href
+    source_refs:
+      - svg-animations-target-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` and `xlink:href` are both omitted, the animation target must be represented as the immediate parent element.
+    applies_to:
+      - set implicit target
+    source_refs:
+      - svg-animations-target-element
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: structure
+    statement: The `attributeName` value must be preserved so later processing can identify the target attribute or property.
+    applies_to:
+      - set attributeName
+    source_refs:
+      - svg-animations-target-attribute
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: structure
+    statement: The `to` value must be preserved as the value assigned by the `<set>` element.
+    applies_to:
+      - set to
+    source_refs:
+      - svg-animations-set-element
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser must not interpret `additive` or `accumulate` as active `<set>` behavior because `<set>` is non-additive and those attributes are ignored if specified.
+    applies_to:
+      - set additive
+      - set accumulate
+    source_refs:
+      - svg-animations-set-element
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: The `to` value does not match the target attribute type.
+    source_behavior: INVALID_ANIMATION_VALUE
+    required_behavior: Preserve the parsed set record and leave value validation or no-effect handling to later animation processing.
+    decision_required: false
+    source_refs:
+      - svg-animations-set-element
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The parser may store `<set>` elements in `SVGDocument` animation data rather than as drawable `SVGElement` cases.
+    allowed_by:
+      - R001
+      - R002
+    source_refs:
+      - svg-animations-set-element
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: work-item
+    title: Animation timing attributes
+    reason: Timing fields such as `begin`, `dur`, and animation `fill` need separate parsing and scheduling requirements.
+    source_refs:
+      - svg-animations-set-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-set-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-set-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-element
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-attribute
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg-animations-set-element
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg-animations-set-element
+    map_item_refs: []
