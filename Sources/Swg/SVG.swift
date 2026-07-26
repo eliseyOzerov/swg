@@ -7,6 +7,7 @@ public struct SVG: View {
 	@Binding private var boundDocument: SVGDocument?
 	@State private var loadedDocument: SVGDocument?
 	@State private var loadedSourceID: String?
+	@State private var animationStartDate = Date()
 
 	private var initialDocument: SVGDocument?
 	private var usesBoundDocument: Bool
@@ -164,8 +165,18 @@ public struct SVG: View {
 	}
 
 	@ViewBuilder private func render(_ document: SVGDocument) -> some View {
+		if options.animationsEnabled, options.animationTime == nil, !document.animations.isEmpty {
+			TimelineView(.animation) { timeline in
+				render(document, animationTime: timeline.date.timeIntervalSince(animationStartDate))
+			}
+		} else {
+			render(document, animationTime: options.animationTime)
+		}
+	}
+
+	@ViewBuilder private func render(_ document: SVGDocument, animationTime: TimeInterval?) -> some View {
 		Canvas { context, size in
-			let renderer = SVGCanvasRenderer(document: document, size: size, options: options)
+			let renderer = SVGCanvasRenderer(document: document, size: size, options: options, animationTime: options.animationsEnabled ? animationTime : nil)
 			renderer.render(in: &context)
 		}
 		.aspectRatio(document.viewBox.aspectRatio, contentMode: options.contentMode)
@@ -192,6 +203,10 @@ public struct SVGRenderOptions {
 	public var preserveAspectRatio: SVGPreserveAspectRatio?
 	/// A root opacity multiplier applied to all rendered content.
 	public var opacity: Double
+	/// Whether declarative SVG animation elements are applied during rendering.
+	public var animationsEnabled: Bool
+	/// A fixed document time in seconds for deterministic animation snapshots, or `nil` for live SwiftUI timeline rendering.
+	public var animationTime: TimeInterval?
 
 	/// Creates rendering options for `SVG`.
 	///
@@ -199,10 +214,14 @@ public struct SVGRenderOptions {
 	///   - contentMode: The SwiftUI content mode used for aspect-ratio layout.
 	///   - preserveAspectRatio: A root `preserveAspectRatio` override, or `nil` to use the parsed document value.
 	///   - opacity: A root opacity multiplier applied to rendered content.
-	public init(contentMode: ContentMode = .fit, preserveAspectRatio: SVGPreserveAspectRatio? = nil, opacity: Double = 1) {
+	///   - animationsEnabled: Whether declarative SVG animation elements are applied during rendering.
+	///   - animationTime: A fixed document time in seconds, or `nil` to render animations live.
+	public init(contentMode: ContentMode = .fit, preserveAspectRatio: SVGPreserveAspectRatio? = nil, opacity: Double = 1, animationsEnabled: Bool = true, animationTime: TimeInterval? = nil) {
 		self.contentMode = contentMode
 		self.preserveAspectRatio = preserveAspectRatio
 		self.opacity = opacity
+		self.animationsEnabled = animationsEnabled
+		self.animationTime = animationTime
 	}
 }
 
@@ -258,6 +277,7 @@ private struct SVGCanvasRenderer {
 	var document: SVGDocument
 	var size: CGSize
 	var options: SVGRenderOptions
+	var animationTime: TimeInterval?
 
 	func render(in context: inout GraphicsContext) {
 		guard size.width > 0, size.height > 0 else { return }
@@ -268,42 +288,44 @@ private struct SVGCanvasRenderer {
 
 		context.drawLayer { layer in
 			layer.concatenate(transform.cgAffineTransform)
+			let animationTimeline = animationTime.map { SVGAnimationTimeline(document: document, time: $0) }
 			for element in document.elements {
-				render(element, opacity: options.opacity, in: &layer)
+				render(element, opacity: options.opacity, timeline: animationTimeline, in: &layer)
 			}
 		}
 	}
 
-	private func render(_ element: SVGElement, opacity: Double, in context: inout GraphicsContext) {
+	private func render(_ element: SVGElement, opacity: Double, timeline: SVGAnimationTimeline?, in context: inout GraphicsContext) {
+		let element = timeline?.applying(to: element) ?? element
 		switch element {
 		case .path(let data):
-			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, timeline: timeline, in: &context)
 		case .rect(let data):
-			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, timeline: timeline, in: &context)
 		case .circle(let data):
-			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, timeline: timeline, in: &context)
 		case .ellipse(let data):
-			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, timeline: timeline, in: &context)
 		case .line(let data):
-			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: true, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: true, timeline: timeline, in: &context)
 		case .polygon(let data):
-			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, timeline: timeline, in: &context)
 		case .polyline(let data):
-			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: true, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: true, timeline: timeline, in: &context)
 		case .group(let data):
-			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, in: &context)
+			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, timeline: timeline, in: &context)
 		case .switch(let data):
-			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, in: &context)
+			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, timeline: timeline, in: &context)
 		case .link(let data):
-			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, in: &context)
+			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, timeline: timeline, in: &context)
 		case .svg(let data):
-			render(viewport: data, inheritedOpacity: opacity, in: &context)
+			render(viewport: data, inheritedOpacity: opacity, timeline: timeline, in: &context)
 		case .unknown(let data):
-			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, in: &context)
+			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, timeline: timeline, in: &context)
 		case .foreignObject(let data):
-			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, in: &context)
+			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, timeline: timeline, in: &context)
 		case .use(let data):
-			render(use: data, inheritedOpacity: opacity, in: &context)
+			render(use: data, inheritedOpacity: opacity, timeline: timeline, in: &context)
 		case .text(let data):
 			render(text: data, inheritedOpacity: opacity, in: &context)
 		case .image:
@@ -311,22 +333,22 @@ private struct SVGCanvasRenderer {
 		}
 	}
 
-	private func render(children: [SVGElement], attributes: SVGPaintAttributes, inheritedOpacity: Double, in context: inout GraphicsContext) {
+	private func render(children: [SVGElement], attributes: SVGPaintAttributes, inheritedOpacity: Double, timeline: SVGAnimationTimeline?, in context: inout GraphicsContext) {
 		guard attributes.canRender else { return }
 		context.drawLayer { layer in
 			layer.concatenate(attributes.transform.cgAffineTransform)
-			let childBounds = bounds(for: children)
+			let childBounds = bounds(for: children, timeline: timeline)
 			applyClip(attributes: attributes, bounds: childBounds, in: &layer)
 			drawMasked(attributes: attributes, bounds: childBounds, in: &layer) { maskedLayer in
 				let opacity = inheritedOpacity * attributes.opacity
 				for child in children {
-					render(child, opacity: opacity, in: &maskedLayer)
+					render(child, opacity: opacity, timeline: timeline, in: &maskedLayer)
 				}
 			}
 		}
 	}
 
-	private func render(viewport data: SVGViewportData, inheritedOpacity: Double, in context: inout GraphicsContext) {
+	private func render(viewport data: SVGViewportData, inheritedOpacity: Double, timeline: SVGAnimationTimeline?, in context: inout GraphicsContext) {
 		guard data.attributes.canRender else { return }
 		context.drawLayer { layer in
 			layer.concatenate(data.attributes.transform.cgAffineTransform)
@@ -343,13 +365,13 @@ private struct SVGCanvasRenderer {
 			drawMasked(attributes: data.attributes, bounds: viewportBounds, in: &layer) { maskedLayer in
 				let opacity = inheritedOpacity * data.attributes.opacity
 				for child in data.children {
-					render(child, opacity: opacity, in: &maskedLayer)
+					render(child, opacity: opacity, timeline: timeline, in: &maskedLayer)
 				}
 			}
 		}
 	}
 
-	private func render(use data: SVGUseData, inheritedOpacity: Double, in context: inout GraphicsContext) {
+	private func render(use data: SVGUseData, inheritedOpacity: Double, timeline: SVGAnimationTimeline?, in context: inout GraphicsContext) {
 		guard data.attributes.canRender else { return }
 		let referenceID = data.href.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
 		context.drawLayer { layer in
@@ -360,16 +382,16 @@ private struct SVGCanvasRenderer {
 				let opacity = inheritedOpacity * data.attributes.opacity
 				if let elements = document.defs.reusableElements[referenceID] {
 					for element in elements {
-						render(element, opacity: opacity, in: &maskedLayer)
+						render(element, opacity: opacity, timeline: timeline, in: &maskedLayer)
 					}
 				} else if let symbol = document.defs.symbols[referenceID] {
-					render(symbol: symbol, use: data, opacity: opacity, in: &maskedLayer)
+					render(symbol: symbol, use: data, opacity: opacity, timeline: timeline, in: &maskedLayer)
 				}
 			}
 		}
 	}
 
-	private func render(symbol: SVGSymbolData, use data: SVGUseData, opacity: Double, in context: inout GraphicsContext) {
+	private func render(symbol: SVGSymbolData, use data: SVGUseData, opacity: Double, timeline: SVGAnimationTimeline?, in context: inout GraphicsContext) {
 		let width = data.width ?? symbol.width
 		let height = data.height ?? symbol.height
 		if let viewBox = symbol.viewBox, let transform = symbol.preserveAspectRatio.viewBoxTransform(
@@ -379,11 +401,11 @@ private struct SVGCanvasRenderer {
 			context.concatenate(transform.cgAffineTransform)
 		}
 		for child in symbol.children {
-			render(child, opacity: opacity * symbol.attributes.opacity, in: &context)
+			render(child, opacity: opacity * symbol.attributes.opacity, timeline: timeline, in: &context)
 		}
 	}
 
-	private func render(path model: Path, attributes: SVGPaintAttributes, inheritedOpacity: Double, forceStroke: Bool, in context: inout GraphicsContext) {
+	private func render(path model: Path, attributes: SVGPaintAttributes, inheritedOpacity: Double, forceStroke: Bool, timeline: SVGAnimationTimeline?, in context: inout GraphicsContext) {
 		guard attributes.canRender else { return }
 		context.drawLayer { layer in
 			layer.concatenate(attributes.transform.cgAffineTransform)
@@ -411,21 +433,21 @@ private struct SVGCanvasRenderer {
 							))
 						}
 					case .markers:
-						renderMarkers(for: model, attributes: attributes, inheritedOpacity: opacity, in: &maskedLayer)
+						renderMarkers(for: model, attributes: attributes, inheritedOpacity: opacity, timeline: timeline, in: &maskedLayer)
 					}
 				}
 			}
 		}
 	}
 
-	private func renderMarkers(for path: Path, attributes: SVGPaintAttributes, inheritedOpacity: Double, in context: inout GraphicsContext) {
+	private func renderMarkers(for path: Path, attributes: SVGPaintAttributes, inheritedOpacity: Double, timeline: SVGAnimationTimeline?, in context: inout GraphicsContext) {
 		guard attributes.markerStart != .none || attributes.markerMid != .none || attributes.markerEnd != .none else { return }
 		for marker in markerPlacements(for: path, attributes: attributes) {
-			render(marker: marker, inheritedOpacity: inheritedOpacity, in: &context)
+			render(marker: marker, inheritedOpacity: inheritedOpacity, timeline: timeline, in: &context)
 		}
 	}
 
-	private func render(marker placement: SVGRenderMarkerPlacement, inheritedOpacity: Double, in context: inout GraphicsContext) {
+	private func render(marker placement: SVGRenderMarkerPlacement, inheritedOpacity: Double, timeline: SVGAnimationTimeline?, in context: inout GraphicsContext) {
 		guard placement.definition.attributes.canRender, placement.definition.markerWidth > 0, placement.definition.markerHeight > 0 else { return }
 		let markerBounds = Rect(x: 0, y: 0, width: placement.definition.markerWidth, height: placement.definition.markerHeight)
 		let viewBoxTransform = placement.definition.viewBox.flatMap {
@@ -446,7 +468,7 @@ private struct SVGCanvasRenderer {
 			layer.concatenate(viewBoxTransform.cgAffineTransform)
 			let opacity = inheritedOpacity * placement.definition.attributes.opacity
 			for child in placement.definition.children {
-				render(child, opacity: opacity, in: &layer)
+				render(child, opacity: opacity, timeline: timeline, in: &layer)
 			}
 		}
 	}
@@ -780,7 +802,7 @@ private struct SVGCanvasRenderer {
 						sourceLayer.concatenate(Transform.identity.translatedBy(x: bounds.x, y: bounds.y).scaledBy(x: bounds.width, y: bounds.height).cgAffineTransform)
 					}
 					for child in definition.children {
-						render(child, opacity: 1, in: &sourceLayer)
+						render(child, opacity: 1, timeline: animationTime.map { SVGAnimationTimeline(document: document, time: $0) }, in: &sourceLayer)
 					}
 				}
 			}
@@ -866,6 +888,7 @@ private struct SVGCanvasRenderer {
 
 	@discardableResult
 	private func appendClipPathElement(_ element: SVGElement, transform: Transform, to path: CGMutablePath) -> FillRule {
+		let element = animationTime.map { SVGAnimationTimeline(document: document, time: $0).applying(to: element) } ?? element
 		switch element {
 		case .path(let data):
 			appendClipPath(data.path.cgPath, attributes: data.attributes, transform: transform, to: path)
@@ -980,7 +1003,7 @@ private struct SVGCanvasRenderer {
 							tileLayer.concatenate(Transform.identity.scaledBy(x: bounds.width, y: bounds.height).cgAffineTransform)
 						}
 						for child in pattern.children {
-							render(child, opacity: opacity * pattern.attributes.opacity, in: &tileLayer)
+							render(child, opacity: opacity * pattern.attributes.opacity, timeline: animationTime.map { SVGAnimationTimeline(document: document, time: $0) }, in: &tileLayer)
 						}
 					}
 				}
@@ -1174,17 +1197,18 @@ private struct SVGCanvasRenderer {
 		SwiftUI.Color(red: color.red, green: color.green, blue: color.blue, opacity: color.alpha * opacity)
 	}
 
-	private func bounds(for elements: [SVGElement]) -> Rect? {
-		bounds(for: elements, transform: .identity)
+	private func bounds(for elements: [SVGElement], timeline: SVGAnimationTimeline? = nil) -> Rect? {
+		bounds(for: elements, transform: .identity, timeline: timeline)
 	}
 
-	private func bounds(for elements: [SVGElement], transform: Transform) -> Rect? {
+	private func bounds(for elements: [SVGElement], transform: Transform, timeline: SVGAnimationTimeline? = nil) -> Rect? {
 		elements.reduce(nil) { partial, element in
-			partial.union(bounds(for: element, transform: transform))
+			partial.union(bounds(for: element, transform: transform, timeline: timeline))
 		}
 	}
 
-	private func bounds(for element: SVGElement, transform: Transform) -> Rect? {
+	private func bounds(for element: SVGElement, transform: Transform, timeline: SVGAnimationTimeline? = nil) -> Rect? {
+		let element = timeline?.applying(to: element) ?? element
 		switch element {
 		case .path(let data):
 			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
@@ -1201,18 +1225,18 @@ private struct SVGCanvasRenderer {
 		case .polyline(let data):
 			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
 		case .group(let data):
-			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform), timeline: timeline)
 		case .switch(let data):
-			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform), timeline: timeline)
 		case .link(let data):
-			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform), timeline: timeline)
 		case .svg(let data):
 			let viewport = Rect(x: data.x, y: data.y, width: data.width, height: data.height)
 			return bounds(for: Path(commands: [.rect(viewport)]).cgPath, transform: transform.concatenating(data.attributes.transform))
 		case .unknown(let data):
-			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform), timeline: timeline)
 		case .foreignObject(let data):
-			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform), timeline: timeline)
 		case .use(let data):
 			return bounds(for: data, transform: transform)
 		case .image(let data):

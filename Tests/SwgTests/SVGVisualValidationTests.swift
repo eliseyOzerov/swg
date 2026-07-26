@@ -34,6 +34,16 @@ import UIKit
 	#expect(raster.redOpaquePixelCount > 80)
 }
 
+@MainActor @Test func svgVisualValidationRendersAnimationSnapshotFixture() throws {
+	let svgURL = try #require(visualFixtureURL(for: "animation-rendering", extension: "svg"))
+	let svg = try String(contentsOf: svgURL, encoding: .utf8)
+	let document = try #require(SVGParser().parse(svg))
+	let raster = try SVGVisualRasterizer.render(document, width: 80, height: 24, options: SVGRenderOptions(animationTime: 1))
+	#expect(raster.redOpaquePixelCount > 50)
+	#expect(raster.greenOpaquePixelCount > 50)
+	#expect(raster.blueOpaquePixelCount(inX: 40..<54, y: 6..<18) > 30)
+}
+
 @MainActor @Test func svgVisualValidationRendersTextFixture() throws {
 	let svgURL = try #require(visualFixtureURL(for: "text-rendering", extension: "svg"))
 	let svg = try String(contentsOf: svgURL, encoding: .utf8)
@@ -62,10 +72,10 @@ private func visualFixtureURL(for name: String, extension fileExtension: String)
 
 private struct SVGVisualRasterizer {
 	@MainActor
-	static func render(_ document: SVGDocument, width: Int, height: Int) throws -> SVGVisualRaster {
+	static func render(_ document: SVGDocument, width: Int, height: Int, options: SVGRenderOptions = SVGRenderOptions()) throws -> SVGVisualRaster {
 		#expect(width > 0)
 		#expect(height > 0)
-		let renderer = ImageRenderer(content: SVG(document).frame(width: CGFloat(width), height: CGFloat(height)))
+		let renderer = ImageRenderer(content: SVG(document, options: options).frame(width: CGFloat(width), height: CGFloat(height)))
 		renderer.scale = 1
 		let uiImage = try #require(renderer.uiImage)
 		let image = try #require(uiImage.cgImage)
@@ -123,6 +133,28 @@ private struct SVGVisualRaster {
 			let blue = pixels[index * 4 + 2]
 			let alpha = pixels[index * 4 + 3]
 			return alpha > 16 && red > 180 && green < 120 && blue < 120
+		}.count
+	}
+
+	var greenOpaquePixelCount: Int {
+		(0..<(width * height)).filter { index in
+			let red = pixels[index * 4]
+			let green = pixels[index * 4 + 1]
+			let blue = pixels[index * 4 + 2]
+			let alpha = pixels[index * 4 + 3]
+			return alpha > 16 && red < 120 && green > 120 && blue < 120
+		}.count
+	}
+
+	func blueOpaquePixelCount(inX xRange: Range<Int>, y yRange: Range<Int>) -> Int {
+		yRange.flatMap { y in
+			xRange.map { x in y * width + x }
+		}.filter { index in
+			let red = pixels[index * 4]
+			let green = pixels[index * 4 + 1]
+			let blue = pixels[index * 4 + 2]
+			let alpha = pixels[index * 4 + 3]
+			return alpha > 16 && red < 120 && green < 120 && blue > 160
 		}.count
 	}
 

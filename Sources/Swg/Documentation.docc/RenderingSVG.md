@@ -77,6 +77,8 @@ SVG(
 
 Use `contentMode` for SwiftUI layout behavior, `preserveAspectRatio` to override the document root mapping, and `opacity` to apply an overall alpha multiplier.
 
+Animations render live by default when supported animation elements are present. Pass `animationTime` for deterministic snapshots, or set `animationsEnabled` to `false` to paint the base document without applying declarative animation.
+
 ## Supported Native Drawing
 
 The native renderer currently draws:
@@ -88,10 +90,11 @@ The native renderer currently draws:
 - Solid fill and stroke paint, fill opacity, stroke opacity, fill rules, stroke width, line caps, line joins, dash arrays, paint order, opacity, display, visibility, and transforms.
 - Basic ``SVGTextData`` text runs, including plain text, spans with inherited or overridden paint, first-position text placement, `font-size`, `font-family`, `font-weight`, `text-anchor`, and preserved whitespace.
 - Local ``SVGMarkerDef`` references on paths and basic shapes, including `marker-start`, `marker-mid`, `marker-end`, `markerUnits`, marker `viewBox`, and `orient` values. Marker children render with explicit paint; contextual marker paint remains model-only.
+- Clock-based ``SVGAnimateData``, ``SVGAnimateTransformData``, and ``SVGSetData`` for numeric geometry and presentation values, simple paint values, and common transform functions.
 - Local ``SVGClipPathDef`` references, including `clip-rule` and `clipPathUnits`.
 - Local ``SVGMaskDef`` references, including luminance-to-alpha mask source rendering, `maskUnits`, and `maskContentUnits`.
 
-The parser also preserves advanced text layout, gradients, patterns, masks, clipping, filters, marker details, images, metadata, scripts, and animation records. Basic linear gradients, radial gradients, spread methods, pattern fills, local clip paths, local masks, basic text, and local markers render natively; the rest remains available in the model even when the SwiftUI renderer skips or simplifies the visual behavior.
+The parser also preserves advanced text layout, gradients, patterns, masks, clipping, filters, marker details, images, metadata, scripts, and animation records. Basic linear gradients, radial gradients, spread methods, pattern fills, local clip paths, local masks, basic text, local markers, and clock-based value animations render natively; the rest remains available in the model even when the SwiftUI renderer skips or simplifies the visual behavior.
 
 ## Use CoreGraphics Directly
 

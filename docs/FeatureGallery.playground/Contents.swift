@@ -19,7 +19,7 @@ struct FeatureExample {
 let duotoneLight = "#e5e7eb"
 let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "markers-native"
+let galleryAssetVersion = "animation-native"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -45,6 +45,7 @@ let colorSpecificSlugs: Set<String> = [
 	"mask-units",
 	"mask-content-units",
 	"text-tspan",
+	"set-animation",
 	"fe-drop-shadow",
 	"fe-flood",
 ]
@@ -465,16 +466,16 @@ let embeddedAndDynamicExamples = [
 		</foreignObject>
 		"""
 	},
-	example("animate", "<animate>", "Embedded and Dynamic SVG", .staticOnly, "Animation records are parsed; the native view paints the initial static geometry only.") {
-		##"<circle cx="60" cy="40" r="20" fill="#22c55e"><animate attributeName="r" values="12;28;12" dur="2s" repeatCount="indefinite"/></circle>"##
+	example("animate", "<animate>", "Embedded and Dynamic SVG", .rendered, "Clock-based numeric animate values render on the native timeline.") {
+		##"<circle cx="60" cy="40" r="28" fill="#d1d5db"/><circle cx="60" cy="40" r="12" fill="#22c55e"><animate attributeName="r" values="12;28;12" dur="2s" repeatCount="indefinite"/></circle>"##
 	},
 	example("animate-motion", "<animateMotion>", "Embedded and Dynamic SVG", .staticOnly, "Motion animation is parsed but not executed.") {
 		##"<path id="motion" d="M20 56 C42 18 78 62 100 24" fill="none" stroke="#cbd5e1" stroke-width="4"/><circle cx="20" cy="56" r="9" fill="#f97316"><animateMotion dur="2s"><mpath href="#motion"/></animateMotion></circle>"##
 	},
-	example("animate-transform", "<animateTransform>", "Embedded and Dynamic SVG", .staticOnly, "Transform animation is parsed but not executed.") {
-		##"<rect x="42" y="24" width="36" height="32" rx="8" fill="#38bdf8"><animateTransform attributeName="transform" type="rotate" from="-18 60 40" to="18 60 40" dur="2s"/></rect>"##
+	example("animate-transform", "<animateTransform>", "Embedded and Dynamic SVG", .rendered, "Clock-based transform animation renders for common transform types.") {
+		##"<rect x="42" y="24" width="36" height="32" rx="8" fill="#d1d5db"/><rect x="42" y="24" width="36" height="32" rx="8" fill="#38bdf8"><animateTransform attributeName="transform" type="rotate" from="-32 60 40" to="32 60 40" dur="2s"/></rect>"##
 	},
-	example("set-animation", "<set>", "Embedded and Dynamic SVG", .staticOnly, "Set animation elements are parsed but do not mutate rendered output.") {
+	example("set-animation", "<set>", "Embedded and Dynamic SVG", .rendered, "Set animation applies active presentation values at clock begin times.") {
 		##"<rect x="28" y="20" width="64" height="40" rx="12" fill="#a855f7"><set attributeName="fill" to="#22c55e" begin="1s"/></rect>"##
 	},
 	example("discard-animation", "<discard>", "Embedded and Dynamic SVG", .staticOnly, "Discard elements are parsed but do not remove rendered content.") {
@@ -711,7 +712,8 @@ enum FeatureGalleryRenderer {
 
 	@MainActor
 	private static func render(_ document: SVGDocument, pngURL: URL, width: Int, height: Int) throws {
-		let renderer = ImageRenderer(content: SVG(document).frame(width: CGFloat(width), height: CGFloat(height)))
+		let options = SVGRenderOptions(animationTime: document.animations.isEmpty ? nil : 1.5)
+		let renderer = ImageRenderer(content: SVG(document, options: options).frame(width: CGFloat(width), height: CGFloat(height)))
 		renderer.scale = 1
 		guard let image = renderer.cgImage else {
 			throw FeatureGalleryError.renderingFailed(pngURL.lastPathComponent)

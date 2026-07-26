@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 24">
+	<rect width="80" height="24" fill="white"/>
+	<circle id="pulse" cx="12" cy="12" r="2" fill="red">
+		<animate attributeName="r" values="2;8" dur="2s" repeatCount="indefinite"/>
+	</circle>
+	<rect id="slide" x="30" y="7" width="8" height="10" fill="blue">
+		<animateTransform attributeName="transform" type="translate" from="0 0" to="24 0" dur="2s" repeatCount="indefinite"/>
+	</rect>
+	<rect id="state" x="62" y="7" width="10" height="10" fill="red">
+		<set attributeName="fill" to="green" begin="1s"/>
+	</rect>
+</svg>
