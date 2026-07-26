@@ -381,12 +381,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				edgeMode: parseFilterEdgeMode(attributes["edgeMode"])
 			))
 		case "feDropShadow":
-			let dx = attributes["dx"].flatMap(parseNumber) ?? 0
-			let dy = attributes["dy"].flatMap(parseNumber) ?? 0
-			let std = attributes["stdDeviation"].flatMap(parseNumber) ?? 0
+			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
+			let dy = attributes["dy"].flatMap(parseNumber) ?? 2
+			let stdDeviation = parseNumberOptionalNumber(attributes["stdDeviation"], defaultValue: 2)
 			let color = attributes["flood-color"].flatMap { parseColor($0) } ?? .black
-			let opacity = attributes["flood-opacity"].flatMap(parseNumber) ?? 1
-			currentFilter?.primitives.append(.dropShadow(dx: dx, dy: dy, stdDeviation: std, color: color.withAlpha(opacity)))
+			let opacity = attributes["flood-opacity"].flatMap(parseAlphaValue) ?? 1
+			currentFilter?.primitives.append(.dropShadow(
+				dx: dx,
+				dy: dy,
+				stdDeviationX: stdDeviation.first,
+				stdDeviationY: stdDeviation.second,
+				color: color.withAlpha(color.alpha * opacity)
+			))
 		case "mask":
 			inMask = true
 			currentMaskID = attributes["id"]

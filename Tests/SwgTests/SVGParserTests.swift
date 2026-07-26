@@ -62,13 +62,14 @@ import Testing
 	#expect(stdDeviationX == 2)
 	#expect(stdDeviationY == 2)
 	#expect(edgeMode == .none)
-	guard case .dropShadow(let dx, let dy, let shadowDeviation, let color) = filter.primitives[1] else {
+	guard case .dropShadow(let dx, let dy, let shadowDeviationX, let shadowDeviationY, let color) = filter.primitives[1] else {
 		Issue.record("Expected second filter primitive to be feDropShadow")
 		return
 	}
 	#expect(dx == 1)
 	#expect(dy == 2)
-	#expect(shadowDeviation == 3)
+	#expect(shadowDeviationX == 3)
+	#expect(shadowDeviationY == 3)
 	#expect(color == Color(0.2, 0.4, 0.6).withAlpha(0.5))
 }
 
@@ -134,6 +135,40 @@ import Testing
 		Issue.record("Expected parsed feGaussianBlur stdDeviation and edgeMode attributes")
 		return
 	}
+}
+
+@Test func svgParserPreservesDropShadowPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="shadow">
+			<feDropShadow/>
+			<feDropShadow dx="3" dy="4" stdDeviation="5" flood-color="#336699" flood-opacity="50%"/>
+			<feDropShadow dx="6" dy="7" stdDeviation="8 9" flood-color="rgba(51,102,153,0.5)" flood-opacity="0.5"/>
+			<feDropShadow dx="bad" dy="bad" stdDeviation="bad" flood-color="bogus" flood-opacity="2"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["shadow"])
+	#expect(filter.primitives.count == 4)
+
+	func expectDropShadow(_ primitive: SVGFilterPrimitive, dx expectedDX: Double, dy expectedDY: Double, stdDeviationX expectedStdDeviationX: Double, stdDeviationY expectedStdDeviationY: Double, color expectedColor: Color) {
+		guard case .dropShadow(let dx, let dy, let stdDeviationX, let stdDeviationY, let color) = primitive else {
+			Issue.record("Expected parsed feDropShadow primitive")
+			return
+		}
+		#expect(dx == expectedDX)
+		#expect(dy == expectedDY)
+		#expect(stdDeviationX == expectedStdDeviationX)
+		#expect(stdDeviationY == expectedStdDeviationY)
+		#expect(color == expectedColor)
+	}
+
+	expectDropShadow(filter.primitives[0], dx: 2, dy: 2, stdDeviationX: 2, stdDeviationY: 2, color: .black)
+	expectDropShadow(filter.primitives[1], dx: 3, dy: 4, stdDeviationX: 5, stdDeviationY: 5, color: Color(0.2, 0.4, 0.6, 0.5))
+	expectDropShadow(filter.primitives[2], dx: 6, dy: 7, stdDeviationX: 8, stdDeviationY: 9, color: Color(0.2, 0.4, 0.6, 0.25))
+	expectDropShadow(filter.primitives[3], dx: 2, dy: 2, stdDeviationX: 2, stdDeviationY: 2, color: .black)
 }
 
 @Test func svgParserPreservesRadialGradientGeometryAndStops() throws {

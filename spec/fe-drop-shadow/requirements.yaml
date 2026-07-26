@@ -1,0 +1,239 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-drop-shadow
+  title: SVG feDropShadow filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feDropShadow>` filter primitives, including offsets, blur standard deviations, flood color, and flood opacity.
+  non_goals:
+    - Expanding `<feDropShadow>` into its equivalent internal filter primitive tree.
+    - Executing drop shadow raster rendering.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-drop-shadow
+      title: "Filter Effects Module Level 1: Filter primitive feDropShadow"
+      url: https://www.w3.org/TR/filter-effects-1/#feDropShadowElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-flood-properties
+      title: "Filter Effects Module Level 1: flood-color and flood-opacity"
+      url: https://www.w3.org/TR/filter-effects-1/#FloodColorProperty
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feDropShadow>` as a filter primitive equivalent to a blur, offset, flood, composite, and merge sequence, while not requiring implementations to expose that expansion."
+    - "The `dx` and `dy` attributes each have initial value `2`."
+    - "The `stdDeviation` attribute is forwarded to the internal `<feGaussianBlur>` and has initial value `2`."
+    - "`flood-color` applies to `<feDropShadow>` and has initial value `black`."
+    - "`flood-opacity` applies to `<feDropShadow>`, has initial value `1`, clamps to `[0,1]`, and multiplies any alpha channel in `flood-color`."
+
+scope:
+  includes:
+    - "`<feDropShadow>` child elements inside `<filter>`."
+    - "`dx` and `dy` number attributes with spec defaults."
+    - "`stdDeviation` omitted, one-number, and two-number values."
+    - "`flood-color` parsed color values and `flood-opacity` alpha clamping."
+  excludes:
+    - Rendering-time expansion into blur, offset, flood, composite, and merge operations.
+    - Filter primitive common attributes such as `x`, `y`, `width`, `height`, and `result`.
+    - Filter graph input wiring through the `in` attribute.
+  assumptions:
+    - Swg stores parsed drop shadow data as one `SVGFilterPrimitive.dropShadow` value for later renderer support.
+
+terminology:
+  - id: T001
+    term: feDropShadow
+    definition: An SVG filter primitive that creates a drop shadow from an input image.
+    source_refs:
+      - filter-effects-fe-drop-shadow
+  - id: T002
+    term: flood-color
+    definition: The color used by the internal flood step of a drop shadow.
+    source_refs:
+      - filter-effects-flood-properties
+  - id: T003
+    term: flood-opacity
+    definition: The opacity used across the internal flood step of a drop shadow.
+    source_refs:
+      - filter-effects-flood-properties
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.dropShadow
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-drop-shadow
+      - filter-effects-flood-properties
+    fields:
+      - name: dx
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `2`.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-drop-shadow
+      - name: dy
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `2`.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-drop-shadow
+      - name: stdDeviationX
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `2`.
+          - Uses the sole `stdDeviation` number when one is provided.
+          - Uses the first `stdDeviation` number when two are provided.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-fe-drop-shadow
+      - name: stdDeviationY
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `2`.
+          - Uses the sole `stdDeviation` number when one is provided.
+          - Uses the second `stdDeviation` number when two are provided.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-fe-drop-shadow
+      - name: color
+        type: Color
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to black with alpha `1`.
+          - Applies clamped `flood-opacity`.
+          - Multiplies `flood-color` alpha by `flood-opacity`.
+        requirement_refs:
+          - R004
+          - R005
+        source_refs:
+          - filter-effects-flood-properties
+
+requirements:
+  - id: R001
+    title: Parse offsets with defaults
+    statement: "`dx` and `dy` on `<feDropShadow>` must parse as numbers and default to `2` when omitted or invalid."
+    keywords:
+      - feDropShadow
+      - dx
+      - dy
+    source_refs:
+      - filter-effects-fe-drop-shadow
+    acceptance:
+      - "Provided numeric `dx` and `dy` values are stored."
+      - "Omitted or invalid `dx` and `dy` values store `2`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDropShadowPrimitiveAttributes
+  - id: R002
+    title: Parse stdDeviation values
+    statement: "`stdDeviation` on `<feDropShadow>` must preserve one-number and two-number values using the same X/Y expansion as `<feGaussianBlur>`."
+    keywords:
+      - feDropShadow
+      - stdDeviation
+    source_refs:
+      - filter-effects-fe-drop-shadow
+    acceptance:
+      - "`stdDeviation=\"5\"` stores `stdDeviationX == 5` and `stdDeviationY == 5`."
+      - "`stdDeviation=\"5 6\"` stores `stdDeviationX == 5` and `stdDeviationY == 6`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDropShadowPrimitiveAttributes
+  - id: R003
+    title: Default stdDeviation to two
+    statement: "Omitted or invalid `stdDeviation` values on `<feDropShadow>` must resolve to the initial value `2 2`."
+    keywords:
+      - feDropShadow
+      - stdDeviation
+      - initial
+    source_refs:
+      - filter-effects-fe-drop-shadow
+    acceptance:
+      - "An omitted `stdDeviation` stores `2` for both axes."
+      - "A malformed `stdDeviation` stores `2` for both axes."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDropShadowPrimitiveAttributes
+  - id: R004
+    title: Parse flood color
+    statement: "`flood-color` on `<feDropShadow>` must parse as the shadow color and default to black when omitted or invalid."
+    keywords:
+      - feDropShadow
+      - flood-color
+    source_refs:
+      - filter-effects-flood-properties
+    acceptance:
+      - "A parsed `flood-color` is stored."
+      - "Omitted or invalid `flood-color` stores black."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDropShadowPrimitiveAttributes
+  - id: R005
+    title: Apply flood opacity
+    statement: "`flood-opacity` on `<feDropShadow>` must clamp to `[0,1]` and multiply the alpha channel from `flood-color`."
+    keywords:
+      - feDropShadow
+      - flood-opacity
+      - alpha
+    source_refs:
+      - filter-effects-flood-properties
+    acceptance:
+      - "Percentage `flood-opacity` values are converted to alpha numbers."
+      - "Values above `1` clamp to `1`."
+      - "`flood-color` alpha is multiplied by `flood-opacity`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDropShadowPrimitiveAttributes
+
+traceability:
+  source_to_requirements:
+    filter-effects-fe-drop-shadow:
+      - R001
+      - R002
+      - R003
+    filter-effects-flood-properties:
+      - R004
+      - R005
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesDropShadowPrimitiveAttributes
+    R002:
+      - svgParserPreservesDropShadowPrimitiveAttributes
+    R003:
+      - svgParserPreservesDropShadowPrimitiveAttributes
+    R004:
+      - svgParserPreservesDropShadowPrimitiveAttributes
+    R005:
+      - svgParserPreservesDropShadowPrimitiveAttributes
