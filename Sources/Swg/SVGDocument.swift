@@ -1014,6 +1014,7 @@ public enum SVGFilterPrimitiveUnits: Equatable, Sendable, Hashable {
 public enum SVGFilterPrimitive: Equatable, Sendable {
 	case blend(input: String?, input2: String?, mode: SVGBlendMode = .normal, noComposite: Bool = false)
 	case colorMatrix(input: String?, type: SVGColorMatrixType = .matrix, values: [Double], isPassThrough: Bool = false)
+	case componentTransfer(input: String?)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }

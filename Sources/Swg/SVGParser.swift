@@ -388,6 +388,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				values: colorMatrix.values,
 				isPassThrough: colorMatrix.isPassThrough
 			))
+		case "feComponentTransfer":
+			currentFilter?.primitives.append(.componentTransfer(input: attributes["in"]))
 		case "feGaussianBlur":
 			let stdDeviation = parseNumberOptionalNumber(attributes["stdDeviation"], defaultValue: 0)
 			currentFilter?.primitives.append(.gaussianBlur(

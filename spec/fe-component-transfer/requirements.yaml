@@ -1,0 +1,115 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-component-transfer
+  title: SVG feComponentTransfer filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feComponentTransfer>` filter primitives and their input source for later per-channel transfer function support.
+  non_goals:
+    - Parsing `feFuncR`, `feFuncG`, `feFuncB`, or `feFuncA` transfer function attributes.
+    - Executing component-wise remapping.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-component-transfer
+      title: "Filter Effects Module Level 1: Filter primitive feComponentTransfer"
+      url: https://www.w3.org/TR/filter-effects-1/#feComponentTransferElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feComponentTransfer>` as a filter primitive."
+    - "Its content model allows descriptive elements plus `feFuncR`, `feFuncG`, `feFuncB`, `feFuncA`, and script elements."
+    - "The `in` attribute identifies the primitive input image."
+    - "The primitive remaps red, green, blue, and alpha channels independently using its child transfer function elements."
+    - "If a transfer function element is unspecified, processing behaves as though that channel's function element had `type=\"identity\"`."
+    - "Detailed parsing for each channel function is tracked by the following separate TODO bullets."
+
+scope:
+  includes:
+    - "`<feComponentTransfer>` child elements inside `<filter>`."
+    - "`in` input reference preservation."
+    - "A parsed primitive shape that can later receive per-channel transfer functions."
+  excludes:
+    - "`feFuncR`, `feFuncG`, `feFuncB`, and `feFuncA` attributes."
+    - "The last-occurrence rule for repeated channel functions."
+    - "Rendering-time channel remapping."
+  assumptions:
+    - Swg stores parsed filter primitives as `SVGFilterPrimitive` values for later renderer support.
+    - Per-channel transfer functions will extend the primitive in the following checklist items.
+
+terminology:
+  - id: T001
+    term: feComponentTransfer
+    definition: An SVG filter primitive that remaps RGBA components independently.
+    source_refs:
+      - filter-effects-fe-component-transfer
+  - id: T002
+    term: transfer function element
+    definition: A child element that defines the remapping function for one color or alpha channel.
+    source_refs:
+      - filter-effects-fe-component-transfer
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.componentTransfer
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-component-transfer
+    fields:
+      - name: input
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in` attribute when present.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-component-transfer
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feComponentTransfer>` must be preserved as a filter primitive with its `in` input reference when present."
+    applies_to:
+      - SVGFilterPrimitive.componentTransfer
+    source_refs:
+      - filter-effects-fe-component-transfer
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesComponentTransferPrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feComponentTransfer>` must remain non-rendered definition content inside `<filter>` and must not appear as a document element."
+    applies_to:
+      - SVGDocument.defs.filters
+    source_refs:
+      - filter-effects-fe-component-transfer
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesComponentTransferPrimitiveAttributes
+
+traceability:
+  source_to_requirements:
+    filter-effects-fe-component-transfer:
+      - R001
+      - R002
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesComponentTransferPrimitiveAttributes
+    R002:
+      - svgParserPreservesComponentTransferPrimitiveAttributes

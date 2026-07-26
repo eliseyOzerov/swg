@@ -154,7 +154,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feDropShadow>`.
 - [x] `<feBlend>`.
 - [x] `<feColorMatrix>`.
-- [ ] `<feComponentTransfer>`.
+- [x] `<feComponentTransfer>`.
 - [ ] `<feFuncR>`.
 - [ ] `<feFuncG>`.
 - [ ] `<feFuncB>`.

@@ -286,6 +286,29 @@ import Testing
 	expectColorMatrix(filter.primitives[10], input: nil, type: .hueRotate, values: [], isPassThrough: true)
 }
 
+@Test func svgParserPreservesComponentTransferPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="component">
+			<feComponentTransfer/>
+			<feComponentTransfer in="SourceGraphic"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["component"])
+	#expect(document.elements.isEmpty)
+	#expect(filter.primitives.count == 2)
+	guard
+		case .componentTransfer(nil) = filter.primitives[0],
+		case .componentTransfer("SourceGraphic") = filter.primitives[1]
+	else {
+		Issue.record("Expected parsed feComponentTransfer input attributes")
+		return
+	}
+}
+
 @Test func svgParserPreservesRadialGradientGeometryAndStops() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
