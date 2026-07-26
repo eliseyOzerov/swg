@@ -1,0 +1,244 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: text-positioning-xy-dx-dy
+  title: SVG text x, y, dx, and dy attributes
+  domain: SVG Text
+  profile: null
+  summary: Requirements for preserving absolute and relative text positioning attributes on SVG text and tspan elements.
+  non_goals:
+    - Full glyph layout and bidi reordering.
+    - rotate handling.
+    - Auto-wrapped text behavior.
+    - Applying text-anchor after layout.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-text-positioning
+      title: SVG 2, Text chapter, text and tspan attributes
+      url: https://www.w3.org/TR/SVG/text.html#TSpanAttributes
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C text chapter.
+
+scope:
+  includes:
+    - Recognition of x and y as absolute positioning attributes on text and tspan.
+    - Recognition of dx and dy as relative positioning attributes on text and tspan.
+    - Preservation of comma- or space-separated coordinate lists.
+    - Preservation of initial scalar convenience values for compatibility with existing parser output.
+  excludes:
+    - Applying coordinate lists to individual glyph positions.
+    - Ancestor precedence resolution during glyph layout.
+    - Character-to-glyph mapping and text selection behavior.
+  assumptions:
+    - Parser-level conformance can preserve coordinate lists for a later text layout phase.
+    - Parsed numeric values are stored in user units using the current length context.
+
+terminology:
+  - id: term-current-text-position
+    term: current text position
+    definition: The coordinate position used as the starting point for rendering typographic characters.
+    source_refs:
+      - svg2-text-positioning
+  - id: term-addressable-character
+    term: addressable character
+    definition: A character in text content to which list-based text positioning values may correspond.
+    source_refs:
+      - svg2-text-positioning
+
+structures:
+  - id: S001
+    name: text and tspan positioning attributes
+    kind: attribute-set
+    source_refs:
+      - svg2-text-positioning
+    fields:
+      - name: x
+        type: list-of-length-percentage-or-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Defines absolute X coordinates.
+          - Initial value is 0 for text and none for tspan.
+        requirement_refs:
+          - R001
+          - R003
+        source_refs:
+          - svg2-text-positioning
+      - name: y
+        type: list-of-length-percentage-or-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Defines absolute Y coordinates.
+          - Initial value is 0 for text and none for tspan.
+        requirement_refs:
+          - R001
+          - R003
+        source_refs:
+          - svg2-text-positioning
+      - name: dx
+        type: list-of-length-percentage-or-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Defines relative X shifts.
+          - Initial value is none.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - svg2-text-positioning
+      - name: dy
+        type: list-of-length-percentage-or-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Defines relative Y shifts.
+          - Initial value is none.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - svg2-text-positioning
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: x and y values provide new absolute X and Y coordinates for the current text position for characters within a text or tspan element and its descendants.
+    applies_to:
+      - text.x
+      - text.y
+      - tspan.x
+      - tspan.y
+    source_refs:
+      - svg2-text-positioning
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: dx and dy values provide relative X and Y coordinate shifts for the current text position for characters within a text or tspan element and its descendants.
+    applies_to:
+      - text.dx
+      - text.dy
+      - tspan.dx
+      - tspan.dy
+    source_refs:
+      - svg2-text-positioning
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: x, y, dx, and dy accept comma- or space-separated lists of length-percentage-or-number values.
+    applies_to:
+      - text
+      - tspan
+    source_refs:
+      - svg2-text-positioning
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: For x and y, text defaults to 0 while tspan has no initial value when the attribute is absent.
+    applies_to:
+      - text
+      - tspan
+    source_refs:
+      - svg2-text-positioning
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Extra list values beyond available characters have no effect, while missing x or y values fall back through nearest ancestor positioning or the current text position during layout.
+    applies_to:
+      - text
+      - tspan
+    source_refs:
+      - svg2-text-positioning
+    testability: reviewable
+    notes:
+      - Parser preservation enables later layout to apply this rule.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Malformed coordinate-list syntax.
+    source_behavior: UNSPECIFIED
+    required_behavior: Preserve no parsed coordinate-list values for that malformed attribute.
+    decision_required: false
+    source_refs:
+      - svg2-text-positioning
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: A parser may store coordinate-list attributes as numeric arrays and expose the first parsed value through legacy scalar convenience fields.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+    source_refs:
+      - svg2-text-positioning
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG list syntax
+    reason: The positioning attributes accept comma- or space-separated lists.
+    source_refs:
+      - svg2-text-positioning
+  - id: DEP002
+    kind: source-section
+    title: SVG length and percentage values
+    reason: Coordinate values may be lengths, percentages, or unitless numbers.
+    source_refs:
+      - svg2-text-positioning
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-text-positioning
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-text-positioning
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-text-positioning
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-text-positioning
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-text-positioning
+    map_item_refs: []

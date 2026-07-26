@@ -214,6 +214,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var inText = false
 	private var textBuilder: SVGTextBuilder?
 	private var currentSpanAttrs: SVGPaintAttributes?
+	private var currentSpanPositioning: SVGTextSpanPositioning = .empty
 	private var textPathStack: [SVGTextPathData] = []
 	private var xmlSpaceStack: [SVGXMLSpaceMode] = [.default]
 	private var inStyleElement = false
@@ -748,6 +749,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		inText = false
 		textBuilder = nil
 		currentSpanAttrs = nil
+		currentSpanPositioning = .empty
 		textPathStack = []
 		xmlSpaceStack = [.default]
 		inStyleElement = false
@@ -1625,17 +1627,25 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: "Text")
 		setCurrentParsedElementID(id)
+		let xValues = parseTextCoordinateList(attributes["x"], percentageBasis: .horizontal) ?? [0]
+		let yValues = parseTextCoordinateList(attributes["y"], percentageBasis: .vertical) ?? [0]
+		let dxValues = parseTextCoordinateList(attributes["dx"], percentageBasis: .horizontal) ?? []
+		let dyValues = parseTextCoordinateList(attributes["dy"], percentageBasis: .vertical) ?? []
 		textBuilder = SVGTextBuilder(
 			id: id,
-			x: double(attributes["x"]),
-			y: double(attributes["y"]),
+			x: xValues.first ?? 0,
+			y: yValues.first ?? 0,
+			xValues: xValues,
+			yValues: yValues,
+			dxValues: dxValues,
+			dyValues: dyValues,
 			fontSize: double(attributes["font-size"]),
 			fontFamily: attributes["font-family"] ?? "",
 			fontWeight: attributes["font-weight"] ?? "normal",
 			textAnchor: parseTextAnchor(attributes["text-anchor"]),
 			attributes: attrs,
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "font-size", "font-family", "font-weight", "text-anchor"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "font-size", "font-family", "font-weight", "text-anchor"])
 		)
 	}
 
@@ -1652,6 +1662,23 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			attributes: parsePaintAttributes(attributes),
 			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side"])
 		))
+	}
+
+	private func parseTextSpanPositioning(_ attributes: [String: String]) -> SVGTextSpanPositioning {
+		SVGTextSpanPositioning(
+			xValues: parseTextCoordinateList(attributes["x"], percentageBasis: .horizontal) ?? [],
+			yValues: parseTextCoordinateList(attributes["y"], percentageBasis: .vertical) ?? [],
+			dxValues: parseTextCoordinateList(attributes["dx"], percentageBasis: .horizontal) ?? [],
+			dyValues: parseTextCoordinateList(attributes["dy"], percentageBasis: .vertical) ?? [],
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy"])
+		)
+	}
+
+	private func parseTextCoordinateList(_ value: String?, percentageBasis: SVGLengthPercentageBasis) -> [Double]? {
+		guard let value else { return nil }
+		return SVGListParser.parse(value) { token in
+			parseDimension(token, context: currentViewportContext, percentageBasis: percentageBasis)
+		}
 	}
 
 	private func parseTitleStart(_ attributes: [String: String]) {
@@ -1773,12 +1800,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		appendBufferedTextSpan(attributes: nil, language: parentLanguageForCurrentElement)
 		xmlSpaceStack.append(parseXMLSpace(attributes["xml:space"], inherited: currentXMLSpaceMode))
 		currentSpanAttrs = parsePaintAttributes(attributes)
+		currentSpanPositioning = parseTextSpanPositioning(attributes)
 	}
 
 	private func finalizeTSpan() {
 		let attributes = currentSpanAttrs
+		let positioning = currentSpanPositioning
 		currentSpanAttrs = nil
-		appendBufferedTextSpan(attributes: attributes, language: currentLanguage)
+		currentSpanPositioning = .empty
+		appendBufferedTextSpan(attributes: attributes, positioning: positioning, language: currentLanguage)
 		if xmlSpaceStack.count > 1 {
 			xmlSpaceStack.removeLast()
 		}
@@ -1803,6 +1833,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				id: textBuilder.id,
 				x: textBuilder.x,
 				y: textBuilder.y,
+				xValues: textBuilder.xValues,
+				yValues: textBuilder.yValues,
+				dxValues: textBuilder.dxValues,
+				dyValues: textBuilder.dyValues,
 				fontSize: fontSize,
 				fontFamily: textBuilder.fontFamily,
 				fontWeight: textBuilder.fontWeight,
@@ -1815,15 +1849,32 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 		textBuilder = nil
 		inText = false
+		currentSpanPositioning = .empty
 		textPathStack = []
 		xmlSpaceStack = [.default]
 	}
 
-	private func appendBufferedTextSpan(attributes: SVGPaintAttributes?, language: String?) {
+	private func appendBufferedTextSpan(attributes: SVGPaintAttributes?, positioning: SVGTextSpanPositioning = .empty, language: String?) {
 		let text = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
 		characterBuffer = ""
 		guard !text.isEmpty, let textBuilder else { return }
-		textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: attributes, textPath: textPathStack.last, language: language))
+		textBuilder.spans.append(SVGTextSpan(
+			text: text,
+			x: positioning.xValues.first,
+			y: positioning.yValues.first,
+			dx: positioning.dxValues.first ?? 0,
+			dy: positioning.dyValues.first ?? 0,
+			xValues: positioning.xValues,
+			yValues: positioning.yValues,
+			dxValues: positioning.dxValues,
+			dyValues: positioning.dyValues,
+			fontSize: nil,
+			fontWeight: nil,
+			attributes: attributes,
+			textPath: textPathStack.last,
+			language: language,
+			unknownAttributes: positioning.unknownAttributes
+		))
 	}
 
 	private var currentXMLSpaceMode: SVGXMLSpaceMode {
@@ -3179,6 +3230,10 @@ private final class SVGTextBuilder {
 	let id: String
 	let x: Double
 	let y: Double
+	let xValues: [Double]
+	let yValues: [Double]
+	let dxValues: [Double]
+	let dyValues: [Double]
 	let fontSize: Double
 	let fontFamily: String
 	let fontWeight: String
@@ -3188,10 +3243,14 @@ private final class SVGTextBuilder {
 	let unknownAttributes: [String: String]
 	var spans: [SVGTextSpan] = []
 
-	init(id: String, x: Double, y: Double, fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
+	init(id: String, x: Double, y: Double, xValues: [Double], yValues: [Double], dxValues: [Double], dyValues: [Double], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
 		self.id = id
 		self.x = x
 		self.y = y
+		self.xValues = xValues
+		self.yValues = yValues
+		self.dxValues = dxValues
+		self.dyValues = dyValues
 		self.fontSize = fontSize
 		self.fontFamily = fontFamily
 		self.fontWeight = fontWeight
@@ -3200,6 +3259,17 @@ private final class SVGTextBuilder {
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
+}
+
+/// Mutable tspan positioning collected before the text run is finalized.
+private struct SVGTextSpanPositioning {
+	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], unknownAttributes: [:])
+
+	let xValues: [Double]
+	let yValues: [Double]
+	let dxValues: [Double]
+	let dyValues: [Double]
+	let unknownAttributes: [String: String]
 }
 
 /// Mutable builder used during SVG title parsing.

@@ -4969,6 +4969,36 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(legacyPath.side == .left)
 }
 
+@Test func svgParserPreservesTextPositioningCoordinateLists() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+		<text id="label" x="10 20" y="30,40" dx="1 2" dy="3,4">AB<tspan x="50,60" y="70 80" dx="-5 6" dy="7 -8">CD</tspan></text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected parsed text element")
+		return
+	}
+	#expect(text.x == 10)
+	#expect(text.y == 30)
+	#expect(text.xValues == [10, 20])
+	#expect(text.yValues == [30, 40])
+	#expect(text.dxValues == [1, 2])
+	#expect(text.dyValues == [3, 4])
+	#expect(text.spans.map(\.text) == ["AB", "CD"])
+	let span = try #require(text.spans.last)
+	#expect(span.x == 50)
+	#expect(span.y == 70)
+	#expect(span.dx == -5)
+	#expect(span.dy == 7)
+	#expect(span.xValues == [50, 60])
+	#expect(span.yValues == [70, 80])
+	#expect(span.dxValues == [-5, 6])
+	#expect(span.dyValues == [7, -8])
+}
+
 @Test func svgParserNormalizesDefaultTextWhitespace() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
