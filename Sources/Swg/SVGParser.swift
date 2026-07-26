@@ -1280,6 +1280,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		result.colorInterpolation = parent.colorInterpolation
 		result.colorRendering = parent.colorRendering
 		result.shapeRendering = parent.shapeRendering
+		result.textRendering = parent.textRendering
 		result.visibility = parent.visibility
 		return result
 	}
@@ -1414,6 +1415,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				result.shapeRendering = shapeRendering
 			}
 		}
+		if let value = attributes["text-rendering"] {
+			if isInheritKeyword(value) {
+				result.textRendering = inherited.textRendering
+			} else if let textRendering = parseTextRendering(value) {
+				result.textRendering = textRendering
+			}
+		}
 		if let value = attributes["opacity"] {
 			if isInheritKeyword(value) {
 				result.opacity = inherited.opacity
@@ -1536,6 +1544,21 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			return .optimizeSpeed
 		case "crispedges":
 			return .crispEdges
+		case "geometricprecision":
+			return .geometricPrecision
+		default:
+			return nil
+		}
+	}
+
+	private func parseTextRendering(_ value: String) -> SVGTextRendering? {
+		switch value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+		case "auto":
+			return .auto
+		case "optimizespeed":
+			return .optimizeSpeed
+		case "optimizelegibility":
+			return .optimizeLegibility
 		case "geometricprecision":
 			return .geometricPrecision
 		default:

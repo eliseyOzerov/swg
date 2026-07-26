@@ -18,6 +18,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var colorInterpolation: SVGColorInterpolation
 	public var colorRendering: SVGColorRendering
 	public var shapeRendering: SVGShapeRendering
+	public var textRendering: SVGTextRendering
 	public var opacity: Double
 	public var transform: Transform
 	public var visibility: SVGVisibility
@@ -44,6 +45,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		colorInterpolation: SVGColorInterpolation = .sRGB,
 		colorRendering: SVGColorRendering = .auto,
 		shapeRendering: SVGShapeRendering = .auto,
+		textRendering: SVGTextRendering = .auto,
 		opacity: Double = 1,
 		transform: Transform = .identity,
 		visibility: SVGVisibility = .visible,
@@ -69,6 +71,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.colorInterpolation = colorInterpolation
 		self.colorRendering = colorRendering
 		self.shapeRendering = shapeRendering
+		self.textRendering = textRendering
 		self.opacity = opacity
 		self.transform = transform
 		self.visibility = visibility
@@ -136,6 +139,14 @@ public enum SVGShapeRendering: Equatable, Sendable, Hashable {
 	case auto
 	case optimizeSpeed
 	case crispEdges
+	case geometricPrecision
+}
+
+/// SVG `text-rendering` hint for text speed, legibility, and precision tradeoffs.
+public enum SVGTextRendering: Equatable, Sendable, Hashable {
+	case auto
+	case optimizeSpeed
+	case optimizeLegibility
 	case geometricPrecision
 }
 

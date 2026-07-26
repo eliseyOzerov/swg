@@ -1374,6 +1374,53 @@ import Testing
 	#expect(paths["inherit"]?.attributes.shapeRendering == .geometricPrecision)
 }
 
+@Test func svgParserAppliesTextRenderingInitialInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.legible { text-rendering: optimizeLegibility; }
+			.invalid { text-rendering: crispEdges; }
+		</style>
+		<text id="initial" x="0" y="1">Initial</text>
+		<g id="parent" text-rendering="geometricPrecision">
+			<text id="inherited" x="0" y="2">Inherited</text>
+			<text id="legible" class="legible" x="0" y="3">Legible</text>
+			<text id="speed" x="0" y="4" text-rendering="optimizeSpeed">Speed</text>
+			<text id="auto" x="0" y="5" text-rendering="auto">Auto</text>
+			<text id="inline" class="legible" x="0" y="6" style="text-rendering: geometricPrecision">Inline</text>
+			<text id="invalid" class="invalid" x="0" y="7">Invalid</text>
+			<text id="inherit" class="legible" x="0" y="8" style="text-rendering: inherit">Inherit</text>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var texts: [String: SVGTextData] = [:]
+	for element in document.elements {
+		switch element {
+		case .text(let text):
+			texts[text.id] = text
+		case .group(let group):
+			for child in group.children {
+				if case .text(let text) = child {
+					texts[text.id] = text
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(texts["initial"]?.attributes.textRendering == .auto)
+	#expect(texts["inherited"]?.attributes.textRendering == .geometricPrecision)
+	#expect(texts["legible"]?.attributes.textRendering == .optimizeLegibility)
+	#expect(texts["speed"]?.attributes.textRendering == .optimizeSpeed)
+	#expect(texts["auto"]?.attributes.textRendering == .auto)
+	#expect(texts["inline"]?.attributes.textRendering == .geometricPrecision)
+	#expect(texts["invalid"]?.attributes.textRendering == .geometricPrecision)
+	#expect(texts["inherit"]?.attributes.textRendering == .geometricPrecision)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">
