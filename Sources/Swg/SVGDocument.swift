@@ -891,6 +891,7 @@ public enum SVGGradientUnits: Sendable, Equatable, Hashable {
 public enum SVGGradientSpreadMethod: Sendable, Equatable, Hashable {
 	case pad
 	case reflect
+	case `repeat`
 }
 
 /// A parsed SVG `<filter>` definition.

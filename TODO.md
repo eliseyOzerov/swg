@@ -129,7 +129,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `gradientTransform`.
 - [x] `spreadMethod="pad"`.
 - [x] `spreadMethod="reflect"`.
-- [ ] `spreadMethod="repeat"`.
+- [x] `spreadMethod="repeat"`.
 - [ ] `<pattern>`.
 - [ ] `patternContentUnits`.
 

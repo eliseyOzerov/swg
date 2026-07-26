@@ -877,6 +877,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			.pad
 		case "reflect":
 			.reflect
+		case "repeat":
+			.repeat
 		default:
 			nil
 		}

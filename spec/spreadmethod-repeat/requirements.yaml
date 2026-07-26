@@ -1,0 +1,159 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: spreadmethod-repeat
+  title: Gradient spread method repeat
+  domain: SVG 2 Paint Servers
+  profile: null
+  summary: Preserve SVG `spreadMethod="repeat"` on linear and radial gradients.
+  non_goals:
+    - Rendering-time repeated gradient tiling.
+    - Template inheritance through `href`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-linear-gradient-spreadmethod
+      title: "SVG 2 Paint Servers: linearGradient spreadMethod"
+      url: https://www.w3.org/TR/SVG/pservers.html#LinearGradientElementSpreadMethodAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-radial-gradient-spreadmethod
+      title: "SVG 2 Paint Servers: radialGradient spreadMethod"
+      url: https://www.w3.org/TR/SVG/pservers.html#RadialGradientElementSpreadMethodAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`spreadMethod` indicates what happens if a gradient starts or ends inside the painted bounds."
+    - "The allowed values are `pad`, `reflect`, and `repeat`."
+    - "`repeat` repeats the gradient pattern start-to-end continuously until the target region is filled."
+    - "Radial gradients use the same spreadMethod values and meanings as linear gradients."
+
+scope:
+  includes:
+    - Parser output for explicit `spreadMethod="repeat"` on linear gradients.
+    - Parser output for explicit `spreadMethod="repeat"` on radial gradients.
+    - Existing default and invalid fallback behavior remaining `pad`.
+  excludes:
+    - Renderer application of repeated gradient tiling.
+    - "`href` inheritance of spread method values."
+  assumptions:
+    - The parser can expose `repeat` as a gradient spread-method enum case for downstream renderer consumption.
+
+terminology:
+  - id: term-spreadmethod
+    term: spreadMethod
+    definition: An SVG gradient attribute that controls how painting continues when the gradient vector or circles do not cover the target region.
+    source_refs:
+      - svg2-linear-gradient-spreadmethod
+      - svg2-radial-gradient-spreadmethod
+  - id: term-repeat
+    term: repeat
+    definition: The spread method that repeats the gradient pattern start-to-end until the target region is filled.
+    source_refs:
+      - svg2-linear-gradient-spreadmethod
+      - svg2-radial-gradient-spreadmethod
+
+structures:
+  - id: S001
+    name: Gradient spread method state
+    kind: structure
+    source_refs:
+      - svg2-linear-gradient-spreadmethod
+      - svg2-radial-gradient-spreadmethod
+    fields:
+      - name: spreadMethod
+        type: enum
+        cardinality: one
+        position: null
+        constraints:
+          - Allowed values include `repeat`.
+          - Applies to linear and radial gradient elements.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-linear-gradient-spreadmethod
+          - svg2-radial-gradient-spreadmethod
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: Explicit `spreadMethod="repeat"` must be preserved on linear gradient definitions.
+    applies_to:
+      - "`linearGradient` elements"
+    source_refs:
+      - svg2-linear-gradient-spreadmethod
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Explicit `spreadMethod="repeat"` must be preserved on radial gradient definitions.
+    applies_to:
+      - "`radialGradient` elements"
+    source_refs:
+      - svg2-radial-gradient-spreadmethod
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs: []
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must prove explicit repeat parsing for both linear and radial gradients.
+    derived_from:
+      - R001
+      - R002
+    reasoning: These cases prove the parser-visible state needed before renderer repeated-spread behavior can be implemented.
+    source_refs:
+      - svg2-linear-gradient-spreadmethod
+      - svg2-radial-gradient-spreadmethod
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-visible representation
+    statement: The package may expose `repeat` as an enum case on gradient definitions and defer renderer behavior to later work.
+    allowed_by:
+      - Current parser architecture
+      - Renderer integration boundary
+    source_refs:
+      - svg2-linear-gradient-spreadmethod
+      - svg2-radial-gradient-spreadmethod
+
+ambiguities: []
+
+dependencies: []
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-spreadmethod
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradient-spreadmethod
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-linear-gradient-spreadmethod
+      - svg2-radial-gradient-spreadmethod
+    map_item_refs: []

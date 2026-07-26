@@ -303,6 +303,28 @@ import Testing
 	#expect(document.defs.radialGradients["radial"]?.spreadMethod == .reflect)
 }
 
+@Test func svgParserPreservesRepeatGradientSpreadMethod() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<defs>
+			<linearGradient id="linear" spreadMethod="repeat">
+				<stop offset="0" stop-color="red"/>
+				<stop offset="1" stop-color="blue"/>
+			</linearGradient>
+			<radialGradient id="radial" spreadMethod="repeat">
+				<stop offset="0" stop-color="white"/>
+				<stop offset="1" stop-color="black"/>
+			</radialGradient>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.linearGradients["linear"]?.spreadMethod == .repeat)
+	#expect(document.defs.radialGradients["radial"]?.spreadMethod == .repeat)
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
