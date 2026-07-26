@@ -249,10 +249,6 @@ if case .rect(let rect) = document.elements.first {
 
 These helpers are the geometry bridge used by the SwiftUI renderer and by callers that want to feed SVG geometry into CoreGraphics directly.
 
-## Styling
-
-Paint and presentation attributes are collected in `SVGPaintAttributes`. The parser handles presentation attributes, inline style declarations, basic cascade/inheritance behavior, transform lists, colors, paint references, opacity, fill rules, stroke properties, markers, clipping, masks, filters, rendering hints, visibility, display, vector effects, and pointer events.
-
 ## Validation
 
 Run the package's iOS simulator test gate with:

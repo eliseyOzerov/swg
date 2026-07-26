@@ -4,10 +4,19 @@ import SwiftUI
 
 /// Controls how `SVGView` maps a parsed document into SwiftUI layout and drawing.
 public struct SVGRenderOptions {
+	/// The SwiftUI content mode used when the view proposes the document aspect ratio.
 	public var contentMode: ContentMode
+	/// An optional override for the root document's `preserveAspectRatio` mapping.
 	public var preserveAspectRatio: SVGPreserveAspectRatio?
+	/// A root opacity multiplier applied to all rendered content.
 	public var opacity: Double
 
+	/// Creates rendering options for `SVGView`.
+	///
+	/// - Parameters:
+	///   - contentMode: The SwiftUI content mode used for aspect-ratio layout.
+	///   - preserveAspectRatio: A root `preserveAspectRatio` override, or `nil` to use the parsed document value.
+	///   - opacity: A root opacity multiplier applied to rendered content.
 	public init(contentMode: ContentMode = .fit, preserveAspectRatio: SVGPreserveAspectRatio? = nil, opacity: Double = 1) {
 		self.contentMode = contentMode
 		self.preserveAspectRatio = preserveAspectRatio
@@ -17,19 +26,33 @@ public struct SVGRenderOptions {
 
 /// A SwiftUI view that renders an `SVGDocument` with the package's native path renderer.
 public struct SVGView: View {
+	/// The parsed SVG document this view renders.
 	public var document: SVGDocument
+	/// Rendering and layout options applied to the document.
 	public var options: SVGRenderOptions
 
+	/// Creates a SwiftUI SVG view from a parsed document.
+	///
+	/// - Parameters:
+	///   - document: The parsed SVG document to display.
+	///   - options: Rendering and layout options for the root drawing pass.
 	public init(_ document: SVGDocument, options: SVGRenderOptions = SVGRenderOptions()) {
 		self.document = document
 		self.options = options
 	}
 
+	/// Parses SVG source and creates a SwiftUI SVG view when parsing succeeds.
+	///
+	/// - Parameters:
+	///   - source: The SVG XML source string to parse.
+	///   - parser: The parser configuration to use.
+	///   - options: Rendering and layout options for the root drawing pass.
 	public init?(svg source: String, parser: SVGParser = SVGParser(), options: SVGRenderOptions = SVGRenderOptions()) {
 		guard let document = parser.parse(source) else { return nil }
 		self.init(document, options: options)
 	}
 
+	/// The SwiftUI body that renders the document into a `Canvas`.
 	public var body: some View {
 		Canvas { context, size in
 			let renderer = SVGCanvasRenderer(document: document, size: size, options: options)
@@ -39,6 +62,7 @@ public struct SVGView: View {
 	}
 }
 
+/// A package-flavored alias for `SVGView`.
 public typealias SWGView = SVGView
 
 private struct SVGCanvasRenderer {

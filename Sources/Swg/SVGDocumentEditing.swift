@@ -2,11 +2,15 @@ import Foundation
 
 public extension SVGDocument {
 	/// Returns the first element in the document tree with the requested SVG `id`.
+	///
+	/// - Parameter id: The SVG `id` attribute to find.
 	func element(id: String) -> SVGElement? {
 		elements.firstNonNil { $0.element(id: id) }
 	}
 
 	/// Returns a copy of the document with every element transformed recursively.
+	///
+	/// - Parameter transform: A closure that receives each element after its descendants have been transformed.
 	func mapElements(_ transform: (SVGElement) -> SVGElement) -> SVGDocument {
 		var copy = self
 		copy.elements = elements.map { $0.recursivelyMapping(transform) }
@@ -14,11 +18,17 @@ public extension SVGDocument {
 	}
 
 	/// Mutates the document by transforming every element recursively.
+	///
+	/// - Parameter transform: A closure that receives each element after its descendants have been transformed.
 	mutating func updateElements(_ transform: (SVGElement) -> SVGElement) {
 		self = mapElements(transform)
 	}
 
 	/// Returns a copy of the document with the element matching `id` transformed.
+	///
+	/// - Parameters:
+	///   - id: The SVG `id` attribute of the element to transform.
+	///   - modify: A closure that receives the matching element and returns its replacement.
 	func modifyingElement(id: String, _ modify: (SVGElement) -> SVGElement) -> SVGDocument {
 		mapElements { element in
 			element.elementID == id ? modify(element) : element
@@ -104,6 +114,8 @@ public extension SVGElement {
 	}
 
 	/// Returns the first element in this subtree with the requested SVG `id`.
+	///
+	/// - Parameter id: The SVG `id` attribute to find.
 	func element(id: String) -> SVGElement? {
 		if elementID == id {
 			return self
@@ -112,6 +124,8 @@ public extension SVGElement {
 	}
 
 	/// Returns a copy of the element with its paint attributes edited.
+	///
+	/// - Parameter modify: A closure that edits the element's presentation attributes.
 	func modifyingAttributes(_ modify: (inout SVGPaintAttributes) -> Void) -> SVGElement {
 		guard var attributes else { return self }
 		modify(&attributes)

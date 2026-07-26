@@ -24,6 +24,8 @@ public extension Transform {
 
 public extension Color {
 	/// Returns this SVG color as a CoreGraphics color after multiplying its alpha.
+	///
+	/// - Parameter alphaMultiplier: A multiplier applied to the color's stored alpha.
 	func cgColor(alphaMultiplier: Double = 1) -> CGColor {
 		CGColor(red: red, green: green, blue: blue, alpha: alpha * alphaMultiplier)
 	}
