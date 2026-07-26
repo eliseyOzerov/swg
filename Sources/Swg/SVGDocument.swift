@@ -1013,6 +1013,7 @@ public enum SVGFilterPrimitiveUnits: Equatable, Sendable, Hashable {
 /// A supported SVG filter primitive.
 public enum SVGFilterPrimitive: Equatable, Sendable {
 	case blend(input: String?, input2: String?, mode: SVGBlendMode = .normal, noComposite: Bool = false)
+	case colorMatrix(input: String?, type: SVGColorMatrixType = .matrix, values: [Double], isPassThrough: Bool = false)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }
@@ -1035,6 +1036,14 @@ public enum SVGBlendMode: Equatable, Sendable, Hashable {
 	case saturation
 	case color
 	case luminosity
+}
+
+/// Color transformation operation used by an SVG `<feColorMatrix>` primitive.
+public enum SVGColorMatrixType: Equatable, Sendable, Hashable {
+	case matrix
+	case saturate
+	case hueRotate
+	case luminanceToAlpha
 }
 
 /// Edge handling behavior for an SVG `<feGaussianBlur>` primitive.

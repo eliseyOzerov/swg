@@ -380,6 +380,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				mode: parseBlendMode(attributes["mode"]),
 				noComposite: attributes.keys.contains("no-composite")
 			))
+		case "feColorMatrix":
+			let colorMatrix = parseColorMatrix(attributes)
+			currentFilter?.primitives.append(.colorMatrix(
+				input: attributes["in"],
+				type: colorMatrix.type,
+				values: colorMatrix.values,
+				isPassThrough: colorMatrix.isPassThrough
+			))
 		case "feGaussianBlur":
 			let stdDeviation = parseNumberOptionalNumber(attributes["stdDeviation"], defaultValue: 0)
 			currentFilter?.primitives.append(.gaussianBlur(
@@ -1026,6 +1034,62 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			.luminosity
 		default:
 			.normal
+		}
+	}
+
+	private func parseColorMatrix(_ attributes: [String: String]) -> (type: SVGColorMatrixType, values: [Double], isPassThrough: Bool) {
+		let type = parseColorMatrixType(attributes["type"])
+		guard let value = attributes["values"] else {
+			return (type, defaultColorMatrixValues(for: type), false)
+		}
+		guard let values = SVGListParser.parse(value, itemParser: parseNumber) else {
+			return (type, [], true)
+		}
+		if let expectedCount = colorMatrixValueCount(for: type), values.count != expectedCount {
+			return (type, values, true)
+		}
+		return (type, type == .luminanceToAlpha ? [] : values, false)
+	}
+
+	private func parseColorMatrixType(_ value: String?) -> SVGColorMatrixType {
+		switch value {
+		case "saturate":
+			.saturate
+		case "hueRotate":
+			.hueRotate
+		case "luminanceToAlpha":
+			.luminanceToAlpha
+		default:
+			.matrix
+		}
+	}
+
+	private func defaultColorMatrixValues(for type: SVGColorMatrixType) -> [Double] {
+		switch type {
+		case .matrix:
+			[
+				1, 0, 0, 0, 0,
+				0, 1, 0, 0, 0,
+				0, 0, 1, 0, 0,
+				0, 0, 0, 1, 0,
+			]
+		case .saturate:
+			[1]
+		case .hueRotate:
+			[0]
+		case .luminanceToAlpha:
+			[]
+		}
+	}
+
+	private func colorMatrixValueCount(for type: SVGColorMatrixType) -> Int? {
+		switch type {
+		case .matrix:
+			20
+		case .saturate, .hueRotate:
+			1
+		case .luminanceToAlpha:
+			nil
 		}
 	}
 

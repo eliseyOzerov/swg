@@ -1,0 +1,237 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-color-matrix
+  title: SVG feColorMatrix filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feColorMatrix>` filter primitives, including input references, operation type, type-specific values, defaults, and pass-through value-count handling.
+  non_goals:
+    - Executing pixel-wise color matrix math.
+    - Expanding shorthand operations into concrete matrices.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-color-matrix
+      title: "Filter Effects Module Level 1: Filter primitive feColorMatrix"
+      url: https://www.w3.org/TR/filter-effects-1/#feColorMatrixElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feColorMatrix>` as a filter primitive that transforms non-premultiplied RGBA color and alpha values."
+    - "The `type` attribute accepts `matrix`, `saturate`, `hueRotate`, and `luminanceToAlpha`; its initial value is `matrix`."
+    - "The `values` list is type-specific: 20 numbers for matrix, one number for saturate, one number in degrees for hueRotate, and not applicable for luminanceToAlpha."
+    - "Omitted `values` defaults to the identity matrix for matrix, `1` for saturate, and `0` for hueRotate."
+    - "If the `values` list entry count does not match the selected type, the primitive acts as a pass-through filter."
+
+scope:
+  includes:
+    - "`<feColorMatrix>` child elements inside `<filter>`."
+    - "`in` input reference preservation."
+    - "`type` values `matrix`, `saturate`, `hueRotate`, and `luminanceToAlpha`."
+    - "`values` parsing as comma and/or whitespace-separated numbers."
+    - "Type-specific omitted-value defaults."
+    - "Pass-through marking for mismatched or malformed `values` lists."
+  excludes:
+    - Rendering-time RGBA matrix application.
+    - Matrix expansion for convenience operations.
+    - Filter primitive common geometry attributes.
+  assumptions:
+    - Swg stores parsed filter primitives as `SVGFilterPrimitive` values for later renderer support.
+    - A malformed `values` attribute cannot produce a valid number list, so it is treated as pass-through rather than as an omitted value.
+
+terminology:
+  - id: T001
+    term: feColorMatrix
+    definition: An SVG filter primitive that applies a matrix-style operation to RGBA pixel values.
+    source_refs:
+      - filter-effects-fe-color-matrix
+  - id: T002
+    term: color matrix type
+    definition: "The selected operation kind: matrix, saturate, hueRotate, or luminanceToAlpha."
+    source_refs:
+      - filter-effects-fe-color-matrix
+  - id: T003
+    term: pass-through filter
+    definition: Behavior used when a filter primitive leaves its input unchanged because its value list does not match the required length.
+    source_refs:
+      - filter-effects-fe-color-matrix
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.colorMatrix
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-color-matrix
+    fields:
+      - name: input
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in` attribute when present.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-color-matrix
+      - name: type
+        type: SVGColorMatrixType
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `matrix`.
+          - Stores the four specification keywords.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-fe-color-matrix
+      - name: values
+        type: list<double>
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Stores type-specific number lists.
+          - Supplies type-specific omitted defaults.
+        requirement_refs:
+          - R004
+          - R005
+        source_refs:
+          - filter-effects-fe-color-matrix
+      - name: isPassThrough
+        type: boolean
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - True when the parsed `values` list has the wrong cardinality for the selected type.
+        requirement_refs:
+          - R006
+        source_refs:
+          - filter-effects-fe-color-matrix
+  - id: S002
+    name: SVGColorMatrixType
+    kind: enum
+    source_refs:
+      - filter-effects-fe-color-matrix
+    fields:
+      - name: keywords
+        type: enum-cases
+        cardinality: one-or-more
+        position: enum-case
+        constraints:
+          - Includes `matrix`, `saturate`, `hueRotate`, and `luminanceToAlpha`.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-fe-color-matrix
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feColorMatrix>` must preserve its `in` input reference when present."
+    applies_to:
+      - SVGFilterPrimitive.colorMatrix
+    source_refs:
+      - filter-effects-fe-color-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesColorMatrixPrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: "`type` must preserve `matrix`, `saturate`, `hueRotate`, and `luminanceToAlpha` operation kinds."
+    applies_to:
+      - SVGFilterPrimitive.colorMatrix
+      - SVGColorMatrixType
+    source_refs:
+      - filter-effects-fe-color-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesColorMatrixPrimitiveAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "Omitted or unsupported `type` values on `<feColorMatrix>` must resolve to the initial value `matrix`."
+    applies_to:
+      - SVGFilterPrimitive.colorMatrix
+    source_refs:
+      - filter-effects-fe-color-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesColorMatrixPrimitiveAttributes
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`values` must parse as a comma and/or whitespace-separated list of numbers with type-specific cardinality."
+    applies_to:
+      - SVGFilterPrimitive.colorMatrix
+    source_refs:
+      - filter-effects-fe-color-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesColorMatrixPrimitiveAttributes
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: "Omitted `values` must default to identity matrix values for `matrix`, `[1]` for `saturate`, `[0]` for `hueRotate`, and an empty list for `luminanceToAlpha`."
+    applies_to:
+      - SVGFilterPrimitive.colorMatrix
+    source_refs:
+      - filter-effects-fe-color-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesColorMatrixPrimitiveAttributes
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: "A present malformed `values` list, or a present list whose entry count does not match the selected type, must mark `<feColorMatrix>` as pass-through."
+    applies_to:
+      - SVGFilterPrimitive.colorMatrix
+    source_refs:
+      - filter-effects-fe-color-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesColorMatrixPrimitiveAttributes
+
+traceability:
+  source_to_requirements:
+    filter-effects-fe-color-matrix:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+      - R006
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesColorMatrixPrimitiveAttributes
+    R002:
+      - svgParserPreservesColorMatrixPrimitiveAttributes
+    R003:
+      - svgParserPreservesColorMatrixPrimitiveAttributes
+    R004:
+      - svgParserPreservesColorMatrixPrimitiveAttributes
+    R005:
+      - svgParserPreservesColorMatrixPrimitiveAttributes
+    R006:
+      - svgParserPreservesColorMatrixPrimitiveAttributes

@@ -232,6 +232,60 @@ import Testing
 	])
 }
 
+@Test func svgParserPreservesColorMatrixPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="colors">
+			<feColorMatrix/>
+			<feColorMatrix in="SourceGraphic" type="matrix" values="1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 1 0"/>
+			<feColorMatrix type="saturate" values="0.4"/>
+			<feColorMatrix type="hueRotate" values="90"/>
+			<feColorMatrix type="luminanceToAlpha"/>
+			<feColorMatrix type="saturate"/>
+			<feColorMatrix type="hueRotate"/>
+			<feColorMatrix type="unsupported"/>
+			<feColorMatrix type="matrix" values="1 0"/>
+			<feColorMatrix type="saturate" values="1 0"/>
+			<feColorMatrix type="hueRotate" values="bad"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["colors"])
+	#expect(filter.primitives.count == 11)
+
+	let identity = [
+		1.0, 0, 0, 0, 0,
+		0, 1, 0, 0, 0,
+		0, 0, 1, 0, 0,
+		0, 0, 0, 1, 0,
+	]
+
+	func expectColorMatrix(_ primitive: SVGFilterPrimitive, input expectedInput: String?, type expectedType: SVGColorMatrixType, values expectedValues: [Double], isPassThrough expectedIsPassThrough: Bool = false) {
+		guard case .colorMatrix(let input, let type, let values, let isPassThrough) = primitive else {
+			Issue.record("Expected parsed feColorMatrix primitive")
+			return
+		}
+		#expect(input == expectedInput)
+		#expect(type == expectedType)
+		#expect(values == expectedValues)
+		#expect(isPassThrough == expectedIsPassThrough)
+	}
+
+	expectColorMatrix(filter.primitives[0], input: nil, type: .matrix, values: identity)
+	expectColorMatrix(filter.primitives[1], input: "SourceGraphic", type: .matrix, values: identity)
+	expectColorMatrix(filter.primitives[2], input: nil, type: .saturate, values: [0.4])
+	expectColorMatrix(filter.primitives[3], input: nil, type: .hueRotate, values: [90])
+	expectColorMatrix(filter.primitives[4], input: nil, type: .luminanceToAlpha, values: [])
+	expectColorMatrix(filter.primitives[5], input: nil, type: .saturate, values: [1])
+	expectColorMatrix(filter.primitives[6], input: nil, type: .hueRotate, values: [0])
+	expectColorMatrix(filter.primitives[7], input: nil, type: .matrix, values: identity)
+	expectColorMatrix(filter.primitives[8], input: nil, type: .matrix, values: [1, 0], isPassThrough: true)
+	expectColorMatrix(filter.primitives[9], input: nil, type: .saturate, values: [1, 0], isPassThrough: true)
+	expectColorMatrix(filter.primitives[10], input: nil, type: .hueRotate, values: [], isPassThrough: true)
+}
+
 @Test func svgParserPreservesRadialGradientGeometryAndStops() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
