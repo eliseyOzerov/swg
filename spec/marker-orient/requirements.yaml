@@ -1,0 +1,238 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: marker-orient
+  title: SVG marker orient attribute
+  domain: SVG 2 Painting
+  profile: null
+  summary: Requirements for parser-visible handling of the `<marker>` `orient` attribute, including automatic orientation keywords, angle values, initial value, and malformed fallback behavior.
+  non_goals:
+    - Computing tangent direction or reflected auto-start-reverse marker rotation during rendering.
+    - Rendering markers onto CGPath output.
+    - Implementing marker placement for marker-start, marker-mid, or marker-end.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-marker-element
+      title: "SVG 2 Painting: The marker element"
+      url: https://www.w3.org/TR/SVG/painting.html#MarkerElement
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-orient-attribute
+      title: "SVG 2 Painting: orient attribute"
+      url: https://www.w3.org/TR/SVG/painting.html#OrientAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 lists `orient` as an attribute of the `marker` element.
+    - SVG 2 defines `orient` with value grammar `auto | auto-start-reverse | <angle>`, initial value `0`, and animatable yes.
+    - SVG 2 describes the attribute as indicating how the marker is rotated when placed at its position.
+    - SVG angle syntax permits supported angle units; package-wide angle parsing treats unitless values as degrees.
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C marker element and orient attribute sections.
+
+scope:
+  includes:
+    - Parser output for the `orient` attribute on `<marker>`.
+    - Initial `orient` value of angle `0`.
+    - "`auto` orientation mode."
+    - "`auto-start-reverse` orientation mode."
+    - Supported angle values and unitless angle values.
+    - Malformed `orient` values falling back to the initial value in parser output.
+  excludes:
+    - Runtime computation of marker tangent angle.
+    - Runtime computation of `auto-start-reverse` reversal on start markers.
+    - Animation of `orient`.
+  assumptions:
+    - The parser may store keyword modes distinctly from numeric angles and leave geometric rotation computation to renderer work.
+    - Invalid attribute values are represented by the parser as the initial angle value for this bullet.
+
+terminology:
+  - id: term-orient
+    term: orient
+    definition: The marker attribute that determines how marker graphics are rotated when placed on a shape.
+    source_refs:
+      - svg2-orient-attribute
+  - id: term-auto-orient
+    term: auto
+    definition: The orient keyword requesting automatic marker rotation from the shape direction at the placement point.
+    source_refs:
+      - svg2-orient-attribute
+  - id: term-auto-start-reverse
+    term: auto-start-reverse
+    definition: The orient keyword requesting automatic rotation with start-marker reversal behavior.
+    source_refs:
+      - svg2-orient-attribute
+
+structures:
+  - id: S001
+    name: marker orient parser state
+    kind: structure
+    source_refs:
+      - svg2-orient-attribute
+    fields:
+      - name: orient
+        type: auto, auto-start-reverse, or angle
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is angle `0`.
+          - Valid keyword values are `auto` and `auto-start-reverse`.
+          - Valid numeric values use SVG angle syntax.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-orient-attribute
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: A marker `orient` attribute must accept `auto`, `auto-start-reverse`, or an SVG angle value.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-orient-attribute
+      - svg2-marker-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `orient` value must be angle `0`.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-orient-attribute
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: The `auto` value must be preserved distinctly from numeric angle values.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-orient-attribute
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The `auto-start-reverse` value must be preserved distinctly from `auto` and numeric angle values.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-orient-attribute
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Numeric `orient` angle values must be preserved after applying the package's SVG angle parsing rules.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-orient-attribute
+    testability: testable
+    notes:
+      - Unitless angle parsing is covered by the package-wide SVG angle parser.
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: The `orient` value determines how marker graphics are rotated at marker placement time.
+    applies_to:
+      - SVG marker rendering
+    source_refs:
+      - svg2-orient-attribute
+    testability: reviewable
+    notes:
+      - Parser-visible coverage stores the requested orientation mode or angle; actual marker rotation is excluded from this bullet.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`orient` is neither `auto`, `auto-start-reverse`, nor a supported SVG angle."
+    source_behavior: UNSPECIFIED
+    required_behavior: Parser output falls back to the initial `orient` angle of `0`.
+    decision_required: false
+    source_refs:
+      - svg2-orient-attribute
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: Parser output for a marker must retain enough `orient` state for a renderer to later compute marker rotation.
+    derived_from:
+      - R001
+      - R006
+    reasoning: The spec defines orient as the marker rotation control, so parser output must preserve the orientation request before renderer geometry work can apply it.
+    source_refs:
+      - svg2-orient-attribute
+
+implementation_choices:
+  - id: IC001
+    topic: Invalid orient fallback
+    statement: The parser may normalize malformed `orient` values to the initial value rather than preserving the malformed token.
+    allowed_by:
+      - R002
+    source_refs:
+      - svg2-orient-attribute
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG marker element
+    reason: The `orient` attribute is defined on SVG `<marker>` elements.
+    source_refs:
+      - svg2-marker-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-orient-attribute
+      - svg2-marker-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-orient-attribute
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-orient-attribute
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-orient-attribute
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-orient-attribute
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-orient-attribute
+    map_item_refs: []

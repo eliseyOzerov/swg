@@ -4048,6 +4048,39 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(defaults.children.isEmpty)
 }
 
+@Test func svgParserPreservesMarkerOrientInitialKeywordsAnglesAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+		<defs>
+			<marker id="defaults"/>
+			<marker id="auto" orient="auto"/>
+			<marker id="auto-start-reverse" orient="auto-start-reverse"/>
+			<marker id="unitless" orient="90"/>
+			<marker id="degrees" orient="90deg"/>
+			<marker id="radians" orient="3.141592653589793rad"/>
+			<marker id="invalid" orient="sideways"/>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	func expectAngle(_ orient: SVGMarkerOrient?, _ expected: Double) {
+		guard case .angle(let angle) = orient else {
+			Issue.record("Expected marker orient angle")
+			return
+		}
+		#expect(abs(angle - expected) < 0.000001)
+	}
+
+	expectAngle(document.defs.markers["defaults"]?.orient, 0)
+	#expect(document.defs.markers["auto"]?.orient == .auto)
+	#expect(document.defs.markers["auto-start-reverse"]?.orient == .autoStartReverse)
+	expectAngle(document.defs.markers["unitless"]?.orient, .pi / 2)
+	expectAngle(document.defs.markers["degrees"]?.orient, .pi / 2)
+	expectAngle(document.defs.markers["radians"]?.orient, .pi)
+	expectAngle(document.defs.markers["invalid"]?.orient, 0)
+}
+
 @Test func svgParserAppliesMarkerStartInitialInheritanceCascadeAndInvalidFallback() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
