@@ -1,0 +1,274 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: gradientunits-userspaceonuse
+  title: Gradient units userSpaceOnUse
+  domain: SVG 2 Paint Servers
+  profile: null
+  summary: Preserve `gradientUnits="userSpaceOnUse"` and resolve supported gradient geometry lengths in the current SVG viewport coordinate system.
+  non_goals:
+    - The `gradientUnits="objectBoundingBox"` initial behavior, covered by the previous TODO bullet.
+    - Applying `gradientTransform`, covered by a separate TODO bullet.
+    - Resolving the referencing element's final current user coordinate system at paint time.
+    - Template inheritance through `href`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-linear-gradient-units
+      title: "SVG 2 Paint Servers: linearGradient gradientUnits"
+      url: https://www.w3.org/TR/SVG/pservers.html#LinearGradientElementGradientUnitsAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-radial-gradient-units
+      title: "SVG 2 Paint Servers: radialGradient gradientUnits"
+      url: https://www.w3.org/TR/SVG/pservers.html#RadialGradientElementGradientUnitsAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`gradientUnits` defines the coordinate system for linear gradient x1, y1, x2, and y2."
+    - "`gradientUnits` defines the coordinate system for radial gradient cx, cy, r, fx, fy, and fr."
+    - "The allowed values are `userSpaceOnUse` and `objectBoundingBox`."
+    - "For `userSpaceOnUse`, gradient geometry values are in the current user coordinate system in place when the gradient is referenced, after applying `gradientTransform`."
+    - "For `userSpaceOnUse`, percentages represent values relative to the current SVG viewport."
+
+scope:
+  includes:
+    - Parser output for `gradientUnits="userSpaceOnUse"` on linear and radial gradients.
+    - Supported number and length syntax for linear x1, y1, x2, and y2.
+    - Supported number and length syntax for radial cx, cy, r, fx, fy, and fr.
+    - Percentage resolution against the current SVG viewport for user-space gradient coordinates.
+    - Invalid or unsupported `gradientUnits` values staying out of scope except as already covered by the objectBoundingBox bullet.
+  excludes:
+    - Rendering-time current user coordinate system resolution from the referencing element.
+    - "`gradientTransform`."
+    - CSS styling or presentation-attribute cascade for gradient geometry attributes.
+    - "`href` inheritance of gradient geometry."
+  assumptions:
+    - Parser-visible coordinates may be stored as user-unit Doubles for `userSpaceOnUse`.
+    - X-like percentages resolve against viewport width; y-like percentages resolve against viewport height; radius percentages use the package's existing normalized diagonal length basis.
+    - Invalid geometry values leave existing gradient defaults unchanged.
+
+terminology:
+  - id: term-gradientunits
+    term: gradientUnits
+    definition: An SVG gradient attribute that selects the coordinate system used by gradient geometry attributes.
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+  - id: term-userspaceonuse
+    term: userSpaceOnUse
+    definition: A gradient coordinate mode where geometry is interpreted in the current user coordinate system of the element referencing the gradient, with percentages relative to the current SVG viewport.
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+structures:
+  - id: S001
+    name: User-space gradient coordinate mode
+    kind: structure
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    fields:
+      - name: gradientUnits
+        type: enum
+        cardinality: one
+        position: null
+        constraints:
+          - Allowed values include `userSpaceOnUse`.
+          - Applies to linear and radial gradient elements.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-linear-gradient-units
+          - svg2-radial-gradient-units
+      - name: geometry
+        type: length-values
+        cardinality: one-or-more
+        position: null
+        constraints:
+          - Linear gradient geometry includes x1, y1, x2, and y2.
+          - Radial gradient geometry includes cx, cy, r, fx, fy, and fr.
+          - Percentages in user-space mode are relative to the current SVG viewport.
+        requirement_refs:
+          - R003
+          - R004
+          - R005
+        source_refs:
+          - svg2-linear-gradient-units
+          - svg2-radial-gradient-units
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: Linear gradients must support `gradientUnits="userSpaceOnUse"` as a parser-visible coordinate mode.
+    applies_to:
+      - "`linearGradient` elements"
+    source_refs:
+      - svg2-linear-gradient-units
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: Radial gradients must support `gradientUnits="userSpaceOnUse"` as a parser-visible coordinate mode.
+    applies_to:
+      - "`radialGradient` elements"
+    source_refs:
+      - svg2-radial-gradient-units
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Linear gradient geometry in user-space mode must preserve supported x1, y1, x2, and y2 values as user-space coordinates.
+    applies_to:
+      - "`linearGradient` elements"
+    source_refs:
+      - svg2-linear-gradient-units
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Radial gradient geometry in user-space mode must preserve supported cx, cy, r, fx, fy, and fr values as user-space coordinates.
+    applies_to:
+      - "`radialGradient` elements"
+    source_refs:
+      - svg2-radial-gradient-units
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Percentage geometry values in user-space gradient mode must resolve relative to the current SVG viewport.
+    applies_to:
+      - gradient geometry attributes
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: User-space gradient length parsing
+    kind: algorithm
+    summary: Resolve supported gradient geometry values using viewport-relative SVG length parsing when `gradientUnits` is `userSpaceOnUse`.
+    steps:
+      - Determine the gradient coordinate mode from `gradientUnits`.
+      - If the mode is `userSpaceOnUse`, parse x-like values against viewport width and y-like values against viewport height.
+      - Parse radial radius-like values against the package's normalized diagonal percentage basis.
+      - Preserve nonnegative radial radius and focal radius defaults if parsing fails or produces a negative value.
+    preconditions:
+      - The gradient element has `gradientUnits="userSpaceOnUse"`.
+    postconditions:
+      - Parser-visible geometry values are represented in user units.
+    requirement_refs:
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A user-space gradient geometry value is malformed or unsupported by the package length parser.
+    source_behavior: UNSPECIFIED
+    required_behavior: Leave the affected geometry field at its existing default value.
+    decision_required: false
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must prove user-space mode preservation and viewport-relative percentage resolution for both linear and radial gradients.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    reasoning: These cases distinguish user-space parsing from object-bounding-box fraction parsing.
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-visible representation
+    statement: The package may store resolved user-space coordinates as Double values on gradient definitions and defer renderer-time current-user-coordinate-system composition.
+    allowed_by:
+      - Current parser architecture
+      - Renderer integration boundary
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG length percentage resolution
+    reason: User-space gradient percentages are resolved relative to the current SVG viewport.
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-units
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradient-units
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-units
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradient-units
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    map_item_refs: []

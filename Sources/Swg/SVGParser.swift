@@ -750,12 +750,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseLinearGradientStart(_ attributes: [String: String]) {
-		var gradient = SVGLinearGradientDef(id: attributes["id"] ?? "")
-		if let v = attributes["x1"] { gradient.x1 = parseGradientCoord(v) }
-		if let v = attributes["y1"] { gradient.y1 = parseGradientCoord(v) }
-		if let v = attributes["x2"] { gradient.x2 = parseGradientCoord(v) }
-		if let v = attributes["y2"] { gradient.y2 = parseGradientCoord(v) }
-		if attributes["gradientUnits"] == "userSpaceOnUse" { gradient.gradientUnits = .userSpaceOnUse }
+		let units = parseGradientUnits(attributes["gradientUnits"])
+		var gradient = SVGLinearGradientDef(
+			id: attributes["id"] ?? "",
+			x2: defaultLinearGradientX2(units: units),
+			gradientUnits: units
+		)
+		if let v = attributes["x1"] { gradient.x1 = parseGradientCoord(v, units: units, percentageBasis: .horizontal) }
+		if let v = attributes["y1"] { gradient.y1 = parseGradientCoord(v, units: units, percentageBasis: .vertical) }
+		if let v = attributes["x2"] { gradient.x2 = parseGradientCoord(v, units: units, percentageBasis: .horizontal) }
+		if let v = attributes["y2"] { gradient.y2 = parseGradientCoord(v, units: units, percentageBasis: .vertical) }
 		if let transform = attributes["gradientTransform"] { gradient.gradientTransform = parseTransform(transform) }
 		gradient.href = parseHref(attributes)
 		currentLinearGradient = gradient
@@ -763,14 +767,20 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseRadialGradientStart(_ attributes: [String: String]) {
-		var gradient = SVGRadialGradientDef(id: attributes["id"] ?? "")
-		if let v = attributes["cx"] { gradient.cx = parseGradientCoord(v) }
-		if let v = attributes["cy"] { gradient.cy = parseGradientCoord(v) }
-		if let v = attributes["r"], let radius = parseNonnegativeGradientCoord(v) { gradient.r = radius }
-		if let v = attributes["fx"] { gradient.fx = parseGradientCoord(v) }
-		if let v = attributes["fy"] { gradient.fy = parseGradientCoord(v) }
-		if let v = attributes["fr"], let radius = parseNonnegativeGradientCoord(v) { gradient.fr = radius }
-		if attributes["gradientUnits"] == "userSpaceOnUse" { gradient.gradientUnits = .userSpaceOnUse }
+		let units = parseGradientUnits(attributes["gradientUnits"])
+		var gradient = SVGRadialGradientDef(
+			id: attributes["id"] ?? "",
+			cx: defaultRadialGradientCX(units: units),
+			cy: defaultRadialGradientCY(units: units),
+			r: defaultRadialGradientRadius(units: units),
+			gradientUnits: units
+		)
+		if let v = attributes["cx"] { gradient.cx = parseGradientCoord(v, units: units, percentageBasis: .horizontal) }
+		if let v = attributes["cy"] { gradient.cy = parseGradientCoord(v, units: units, percentageBasis: .vertical) }
+		if let v = attributes["r"], let radius = parseNonnegativeGradientCoord(v, units: units, percentageBasis: .normalizedDiagonal) { gradient.r = radius }
+		if let v = attributes["fx"] { gradient.fx = parseGradientCoord(v, units: units, percentageBasis: .horizontal) }
+		if let v = attributes["fy"] { gradient.fy = parseGradientCoord(v, units: units, percentageBasis: .vertical) }
+		if let v = attributes["fr"], let radius = parseNonnegativeGradientCoord(v, units: units, percentageBasis: .normalizedDiagonal) { gradient.fr = radius }
 		if let transform = attributes["gradientTransform"] { gradient.gradientTransform = parseTransform(transform) }
 		gradient.href = parseHref(attributes)
 		currentRadialGradient = gradient
@@ -835,21 +845,64 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return parsed.map { min(max($0, 0), 1) }
 	}
 
-	private func parseGradientCoord(_ value: String) -> Double {
-		parseGradientCoordValue(value) ?? 0
+	private func parseGradientCoord(_ value: String, units: SVGGradientUnits, percentageBasis: SVGLengthPercentageBasis) -> Double {
+		parseGradientCoordValue(value, units: units, percentageBasis: percentageBasis) ?? 0
 	}
 
-	private func parseNonnegativeGradientCoord(_ value: String) -> Double? {
-		guard let coordinate = parseGradientCoordValue(value), coordinate >= 0 else { return nil }
+	private func parseNonnegativeGradientCoord(_ value: String, units: SVGGradientUnits, percentageBasis: SVGLengthPercentageBasis) -> Double? {
+		guard let coordinate = parseGradientCoordValue(value, units: units, percentageBasis: percentageBasis), coordinate >= 0 else { return nil }
 		return coordinate
 	}
 
-	private func parseGradientCoordValue(_ value: String) -> Double? {
+	private func parseGradientCoordValue(_ value: String, units: SVGGradientUnits, percentageBasis: SVGLengthPercentageBasis) -> Double? {
+		if units == .userSpaceOnUse {
+			return parseDimension(value, context: currentViewportContext, percentageBasis: percentageBasis)
+		}
 		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
 		if trimmed.hasSuffix("%") {
 			return parseNumber(String(trimmed.dropLast())).map { $0 / 100 }
 		}
 		return parseNumber(trimmed)
+	}
+
+	private func parseGradientUnits(_ value: String?) -> SVGGradientUnits {
+		value == "userSpaceOnUse" ? .userSpaceOnUse : .objectBoundingBox
+	}
+
+	private func defaultLinearGradientX2(units: SVGGradientUnits) -> Double {
+		switch units {
+		case .objectBoundingBox:
+			1
+		case .userSpaceOnUse:
+			SVGLengthPercentageBasis.horizontal.referenceDistance(in: currentViewportContext)
+		}
+	}
+
+	private func defaultRadialGradientCX(units: SVGGradientUnits) -> Double {
+		switch units {
+		case .objectBoundingBox:
+			0.5
+		case .userSpaceOnUse:
+			SVGLengthPercentageBasis.horizontal.referenceDistance(in: currentViewportContext) / 2
+		}
+	}
+
+	private func defaultRadialGradientCY(units: SVGGradientUnits) -> Double {
+		switch units {
+		case .objectBoundingBox:
+			0.5
+		case .userSpaceOnUse:
+			SVGLengthPercentageBasis.vertical.referenceDistance(in: currentViewportContext) / 2
+		}
+	}
+
+	private func defaultRadialGradientRadius(units: SVGGradientUnits) -> Double {
+		switch units {
+		case .objectBoundingBox:
+			0.5
+		case .userSpaceOnUse:
+			SVGLengthPercentageBasis.normalizedDiagonal.referenceDistance(in: currentViewportContext) / 2
+		}
 	}
 
 	private func parseHref(_ attributes: [String: String]) -> String? {

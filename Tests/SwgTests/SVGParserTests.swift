@@ -144,6 +144,65 @@ import Testing
 	#expect(radialInvalid.r == 0.2)
 }
 
+@Test func svgParserResolvesUserSpaceOnUseGradientUnitsAgainstViewport() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100">
+		<defs>
+			<linearGradient id="linearDefault" gradientUnits="userSpaceOnUse">
+				<stop offset="0" stop-color="red"/>
+				<stop offset="1" stop-color="blue"/>
+			</linearGradient>
+			<linearGradient id="linearExplicit" gradientUnits="userSpaceOnUse" x1="25%" y1="50%" x2="1in" y2="30">
+				<stop offset="0" stop-color="red"/>
+				<stop offset="1" stop-color="blue"/>
+			</linearGradient>
+			<radialGradient id="radialDefault" gradientUnits="userSpaceOnUse">
+				<stop offset="0" stop-color="white"/>
+				<stop offset="1" stop-color="black"/>
+			</radialGradient>
+			<radialGradient id="radialExplicit" gradientUnits="userSpaceOnUse" cx="50%" cy="25%" r="10%" fx="75%" fy="80%" fr="5%">
+				<stop offset="0" stop-color="white"/>
+				<stop offset="1" stop-color="black"/>
+			</radialGradient>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let linearDefault = try #require(document.defs.linearGradients["linearDefault"])
+	let linearExplicit = try #require(document.defs.linearGradients["linearExplicit"])
+	let radialDefault = try #require(document.defs.radialGradients["radialDefault"])
+	let radialExplicit = try #require(document.defs.radialGradients["radialExplicit"])
+
+	#expect(linearDefault.gradientUnits == .userSpaceOnUse)
+	#expect(linearDefault.x1 == 0)
+	#expect(linearDefault.y1 == 0)
+	#expect(linearDefault.x2 == 200)
+	#expect(linearDefault.y2 == 0)
+
+	#expect(linearExplicit.gradientUnits == .userSpaceOnUse)
+	#expect(linearExplicit.x1 == 50)
+	#expect(linearExplicit.y1 == 50)
+	#expect(linearExplicit.x2 == 96)
+	#expect(linearExplicit.y2 == 30)
+
+	#expect(radialDefault.gradientUnits == .userSpaceOnUse)
+	#expect(radialDefault.cx == 100)
+	#expect(radialDefault.cy == 50)
+	#expect(abs(radialDefault.r - 79.05694150420949) < 0.000001)
+	#expect(radialDefault.fx == nil)
+	#expect(radialDefault.fy == nil)
+	#expect(radialDefault.fr == 0)
+
+	#expect(radialExplicit.gradientUnits == .userSpaceOnUse)
+	#expect(radialExplicit.cx == 100)
+	#expect(radialExplicit.cy == 25)
+	#expect(abs(radialExplicit.r - 15.811388300841898) < 0.000001)
+	#expect(radialExplicit.fx == 150)
+	#expect(radialExplicit.fy == 80)
+	#expect(abs(radialExplicit.fr - 7.905694150420949) < 0.000001)
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
