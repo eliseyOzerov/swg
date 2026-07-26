@@ -140,7 +140,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `clip-rule`.
 - [x] `clipPathUnits`.
 - [x] `<mask>`.
-- [ ] `mask`.
+- [x] `mask`.
 - [ ] `maskUnits`.
 - [ ] `maskContentUnits`.
 - [ ] `opacity`.

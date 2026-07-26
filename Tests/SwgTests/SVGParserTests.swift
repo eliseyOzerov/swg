@@ -601,6 +601,52 @@ import Testing
 	#expect(path.attributes.opacity == 0.5)
 }
 
+@Test func svgParserParsesMaskPropertyLocalReferences() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.classMask { mask: url( '#classMask' ); }
+			.noneMask { mask: none; }
+			.invalidMask { mask: url(#a) url(#b); }
+		</style>
+		<g id="parent" mask="url(#parentMask)">
+			<path id="notInherited" d="M0 0 L1 1"/>
+			<path id="explicitInherit" d="M0 0 L1 1" style="mask: inherit"/>
+		</g>
+		<path id="attributeMask" d="M0 0 L1 1" mask="url(#attributeMask)"/>
+		<path id="classMask" class="classMask" d="M0 0 L1 1"/>
+		<path id="noneMask" class="noneMask" d="M0 0 L1 1" mask="url(#ignored)"/>
+		<path id="invalidMask" class="invalidMask" d="M0 0 L1 1"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let parent) = document.elements[0] else {
+		Issue.record("Expected parent group")
+		return
+	}
+
+	var paths: [String: SVGPathData] = [:]
+	for child in parent.children {
+		if case .path(let path) = child {
+			paths[path.id] = path
+		}
+	}
+	for element in document.elements.dropFirst() {
+		if case .path(let path) = element {
+			paths[path.id] = path
+		}
+	}
+
+	#expect(parent.attributes.maskID == "parentMask")
+	#expect(paths["notInherited"]?.attributes.maskID == nil)
+	#expect(paths["explicitInherit"]?.attributes.maskID == "parentMask")
+	#expect(paths["attributeMask"]?.attributes.maskID == "attributeMask")
+	#expect(paths["classMask"]?.attributes.maskID == "classMask")
+	#expect(paths["noneMask"]?.attributes.maskID == nil)
+	#expect(paths["invalidMask"]?.attributes.maskID == nil)
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

@@ -1,0 +1,166 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: mask-property
+  title: SVG mask property
+  domain: CSS Masking Level 1 / SVG
+  profile: null
+  summary: Preserve SVG `mask` presentation attribute and CSS property references to local `<mask>` sources on supported SVG elements.
+  non_goals:
+    - Parsing `maskUnits`; it is tracked as a separate TODO bullet.
+    - Parsing `maskContentUnits`; it is tracked as a separate TODO bullet.
+    - Implementing CSS image masks, multi-layer mask composition, mask positioning, mask sizing, or mask borders.
+    - Applying masks during rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-masking-mask-property
+      title: "CSS Masking Module Level 1: Mask Shorthand: the mask property"
+      url: https://www.w3.org/TR/css-masking-1/#the-mask
+      version: Candidate Recommendation Draft, 5 August 2021
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - CSS Masking defines `mask` as a shorthand for mask layers.
+    - CSS Masking states that the `mask` property is a presentation attribute for SVG elements.
+
+scope:
+  includes:
+    - "`mask` presentation attributes."
+    - "`mask` declarations from style elements and inline styles."
+    - Local `url(#id)` references to SVG `<mask>` elements.
+    - CSS-wide `inherit` behavior.
+  excludes:
+    - Non-local image mask sources.
+    - Multi-layer mask shorthand expansion.
+    - Mask repeat, position, clip, origin, size, composite, mode, and mask-border subproperties.
+  assumptions:
+    - The current parser representation stores the local mask target ID used by downstream renderers.
+
+terminology:
+  - id: T001
+    term: mask property
+    definition: A CSS Masking shorthand property that selects one or more mask layers and is exposed as an SVG presentation attribute.
+    source_refs:
+      - css-masking-mask-property
+  - id: T002
+    term: mask reference
+    definition: A URL reference in a mask layer that can identify an SVG `<mask>` source.
+    source_refs:
+      - css-masking-mask-property
+
+structures:
+  - id: S001
+    name: SVG mask reference attribute
+    kind: field
+    source_refs:
+      - css-masking-mask-property
+    fields:
+      - name: maskID
+        type: string?
+        cardinality: zero-or-one
+        position: presentation-attributes
+        constraints:
+          - Stores the local fragment ID from a supported `url(#id)` mask reference.
+          - Uses nil when no mask reference applies.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - css-masking-mask-property
+
+requirements:
+  - id: R001
+    title: Parse local URL mask references
+    statement: A supported local `url(#id)` value for `mask` must be preserved on the target SVG element.
+    keywords:
+      - mask
+      - url
+    source_refs:
+      - css-masking-mask-property
+    acceptance:
+      - "`mask=\"url(#mask)\"` stores `mask` as the local mask target ID."
+      - "`mask: url('#mask')` from CSS stores the same local target ID."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserParsesMaskPropertyLocalReferences
+  - id: R002
+    title: Support mask none
+    statement: The `none` value must represent the absence of a mask reference.
+    keywords:
+      - mask
+      - none
+    source_refs:
+      - css-masking-mask-property
+    acceptance:
+      - "`mask=\"none\"` stores no mask target ID."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserParsesMaskPropertyLocalReferences
+  - id: R003
+    title: Do not inherit mask by default
+    statement: The `mask` property is not inherited by default.
+    keywords:
+      - mask
+      - inheritance
+    source_refs:
+      - css-masking-mask-property
+    acceptance:
+      - A child element without `mask` does not inherit an ancestor's mask reference.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserParsesMaskPropertyLocalReferences
+  - id: R004
+    title: Honor explicit inherit
+    statement: The CSS-wide `inherit` keyword must copy the parent mask reference.
+    keywords:
+      - mask
+      - inherit
+    source_refs:
+      - css-masking-mask-property
+    acceptance:
+      - "`mask: inherit` stores the parent mask target ID."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserParsesMaskPropertyLocalReferences
+  - id: R005
+    title: Ignore unsupported shorthand forms
+    statement: Unsupported or invalid `mask` shorthand values must not create a local mask target ID.
+    keywords:
+      - mask
+      - invalid
+    source_refs:
+      - css-masking-mask-property
+    acceptance:
+      - Multiple mask layers or unknown tokens are ignored by the local-reference parser.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserParsesMaskPropertyLocalReferences
+
+coverage:
+  status: test-required
+  test_files:
+    - Tests/SwgTests/SVGParserTests.swift
+  requirement_to_tests:
+    R001:
+      - svgParserParsesMaskPropertyLocalReferences
+    R002:
+      - svgParserParsesMaskPropertyLocalReferences
+    R003:
+      - svgParserParsesMaskPropertyLocalReferences
+    R004:
+      - svgParserParsesMaskPropertyLocalReferences
+    R005:
+      - svgParserParsesMaskPropertyLocalReferences
