@@ -1014,7 +1014,7 @@ public enum SVGFilterPrimitiveUnits: Equatable, Sendable, Hashable {
 public enum SVGFilterPrimitive: Equatable, Sendable {
 	case blend(input: String?, input2: String?, mode: SVGBlendMode = .normal, noComposite: Bool = false)
 	case colorMatrix(input: String?, type: SVGColorMatrixType = .matrix, values: [Double], isPassThrough: Bool = false)
-	case componentTransfer(input: String?)
+	case componentTransfer(input: String?, functions: [SVGComponentTransferChannel: SVGComponentTransferFunction] = [:])
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }
@@ -1045,6 +1045,52 @@ public enum SVGColorMatrixType: Equatable, Sendable, Hashable {
 	case saturate
 	case hueRotate
 	case luminanceToAlpha
+}
+
+/// Color or alpha channel addressed by an SVG component transfer function element.
+public enum SVGComponentTransferChannel: Equatable, Sendable, Hashable {
+	case red
+	case green
+	case blue
+	case alpha
+}
+
+/// Transfer function data for an SVG component transfer channel.
+public struct SVGComponentTransferFunction: Equatable, Sendable, Hashable {
+	public var type: SVGComponentTransferFunctionType
+	public var tableValues: [Double]
+	public var slope: Double
+	public var intercept: Double
+	public var amplitude: Double
+	public var exponent: Double
+	public var offset: Double
+
+	public init(
+		type: SVGComponentTransferFunctionType = .identity,
+		tableValues: [Double] = [],
+		slope: Double = 1,
+		intercept: Double = 0,
+		amplitude: Double = 1,
+		exponent: Double = 1,
+		offset: Double = 0
+	) {
+		self.type = type
+		self.tableValues = tableValues
+		self.slope = slope
+		self.intercept = intercept
+		self.amplitude = amplitude
+		self.exponent = exponent
+		self.offset = offset
+	}
+}
+
+/// Operation type used by an SVG component transfer function element.
+public enum SVGComponentTransferFunctionType: Equatable, Sendable, Hashable {
+	case identity
+	case table
+	case discrete
+	case linear
+	case gamma
 }
 
 /// Edge handling behavior for an SVG `<feGaussianBlur>` primitive.

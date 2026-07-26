@@ -198,6 +198,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var patternStack: [SVGPatternDef] = []
 	private var patternElementStack: [SVGElementBuilder] = []
 	private var currentFilter: SVGFilterDef?
+	private var currentComponentTransferIndex: Int?
 	private var inMask = false
 	private var currentMaskID: String?
 	private var currentMaskUnits: SVGMaskUnits = .objectBoundingBox
@@ -390,6 +391,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			))
 		case "feComponentTransfer":
 			currentFilter?.primitives.append(.componentTransfer(input: attributes["in"]))
+			currentComponentTransferIndex = currentFilter?.primitives.indices.last
+		case "feFuncR":
+			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .red)
 		case "feGaussianBlur":
 			let stdDeviation = parseNumberOptionalNumber(attributes["stdDeviation"], defaultValue: 0)
 			currentFilter?.primitives.append(.gaussianBlur(
@@ -541,6 +545,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				defs.filters[filter.id] = filter
 			}
 			currentFilter = nil
+		case "feComponentTransfer":
+			currentComponentTransferIndex = nil
 		case "mask":
 			if let id = currentMaskID {
 				defs.masks[id] = SVGMaskDef(id: id, maskUnits: currentMaskUnits, maskContentUnits: currentMaskContentUnits, children: maskElements)
@@ -589,6 +595,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		patternStack = []
 		patternElementStack = []
 		currentFilter = nil
+		currentComponentTransferIndex = nil
 		inMask = false
 		currentMaskID = nil
 		currentMaskUnits = .objectBoundingBox
@@ -1093,6 +1100,45 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case .luminanceToAlpha:
 			nil
 		}
+	}
+
+	private func parseComponentTransferFunction(_ attributes: [String: String]) -> SVGComponentTransferFunction {
+		SVGComponentTransferFunction(
+			type: parseComponentTransferFunctionType(attributes["type"]),
+			tableValues: attributes["tableValues"].flatMap { SVGListParser.parse($0, itemParser: parseNumber) } ?? [],
+			slope: attributes["slope"].flatMap(parseNumber) ?? 1,
+			intercept: attributes["intercept"].flatMap(parseNumber) ?? 0,
+			amplitude: attributes["amplitude"].flatMap(parseNumber) ?? 1,
+			exponent: attributes["exponent"].flatMap(parseNumber) ?? 1,
+			offset: attributes["offset"].flatMap(parseNumber) ?? 0
+		)
+	}
+
+	private func parseComponentTransferFunctionType(_ value: String?) -> SVGComponentTransferFunctionType {
+		switch value {
+		case "table":
+			.table
+		case "discrete":
+			.discrete
+		case "linear":
+			.linear
+		case "gamma":
+			.gamma
+		default:
+			.identity
+		}
+	}
+
+	private func setComponentTransferFunction(_ function: SVGComponentTransferFunction, for channel: SVGComponentTransferChannel) {
+		guard
+			let index = currentComponentTransferIndex,
+			var filter = currentFilter,
+			filter.primitives.indices.contains(index),
+			case .componentTransfer(let input, var functions) = filter.primitives[index]
+		else { return }
+		functions[channel] = function
+		filter.primitives[index] = .componentTransfer(input: input, functions: functions)
+		currentFilter = filter
 	}
 
 	private func parseFilterEdgeMode(_ value: String?) -> SVGFilterEdgeMode {

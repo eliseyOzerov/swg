@@ -1,0 +1,227 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-func-r
+  title: SVG feFuncR transfer function element
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feFuncR>` transfer function elements as the red-channel function of an enclosing `<feComponentTransfer>` primitive.
+  non_goals:
+    - Parsing green, blue, or alpha channel transfer function elements.
+    - Executing transfer-function remapping.
+    - Supporting animation children.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-func-r
+      title: "Filter Effects Module Level 1: Transfer function feFuncR"
+      url: https://www.w3.org/TR/filter-effects-1/#elementdef-fefuncr
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-fe-component-transfer
+      title: "Filter Effects Module Level 1: Filter primitive feComponentTransfer"
+      url: https://www.w3.org/TR/filter-effects-1/#feComponentTransferElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feFuncR>` as the transfer function element for the red component."
+    - "Transfer function `type` accepts `identity`, `table`, `discrete`, `linear`, and `gamma`, with initial value `identity`."
+    - "`tableValues` is a whitespace and/or comma-separated list of numbers; if omitted, the effect is as if an empty list were provided."
+    - "`slope`, `amplitude`, and `exponent` default to `1`; `intercept` and `offset` default to `0`."
+    - "When more than one transfer function element of the same kind is specified, the last occurrence is used."
+
+scope:
+  includes:
+    - "`<feFuncR>` child elements inside `<feComponentTransfer>`."
+    - "The red channel mapping."
+    - "`type`, `tableValues`, `slope`, `intercept`, `amplitude`, `exponent`, and `offset` attributes."
+    - "Last occurrence wins for repeated `<feFuncR>` children."
+  excludes:
+    - "`<feFuncG>`, `<feFuncB>`, and `<feFuncA>`."
+    - "Applying transfer functions to pixel values."
+    - "Animation elements inside `<feFuncR>`."
+  assumptions:
+    - Swg stores parsed transfer functions inside the enclosing `SVGFilterPrimitive.componentTransfer` value.
+    - Malformed number attributes fall back to their initial values.
+    - Malformed `tableValues` lists are treated like omitted lists.
+
+terminology:
+  - id: T001
+    term: feFuncR
+    definition: The transfer function element for the red component of an input graphic.
+    source_refs:
+      - filter-effects-fe-func-r
+  - id: T002
+    term: transfer function type
+    definition: "The operation form used to remap one component: identity, table, discrete, linear, or gamma."
+    source_refs:
+      - filter-effects-fe-func-r
+
+structures:
+  - id: S001
+    name: SVGComponentTransferChannel.red
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-func-r
+    fields: []
+  - id: S002
+    name: SVGComponentTransferFunction
+    kind: struct
+    source_refs:
+      - filter-effects-fe-func-r
+    fields:
+      - name: type
+        type: SVGComponentTransferFunctionType
+        cardinality: exactly-one
+        position: property
+        constraints:
+          - Defaults to `identity`.
+        requirement_refs:
+          - R001
+      - name: tableValues
+        type: list<double>
+        cardinality: exactly-one
+        position: property
+        constraints:
+          - Defaults to an empty list.
+        requirement_refs:
+          - R002
+      - name: slope
+        type: double
+        cardinality: exactly-one
+        position: property
+        constraints:
+          - Defaults to `1`.
+        requirement_refs:
+          - R003
+      - name: intercept
+        type: double
+        cardinality: exactly-one
+        position: property
+        constraints:
+          - Defaults to `0`.
+        requirement_refs:
+          - R003
+      - name: amplitude
+        type: double
+        cardinality: exactly-one
+        position: property
+        constraints:
+          - Defaults to `1`.
+        requirement_refs:
+          - R004
+      - name: exponent
+        type: double
+        cardinality: exactly-one
+        position: property
+        constraints:
+          - Defaults to `1`.
+        requirement_refs:
+          - R004
+      - name: offset
+        type: double
+        cardinality: exactly-one
+        position: property
+        constraints:
+          - Defaults to `0`.
+        requirement_refs:
+          - R004
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feFuncR>` must store the supported transfer function `type` values and default omitted or unsupported types to `identity`."
+    applies_to:
+      - SVGComponentTransferFunction.type
+    source_refs:
+      - filter-effects-fe-func-r
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesRedComponentTransferFunctionAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`tableValues` on `<feFuncR>` must parse comma and/or whitespace-separated numbers and default to an empty list when omitted or malformed."
+    applies_to:
+      - SVGComponentTransferFunction.tableValues
+    source_refs:
+      - filter-effects-fe-func-r
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesRedComponentTransferFunctionAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`linear` attributes must preserve `slope` and `intercept`, defaulting to `1` and `0` respectively."
+    applies_to:
+      - SVGComponentTransferFunction.slope
+      - SVGComponentTransferFunction.intercept
+    source_refs:
+      - filter-effects-fe-func-r
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesRedComponentTransferFunctionAttributes
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`gamma` attributes must preserve `amplitude`, `exponent`, and `offset`, defaulting to `1`, `1`, and `0` respectively."
+    applies_to:
+      - SVGComponentTransferFunction.amplitude
+      - SVGComponentTransferFunction.exponent
+      - SVGComponentTransferFunction.offset
+    source_refs:
+      - filter-effects-fe-func-r
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesRedComponentTransferFunctionAttributes
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: "When multiple `<feFuncR>` elements occur in the same `<feComponentTransfer>`, the last red-channel function must be used."
+    applies_to:
+      - SVGFilterPrimitive.componentTransfer
+    source_refs:
+      - filter-effects-fe-component-transfer
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserUsesLastRedComponentTransferFunction
+
+traceability:
+  source_to_requirements:
+    filter-effects-fe-func-r:
+      - R001
+      - R002
+      - R003
+      - R004
+    filter-effects-fe-component-transfer:
+      - R005
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesRedComponentTransferFunctionAttributes
+    R002:
+      - svgParserPreservesRedComponentTransferFunctionAttributes
+    R003:
+      - svgParserPreservesRedComponentTransferFunctionAttributes
+    R004:
+      - svgParserPreservesRedComponentTransferFunctionAttributes
+    R005:
+      - svgParserUsesLastRedComponentTransferFunction

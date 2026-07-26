@@ -155,7 +155,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feBlend>`.
 - [x] `<feColorMatrix>`.
 - [x] `<feComponentTransfer>`.
-- [ ] `<feFuncR>`.
+- [x] `<feFuncR>`.
 - [ ] `<feFuncG>`.
 - [ ] `<feFuncB>`.
 - [ ] `<feFuncA>`.
