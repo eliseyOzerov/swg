@@ -224,7 +224,4 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Scripting and Interactivity
 
 - [ ] `<script>`.
-- [ ] `on*` event attributes.
 - [ ] `pointer-events`.
-- [ ] `tabindex`.
-- [ ] `role`.
