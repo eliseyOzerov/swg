@@ -92,6 +92,11 @@ The suite contains focused parser/model tests plus fixture-backed visual tests.
 
 Visual validation lives in `Tests/SwgTests/SVGVisualValidationTests.swift`. Each visual case pairs an SVG fixture with a text golden:
 
+| Test | Expected raster |
+| --- | --- |
+| `basic-paint` | ![Basic paint expected raster](docs/visual-tests/basic-paint-preview.svg) |
+| `transforms` | ![Transforms expected raster](docs/visual-tests/transforms-preview.svg) |
+
 ```text
 Tests/SwgTests/VisualFixtures/basic-paint.svg
 Tests/SwgTests/VisualFixtures/basic-paint.golden.txt
