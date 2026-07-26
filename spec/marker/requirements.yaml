@@ -1,0 +1,243 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: marker
+  title: SVG marker element
+  domain: SVG Markers
+  profile: null
+  summary: Requirements for preserving SVG `<marker>` definitions as never-rendered containers whose graphics can be referenced by marker properties.
+  non_goals:
+    - Applying marker-start, marker-mid, or marker-end properties to shapes.
+    - Computing marker placement or rendering marker graphics onto paths.
+    - Full marker orientation, markerUnits, or viewBox conformance beyond preserving default fields for later bullets.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-marker-element
+      title: SVG 2, Painting - The marker element
+      url: https://www.w3.org/TR/SVG/painting.html#MarkerElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-markers-overview
+      title: SVG 2, Painting - Markers
+      url: https://www.w3.org/TR/SVG/painting.html#Markers
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C painting chapter marker sections.
+
+scope:
+  includes:
+    - Recognition of `<marker>` as an SVG marker definition element.
+    - Preservation of marker definitions outside the normal root renderable element list.
+    - Preservation of marker child SVG graphics.
+    - Preservation of `refX`, `refY`, `markerWidth`, and `markerHeight` fields with their initial values.
+    - Preservation of presentation attributes and unknown non-namespace attributes.
+  excludes:
+    - Marker property parsing and attachment to shapes.
+    - Marker rendering, placement, and orientation algorithms.
+    - Full `orient`, `markerUnits`, and `viewBox` feature tests, which are separate checklist bullets.
+  assumptions:
+    - Parser output may store markers in the document definitions registry for later renderer use.
+
+terminology:
+  - id: term-marker
+    term: marker
+    definition: A graphical object painted at particular positions along a shape element.
+    source_refs:
+      - svg2-markers-overview
+  - id: term-never-rendered
+    term: never-rendered element
+    definition: An element whose definition is not directly rendered where it appears in the document tree.
+    source_refs:
+      - svg2-marker-element
+
+structures:
+  - id: S001
+    name: marker
+    kind: element
+    source_refs:
+      - svg2-marker-element
+    fields:
+      - name: id
+        type: string
+        cardinality: optional
+        position: core-attribute
+        constraints:
+          - Identifies the marker definition for later reference by marker properties.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-marker-element
+      - name: refX
+        type: length-percentage-or-number-or-keyword
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - Defines the reference point placed at the marker position.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-marker-element
+      - name: refY
+        type: length-percentage-or-number-or-keyword
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - Defines the reference point placed at the marker position.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-marker-element
+      - name: markerWidth
+        type: length-percentage-or-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 3.
+          - Defines the marker viewport width.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-marker-element
+      - name: markerHeight
+        type: length-percentage-or-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 3.
+          - Defines the marker viewport height.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-marker-element
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: A `<marker>` element defines the graphics used for drawing markers on a shape.
+    applies_to:
+      - marker
+    source_refs:
+      - svg2-marker-element
+      - svg2-markers-overview
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A `<marker>` element is a container element and a never-rendered element; parser output must preserve it as a definition rather than as a directly rendered root element.
+    applies_to:
+      - marker
+    source_refs:
+      - svg2-marker-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: Marker definitions must preserve parseable SVG child graphics allowed by the marker content model.
+    applies_to:
+      - marker children
+    source_refs:
+      - svg2-marker-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: Marker definitions must preserve `refX`, `refY`, `markerWidth`, and `markerHeight`, including their initial values when omitted.
+    applies_to:
+      - marker geometry
+    source_refs:
+      - svg2-marker-element
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Presentation attributes on a marker definition must be available to marker child graphics through normal SVG inheritance.
+    applies_to:
+      - marker children
+    source_refs:
+      - svg2-marker-element
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`markerWidth` or `markerHeight` is negative."
+    source_behavior: ERROR
+    required_behavior: Parser behavior for negative marker dimensions is not expanded in this bullet.
+    decision_required: false
+    source_refs:
+      - svg2-marker-element
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The parser may store marker definitions in the document definitions registry with their parseable SVG children and leave placement/rendering to a later renderer.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+    source_refs:
+      - svg2-marker-element
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: Marker properties
+    reason: Marker definitions become visible only when referenced by marker-start, marker-mid, marker-end, or marker shorthand properties.
+    source_refs:
+      - svg2-markers-overview
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+      - svg2-markers-overview
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-marker-element
+    map_item_refs: []

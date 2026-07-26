@@ -145,11 +145,12 @@ public struct SVGMetadataElementData: Equatable, Sendable {
 	}
 }
 
-/// A registry of reusable SVG definitions such as gradients, patterns, clip paths, filters, and masks.
+/// A registry of reusable SVG definitions such as gradients, patterns, markers, clip paths, filters, and masks.
 public struct SVGDefs: Equatable, Sendable {
 	public var linearGradients: [String: SVGLinearGradientDef]
 	public var radialGradients: [String: SVGRadialGradientDef]
 	public var patterns: [String: SVGPatternDef]
+	public var markers: [String: SVGMarkerDef]
 	public var symbols: [String: SVGSymbolData]
 	public var views: [String: SVGViewData]
 	public var clipPathDefinitions: [String: SVGClipPathDef]
@@ -162,6 +163,7 @@ public struct SVGDefs: Equatable, Sendable {
 		linearGradients: [String: SVGLinearGradientDef] = [:],
 		radialGradients: [String: SVGRadialGradientDef] = [:],
 		patterns: [String: SVGPatternDef] = [:],
+		markers: [String: SVGMarkerDef] = [:],
 		symbols: [String: SVGSymbolData] = [:],
 		views: [String: SVGViewData] = [:],
 		clipPathDefinitions: [String: SVGClipPathDef] = [:],
@@ -173,6 +175,7 @@ public struct SVGDefs: Equatable, Sendable {
 		self.linearGradients = linearGradients
 		self.radialGradients = radialGradients
 		self.patterns = patterns
+		self.markers = markers
 		self.symbols = symbols
 		self.views = views
 		self.clipPathDefinitions = clipPathDefinitions
@@ -181,6 +184,52 @@ public struct SVGDefs: Equatable, Sendable {
 		self.masks = masks
 		self.reusableElements = reusableElements
 	}
+}
+
+/// A reusable SVG `<marker>` definition with viewport geometry and marker graphics.
+public struct SVGMarkerDef: Equatable, Sendable {
+	public var id: String
+	public var refX: String
+	public var refY: String
+	public var markerWidth: Double
+	public var markerHeight: Double
+	public var markerUnits: SVGMarkerUnits
+	public var orient: SVGMarkerOrient
+	public var viewBox: Rect?
+	public var preserveAspectRatio: SVGPreserveAspectRatio
+	public var attributes: SVGPaintAttributes
+	public var children: [SVGElement]
+	public var language: String?
+	public var unknownAttributes: [String: String]
+
+	public init(id: String, refX: String = "0", refY: String = "0", markerWidth: Double = 3, markerHeight: Double = 3, markerUnits: SVGMarkerUnits = .strokeWidth, orient: SVGMarkerOrient = .angle(0), viewBox: Rect? = nil, preserveAspectRatio: SVGPreserveAspectRatio = .default, attributes: SVGPaintAttributes = .defaults, children: [SVGElement] = [], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.refX = refX
+		self.refY = refY
+		self.markerWidth = markerWidth
+		self.markerHeight = markerHeight
+		self.markerUnits = markerUnits
+		self.orient = orient
+		self.viewBox = viewBox
+		self.preserveAspectRatio = preserveAspectRatio
+		self.attributes = attributes
+		self.children = children
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Coordinate system used for an SVG `<marker>` definition.
+public enum SVGMarkerUnits: Equatable, Sendable, Hashable {
+	case strokeWidth
+	case userSpaceOnUse
+}
+
+/// Orientation mode requested by an SVG `<marker>` definition.
+public enum SVGMarkerOrient: Equatable, Sendable, Hashable {
+	case auto
+	case autoStartReverse
+	case angle(Double)
 }
 
 /// A reusable SVG `<clipPath>` definition with coordinate units and clipping geometry.

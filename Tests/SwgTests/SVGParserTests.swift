@@ -3993,6 +3993,61 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(textPath.href == "#curve")
 }
 
+@Test func svgParserStoresMarkerDefinitionsOutsideRenderableElements() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" lang="en">
+		<defs>
+			<marker id="arrow" refX="1" refY="5" markerWidth="4" markerHeight="3" fill="#336699" data-note="kept">
+				<title>Arrowhead</title>
+				<path id="arrow-shape" d="M0 0 L10 5 L0 10 z"/>
+				<g id="detail" stroke="black">
+					<circle id="dot" cx="5" cy="5" r="1"/>
+				</g>
+			</marker>
+			<marker id="defaults"/>
+		</defs>
+		<path id="line" d="M0 20 L40 20"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["line"])
+	let arrow = try #require(document.defs.markers["arrow"])
+	#expect(arrow.refX == "1")
+	#expect(arrow.refY == "5")
+	#expect(arrow.markerWidth == 4)
+	#expect(arrow.markerHeight == 3)
+	#expect(arrow.markerUnits == .strokeWidth)
+	#expect(arrow.orient == .angle(0))
+	#expect(arrow.language == "en")
+	#expect(arrow.unknownAttributes == ["data-note": "kept"])
+	#expect(document.selectedElementTitles["arrow"]?.text == "Arrowhead")
+	#expect(arrow.children.flatMap { $0.collectIDs() } == ["arrow-shape", "detail", "dot"])
+
+	guard case .path(let arrowShape) = arrow.children.first else {
+		Issue.record("Expected first marker child to be a path")
+		return
+	}
+	#expect(arrowShape.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+
+	guard case .group(let detail) = arrow.children.dropFirst().first else {
+		Issue.record("Expected second marker child to be a group")
+		return
+	}
+	#expect(detail.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(detail.attributes.stroke == .color(.black))
+
+	let defaults = try #require(document.defs.markers["defaults"])
+	#expect(defaults.refX == "0")
+	#expect(defaults.refY == "0")
+	#expect(defaults.markerWidth == 3)
+	#expect(defaults.markerHeight == 3)
+	#expect(defaults.markerUnits == .strokeWidth)
+	#expect(defaults.orient == .angle(0))
+	#expect(defaults.children.isEmpty)
+}
+
 @Test func svgParserPreservesUseGeometryAndReferenceOverrides() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100">

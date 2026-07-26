@@ -197,6 +197,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var currentGradientStops: [SVGGradientStop] = []
 	private var patternStack: [SVGPatternDef] = []
 	private var patternElementStack: [SVGElementBuilder] = []
+	private var markerStack: [SVGMarkerDef] = []
+	private var markerElementStack: [SVGElementBuilder] = []
 	private var currentFilter: SVGFilterDef?
 	private var currentComponentTransferIndex: Int?
 	private var currentLightingPrimitiveIndex: Int?
@@ -364,6 +366,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			parseRadialGradientStart(attributes)
 		case "pattern":
 			parsePatternStart(attributes)
+		case "marker":
+			parseMarkerStart(attributes)
 		case "stop":
 			parseGradientStop(attributes)
 		case "clipPath":
@@ -569,6 +573,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			let builder = SVGElementBuilder(kind: .group, id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
 			if !patternStack.isEmpty {
 				patternElementStack.append(builder)
+			} else if !markerStack.isEmpty {
+				markerElementStack.append(builder)
 			} else if !symbolElementStack.isEmpty {
 				symbolElementStack.append(builder)
 			} else if inDefs {
@@ -665,6 +671,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if let pattern = patternStack.popLast() {
 				defs.patterns[pattern.id] = pattern
 			}
+		case "marker":
+			if let marker = markerStack.popLast() {
+				defs.markers[marker.id] = marker
+			}
+			popViewportContext()
 		case "clipPath":
 			if let id = currentClipPathID {
 				defs.clipPathDefinitions[id] = SVGClipPathDef(id: id, units: currentClipPathUnits, children: clipPathElements)
@@ -736,6 +747,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		currentGradientStops = []
 		patternStack = []
 		patternElementStack = []
+		markerStack = []
+		markerElementStack = []
 		currentFilter = nil
 		currentComponentTransferIndex = nil
 		currentLightingPrimitiveIndex = nil
@@ -868,6 +881,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let builder = SVGElementBuilder(kind: .switch, id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
 		if !patternStack.isEmpty {
 			patternElementStack.append(builder)
+		} else if !markerStack.isEmpty {
+			markerElementStack.append(builder)
 		} else if !symbolElementStack.isEmpty {
 			symbolElementStack.append(builder)
 		} else if inDefs {
@@ -900,6 +915,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		)
 		if !patternStack.isEmpty {
 			patternElementStack.append(builder)
+		} else if !markerStack.isEmpty {
+			markerElementStack.append(builder)
 		} else if !symbolElementStack.isEmpty {
 			symbolElementStack.append(builder)
 		} else if inDefs {
@@ -929,6 +946,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let builder = SVGElementBuilder(kind: .unknown(name: elementName, namespaceURI: namespaceURI), id: id, attributes: attrs, language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: []))
 		if !patternStack.isEmpty {
 			patternElementStack.append(builder)
+		} else if !markerStack.isEmpty {
+			markerElementStack.append(builder)
 		} else if !symbolElementStack.isEmpty {
 			symbolElementStack.append(builder)
 		} else if inDefs {
@@ -961,6 +980,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		)
 		if !patternStack.isEmpty {
 			patternElementStack.append(builder)
+		} else if !markerStack.isEmpty {
+			markerElementStack.append(builder)
 		} else if !symbolElementStack.isEmpty {
 			symbolElementStack.append(builder)
 		} else if inDefs {
@@ -1031,6 +1052,28 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		pattern.preserveAspectRatio = parsePreserveAspectRatio(attributes["preserveAspectRatio"])
 		pattern.href = parseHref(attributes)
 		patternStack.append(pattern)
+	}
+
+	private func parseMarkerStart(_ attributes: [String: String]) {
+		let markerWidth = parseMarkerSize(attributes["markerWidth"])
+		let markerHeight = parseMarkerSize(attributes["markerHeight"])
+		let marker = SVGMarkerDef(
+			id: attributes["id"] ?? "",
+			refX: attributes["refX"] ?? "0",
+			refY: attributes["refY"] ?? "0",
+			markerWidth: markerWidth,
+			markerHeight: markerHeight,
+			markerUnits: parseMarkerUnits(attributes["markerUnits"]),
+			orient: parseMarkerOrient(attributes["orient"]),
+			viewBox: attributes["viewBox"].flatMap(parseViewBox),
+			preserveAspectRatio: parsePreserveAspectRatio(attributes["preserveAspectRatio"]),
+			attributes: parsePaintAttributes(attributes),
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["refX", "refY", "markerWidth", "markerHeight", "markerUnits", "orient", "viewBox", "preserveAspectRatio"])
+		)
+		setCurrentParsedElementID(marker.id)
+		markerStack.append(marker)
+		pushViewportContext(width: markerWidth, height: markerHeight, base: currentViewportContext)
 	}
 
 	private func parseGradientStop(_ attributes: [String: String]) {
@@ -1141,6 +1184,22 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parsePatternContentUnits(_ value: String?) -> SVGPatternUnits {
 		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
+	}
+
+	private func parseMarkerUnits(_ value: String?) -> SVGMarkerUnits {
+		value == "userSpaceOnUse" ? .userSpaceOnUse : .strokeWidth
+	}
+
+	private func parseMarkerOrient(_ value: String?) -> SVGMarkerOrient {
+		guard let value else { return .angle(0) }
+		switch value {
+		case "auto":
+			return .auto
+		case "auto-start-reverse":
+			return .autoStartReverse
+		default:
+			return SVGAngleParser.parse(value).map(SVGMarkerOrient.angle) ?? .angle(0)
+		}
 	}
 
 	private func parseClipPathUnits(_ value: String?) -> SVGClipPathUnits {
@@ -1640,6 +1699,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		)
 		if !patternStack.isEmpty {
 			patternElementStack.append(builder)
+		} else if !markerStack.isEmpty {
+			markerElementStack.append(builder)
 		} else if !symbolElementStack.isEmpty {
 			symbolElementStack.append(builder)
 		} else if inDefs {
@@ -2225,6 +2286,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			}
 			return
 		}
+		if !markerStack.isEmpty {
+			if let last = markerElementStack.last {
+				last.children.append(element)
+			} else {
+				markerStack[markerStack.count - 1].children.append(element)
+			}
+			return
+		}
 		if inClipPath {
 			clipPathElements.append(element)
 			return
@@ -2256,6 +2325,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let builder = patternElementStack.last {
 			_ = patternElementStack.popLast()
 			appendElement(builder.buildElement())
+		} else if let builder = markerElementStack.last {
+			_ = markerElementStack.popLast()
+			appendElement(builder.buildElement())
 		} else if let builder = symbolElementStack.last, !builder.isSymbol {
 			_ = symbolElementStack.popLast()
 			appendElement(builder.buildElement())
@@ -2278,7 +2350,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private var currentOpenContainerBuilder: SVGElementBuilder? {
-		patternElementStack.last ?? symbolElementStack.last ?? defsElementStack.last ?? elementStack.last
+		patternElementStack.last ?? markerElementStack.last ?? symbolElementStack.last ?? defsElementStack.last ?? elementStack.last
 	}
 
 	private func currentDescriptiveParent() -> (isRoot: Bool, id: String?) {
@@ -2293,7 +2365,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private var hasOpenLinkAncestor: Bool {
-		patternElementStack.contains { $0.isLink } || symbolElementStack.contains { $0.isLink } || defsElementStack.contains { $0.isLink } || elementStack.contains { $0.isLink }
+		patternElementStack.contains { $0.isLink } || markerElementStack.contains { $0.isLink } || symbolElementStack.contains { $0.isLink } || defsElementStack.contains { $0.isLink } || elementStack.contains { $0.isLink }
 	}
 
 	private func conditionalAttributesPass(_ attributes: [String: String]) -> Bool {
@@ -2320,7 +2392,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parsePaintAttributes(_ attributes: [String: String]) -> SVGPaintAttributes {
-		let parent = patternElementStack.last?.attributes ?? patternStack.last?.attributes ?? clipPathAttributeStack.last ?? symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
+		let parent = patternElementStack.last?.attributes ?? patternStack.last?.attributes ?? markerElementStack.last?.attributes ?? markerStack.last?.attributes ?? clipPathAttributeStack.last ?? symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
 		var result = inheritedPaintAttributes(from: parent)
 
 		applyPresentationAttributes(attributes, to: &result, inherited: parent)
@@ -2924,6 +2996,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			return percentageBasis.referenceDistance(in: context)
 		}
 		return parseDimension(value, context: context, percentageBasis: percentageBasis) ?? percentageBasis.referenceDistance(in: context)
+	}
+
+	private func parseMarkerSize(_ value: String?) -> Double {
+		guard let value else { return 3 }
+		guard let size = parseDimension(value, context: currentViewportContext, percentageBasis: .normalizedDiagonal), size >= 0 else { return 0 }
+		return size
 	}
 
 	private func parseUseSize(_ value: String?, percentageBasis: SVGLengthPercentageBasis, context: SVGLengthContext) -> Double? {
