@@ -1,0 +1,292 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: radial-gradient
+  title: Radial gradient element with stops
+  domain: SVG 2 Paint Servers
+  profile: null
+  summary: Preserve SVG `radialGradient` paint-server definitions and their child stop records so parser output can later construct radial gradient paints.
+  non_goals:
+    - Rendering or sampling radial gradients.
+    - Implementing gradient template inheritance through `href`.
+    - Completing dedicated stop offset, stop-color, stop-opacity, gradientUnits, gradientTransform, or spreadMethod checklist bullets.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-radial-gradients
+      title: "SVG 2 Paint Servers: Radial gradients"
+      url: https://www.w3.org/TR/SVG/pservers.html#RadialGradients
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-gradient-stops
+      title: "SVG 2 Paint Servers: Gradient stops"
+      url: https://www.w3.org/TR/SVG/pservers.html#GradientStops
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 defines radial gradients through the `radialGradient` element, a never-rendered gradient paint server element.
+    - "`radialGradient` can contain `stop` children, and those stops define the color vector used by the gradient."
+    - "`cx`, `cy`, and `r` define the end circle, while `fx`, `fy`, and `fr` define the start circle."
+
+scope:
+  includes:
+    - Parser output for `radialGradient` definitions in `defs`.
+    - Preservation of child `stop` records in document order.
+    - Initial coordinate values for `cx`, `cy`, `r`, and `fr`.
+    - Parsing explicit `cx`, `cy`, `r`, `fx`, `fy`, and `fr` number or percentage values.
+    - Treating negative `r` and `fr` values as invalid for parser output and leaving their defaults in place.
+  excludes:
+    - Actual gradient painting.
+    - Template resolution via `href`.
+    - Spread method behavior.
+    - Coordinate-space rendering effects of `gradientUnits`.
+    - Transform behavior from `gradientTransform`.
+    - Complete validation for standalone stop properties, which are covered by later checklist bullets.
+  assumptions:
+    - Parser-visible numeric gradient coordinates may normalize percentages to unit fractions, matching the existing linear-gradient representation.
+    - The parser may preserve missing `fx` and `fy` distinctly from explicit values so template inheritance or later used-value resolution remains possible.
+
+terminology:
+  - id: term-radial-gradient
+    term: radialGradient
+    definition: A radial gradient paint-server element that defines a gradient from a start circle to an end circle.
+    source_refs:
+      - svg2-radial-gradients
+  - id: term-end-circle
+    term: end circle
+    definition: The circle defined by `cx`, `cy`, and `r` onto which the 100 percent gradient stop is mapped.
+    source_refs:
+      - svg2-radial-gradients
+  - id: term-start-circle
+    term: start circle
+    definition: The circle defined by `fx`, `fy`, and `fr` onto which the 0 percent gradient stop is mapped.
+    source_refs:
+      - svg2-radial-gradients
+  - id: term-gradient-stop
+    term: stop
+    definition: A child element whose records define the color vector used by a linear or radial gradient.
+    source_refs:
+      - svg2-gradient-stops
+
+structures:
+  - id: S001
+    name: Radial gradient definition
+    kind: structure
+    source_refs:
+      - svg2-radial-gradients
+    fields:
+      - name: id
+        type: string
+        cardinality: one
+        position: null
+        constraints:
+          - Identifies the paint server for URL references.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-radial-gradients
+      - name: cx
+        type: length
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is 50%.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-radial-gradients
+      - name: cy
+        type: length
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is 50%.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-radial-gradients
+      - name: r
+        type: length
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is 50%.
+          - Negative values are errors.
+        requirement_refs:
+          - R002
+          - R004
+        source_refs:
+          - svg2-radial-gradients
+      - name: fx
+        type: length
+        cardinality: optional
+        position: null
+        constraints:
+          - If not specified, the used value coincides with `cx`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-radial-gradients
+      - name: fy
+        type: length
+        cardinality: optional
+        position: null
+        constraints:
+          - If not specified, the used value coincides with `cy`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-radial-gradients
+      - name: fr
+        type: length
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is 0%.
+          - Negative values are errors.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg2-radial-gradients
+      - name: stops
+        type: list
+        cardinality: zero-or-more
+        position: child-order
+        constraints:
+          - Stop children define the gradient color vector.
+          - At least two stops are necessary to produce a gradient effect.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-gradient-stops
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: A `radialGradient` element must be represented as a radial gradient paint-server definition.
+    applies_to:
+      - "`radialGradient` elements"
+    source_refs:
+      - svg2-radial-gradients
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Missing `cx`, `cy`, and `r` attributes must use the `50%` initial value.
+    applies_to:
+      - Radial gradient end circle
+    source_refs:
+      - svg2-radial-gradients
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Explicit `fx`, `fy`, and `fr` values must be preserved, and missing `fr` must behave as `0%`.
+    applies_to:
+      - Radial gradient start circle
+    source_refs:
+      - svg2-radial-gradients
+    testability: testable
+    notes:
+      - Missing `fx` and `fy` used-value coincidence with `cx` and `cy` may be resolved by a later renderer.
+  - id: R004
+    normative_strength: MUST
+    kind: error
+    statement: Negative `r` and `fr` values must not replace the valid default radial-gradient radii in parser-visible output.
+    applies_to:
+      - Radial gradient radii
+    source_refs:
+      - svg2-radial-gradients
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: ordering
+    statement: Child `stop` elements of a `radialGradient` must be associated with that gradient in document order.
+    applies_to:
+      - Radial gradient stop list
+    source_refs:
+      - svg2-gradient-stops
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A radial-gradient `r` or `fr` value is negative.
+    source_behavior: Negative value is an error.
+    required_behavior: Leave the parser-visible radius at its default value for this work item.
+    decision_required: false
+    source_refs:
+      - svg2-radial-gradients
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Missing focus-center values
+    statement: Parser output may preserve missing `fx` and `fy` as absent rather than eagerly copying `cx` and `cy`, provided later used-value resolution can still make them coincide.
+    allowed_by:
+      - Current parser data model
+      - User-directed parser-first SVG conversion workflow
+    source_refs:
+      - svg2-radial-gradients
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 gradient stops
+    reason: The radial-gradient element stores child stop records as the gradient's color vector.
+    source_refs:
+      - svg2-gradient-stops
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradients
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradients
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradients
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradients
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-gradient-stops
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-radial-gradients
+    map_item_refs: []

@@ -766,9 +766,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		var gradient = SVGRadialGradientDef(id: attributes["id"] ?? "")
 		if let v = attributes["cx"] { gradient.cx = parseGradientCoord(v) }
 		if let v = attributes["cy"] { gradient.cy = parseGradientCoord(v) }
-		if let v = attributes["r"] { gradient.r = parseGradientCoord(v) }
+		if let v = attributes["r"], let radius = parseNonnegativeGradientCoord(v) { gradient.r = radius }
 		if let v = attributes["fx"] { gradient.fx = parseGradientCoord(v) }
 		if let v = attributes["fy"] { gradient.fy = parseGradientCoord(v) }
+		if let v = attributes["fr"], let radius = parseNonnegativeGradientCoord(v) { gradient.fr = radius }
 		if attributes["gradientUnits"] == "userSpaceOnUse" { gradient.gradientUnits = .userSpaceOnUse }
 		if let transform = attributes["gradientTransform"] { gradient.gradientTransform = parseTransform(transform) }
 		gradient.href = parseHref(attributes)
@@ -792,11 +793,20 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseGradientCoord(_ value: String) -> Double {
+		parseGradientCoordValue(value) ?? 0
+	}
+
+	private func parseNonnegativeGradientCoord(_ value: String) -> Double? {
+		guard let coordinate = parseGradientCoordValue(value), coordinate >= 0 else { return nil }
+		return coordinate
+	}
+
+	private func parseGradientCoordValue(_ value: String) -> Double? {
 		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
 		if trimmed.hasSuffix("%") {
-			return (parseNumber(String(trimmed.dropLast())) ?? 0) / 100
+			return parseNumber(String(trimmed.dropLast())).map { $0 / 100 }
 		}
-		return parseNumber(trimmed) ?? 0
+		return parseNumber(trimmed)
 	}
 
 	private func parseHref(_ attributes: [String: String]) -> String? {

@@ -38,6 +38,56 @@ import Testing
 	#expect(path.attributes.strokeWidth == 2)
 }
 
+@Test func svgParserPreservesRadialGradientGeometryAndStops() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<defs>
+			<radialGradient id="default">
+				<stop offset="0%" stop-color="red"/>
+				<stop offset="100%" stop-color="blue"/>
+			</radialGradient>
+			<radialGradient id="focus" cx="25%" cy="75%" r="40%" fx="10%" fy="20%" fr="5%">
+				<stop offset="0" stop-color="#ffffff"/>
+				<stop offset="0.5" stop-color="#808080" stop-opacity="0.25"/>
+				<stop offset="1" stop-color="#000000"/>
+			</radialGradient>
+			<radialGradient id="invalid" r="-10%" fr="-1">
+				<stop offset="0%" stop-color="red"/>
+				<stop offset="100%" stop-color="blue"/>
+			</radialGradient>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let defaults = try #require(document.defs.radialGradients["default"])
+	let focus = try #require(document.defs.radialGradients["focus"])
+	let invalid = try #require(document.defs.radialGradients["invalid"])
+
+	#expect(defaults.cx == 0.5)
+	#expect(defaults.cy == 0.5)
+	#expect(defaults.r == 0.5)
+	#expect(defaults.fx == nil)
+	#expect(defaults.fy == nil)
+	#expect(defaults.fr == 0)
+	#expect(defaults.stops.map(\.offset) == [0, 1])
+	#expect(defaults.stops.map(\.color) == [.red, .blue])
+
+	#expect(focus.cx == 0.25)
+	#expect(focus.cy == 0.75)
+	#expect(focus.r == 0.4)
+	#expect(focus.fx == 0.1)
+	#expect(focus.fy == 0.2)
+	#expect(focus.fr == 0.05)
+	#expect(focus.stops.map(\.offset) == [0, 0.5, 1])
+	#expect(focus.stops[1].color == Color(128 / 255, 128 / 255, 128 / 255))
+	#expect(focus.stops[1].opacity == 0.25)
+
+	#expect(invalid.r == 0.5)
+	#expect(invalid.fr == 0)
+	#expect(invalid.stops.count == 2)
+}
+
 @Test func svgParserMultipliesTransformListsFromLeftToRight() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

@@ -821,6 +821,7 @@ public struct SVGRadialGradientDef: Equatable, Sendable {
 	public var r: Double
 	public var fx: Double?
 	public var fy: Double?
+	public var fr: Double
 	public var gradientUnits: SVGGradientUnits
 	public var gradientTransform: Transform
 	public var stops: [SVGGradientStop]
@@ -833,6 +834,7 @@ public struct SVGRadialGradientDef: Equatable, Sendable {
 		r: Double = 0.5,
 		fx: Double? = nil,
 		fy: Double? = nil,
+		fr: Double = 0,
 		gradientUnits: SVGGradientUnits = .objectBoundingBox,
 		gradientTransform: Transform = .identity,
 		stops: [SVGGradientStop] = [],
@@ -844,6 +846,7 @@ public struct SVGRadialGradientDef: Equatable, Sendable {
 		self.r = r
 		self.fx = fx
 		self.fy = fy
+		self.fr = fr
 		self.gradientUnits = gradientUnits
 		self.gradientTransform = gradientTransform
 		self.stops = stops
