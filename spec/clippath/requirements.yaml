@@ -1,0 +1,185 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: clippath
+  title: SVG clipPath element
+  domain: CSS Masking Level 1 / SVG
+  profile: null
+  summary: Preserve SVG `<clipPath>` elements as reusable clipping path sources with their child geometry, without rendering them as normal document content.
+  non_goals:
+    - Parsing the `clip-path` property; it is tracked as a separate TODO bullet.
+    - Parsing `clip-rule`; it is tracked as a separate TODO bullet.
+    - Parsing `clipPathUnits`; it is tracked as a separate TODO bullet.
+    - Evaluating clipping geometry or applying clipping during rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-masking-clippath-element
+      title: "CSS Masking Module Level 1: The clipPath element"
+      url: https://www.w3.org/TR/css-masking-1/#ClipPathElement
+      version: Candidate Recommendation Draft, 5 August 2021
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-masking-removed
+      title: "SVG 2: Removed Clipping, Masking and Compositing chapter"
+      url: https://www.w3.org/TR/SVG/masking.html
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: descriptive
+  source_notes:
+    - SVG 2 points clipping and masking definitions to CSS Masking Module Level 1.
+
+scope:
+  includes:
+    - "`<clipPath>` elements."
+    - Supported child geometry inside a clipping path source.
+    - Never-rendered definition behavior.
+  excludes:
+    - "`clip-path` references."
+    - "`clip-rule` winding behavior."
+    - "`clipPathUnits` coordinate-system selection."
+    - Indirect `<use>` error handling inside clip paths.
+  assumptions:
+    - The parser can preserve supported child elements as the representation needed by downstream path conversion/rendering.
+
+terminology:
+  - id: T001
+    term: clipPath
+    definition: A never-rendered SVG container whose child graphics define a clipping source that can be referenced by `clip-path`.
+    source_refs:
+      - css-masking-clippath-element
+  - id: T002
+    term: clipping region
+    definition: The region to which paint is allowed to be applied after clipping is considered.
+    source_refs:
+      - css-masking-clippath-element
+
+structures:
+  - id: S001
+    name: SVG clipping path source
+    kind: structure
+    source_refs:
+      - css-masking-clippath-element
+    fields:
+      - name: id
+        type: string
+        cardinality: optional-in-source
+        position: attribute
+        constraints:
+          - Used by `clip-path` URL references.
+        requirement_refs:
+          - R001
+        source_refs:
+          - css-masking-clippath-element
+      - name: children
+        type: SVG element list
+        cardinality: zero-or-more
+        position: content
+        constraints:
+          - Can include shape elements, text, use, descriptive, animation, and script content according to the source content model.
+        requirement_refs:
+          - R002
+        source_refs:
+          - css-masking-clippath-element
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: A `<clipPath>` element must be preserved as a clipping path source that can be referenced by the `clip-path` property.
+    applies_to:
+      - clipPath
+    source_refs:
+      - css-masking-clippath-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: content
+    statement: Supported child graphics inside `<clipPath>` must be preserved because their raw geometry defines the clipping silhouette.
+    applies_to:
+      - clipPath.children
+    source_refs:
+      - css-masking-clippath-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST_NOT
+    kind: rendering
+    statement: A `<clipPath>` element must not be rendered directly as ordinary document content.
+    applies_to:
+      - clipPath
+    source_refs:
+      - css-masking-clippath-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: inheritance
+    statement: Properties inherit into a `<clipPath>` from its ancestors, not from the element referencing the clip path.
+    applies_to:
+      - clipPath
+    source_refs:
+      - css-masking-clippath-element
+    testability: reviewable
+    notes:
+      - Full inheritance behavior is covered across other cascade bullets; this item records the rule for downstream clipping work.
+
+algorithms: []
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `<use>` child of `<clipPath>` indirectly references an unsupported element.
+    source_behavior: error
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - css-masking-clippath-element
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Clipping evaluation
+    statement: This bullet may stop at preserving the clipPath definition; applying it to rendered output is deferred to clipping/rendering integration work.
+    allowed_by:
+      - R001
+      - R002
+    source_refs:
+      - css-masking-clippath-element
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: CSS Masking clip-path property
+    reason: Defines how clipping path sources are referenced and applied.
+    source_refs:
+      - css-masking-clippath-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - css-masking-clippath-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-masking-clippath-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-masking-clippath-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-masking-clippath-element
+    map_item_refs: []

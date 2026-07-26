@@ -392,6 +392,48 @@ import Testing
 	#expect(document.defs.patterns["withViewBox"]?.viewBox == Rect(x: 0, y: 0, width: 10, height: 10))
 }
 
+@Test func svgParserStoresClipPathDefinitionsOutsideRenderableElements() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<clipPath id="clip">
+			<rect id="clipRect" x="1" y="2" width="3" height="4"/>
+			<circle id="clipCircle" cx="10" cy="10" r="5"/>
+			<path id="clipPathShape" d="M0 0 L20 0 L20 20 Z"/>
+		</clipPath>
+		<rect id="painted" width="20" height="20"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let clipChildren = try #require(document.defs.clipPaths["clip"])
+
+	#expect(document.elementIDs == ["painted"])
+	#expect(clipChildren.flatMap { $0.collectIDs() } == ["clipRect", "clipCircle", "clipPathShape"])
+
+	guard case .rect(let rect) = clipChildren[0] else {
+		Issue.record("Expected clip rect")
+		return
+	}
+	#expect(rect.x == 1)
+	#expect(rect.y == 2)
+	#expect(rect.width == 3)
+	#expect(rect.height == 4)
+
+	guard case .circle(let circle) = clipChildren[1] else {
+		Issue.record("Expected clip circle")
+		return
+	}
+	#expect(circle.cx == 10)
+	#expect(circle.cy == 10)
+	#expect(circle.r == 5)
+
+	guard case .path(let path) = clipChildren[2] else {
+		Issue.record("Expected clip path geometry")
+		return
+	}
+	#expect(path.d == "M0 0 L20 0 L20 20 Z")
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

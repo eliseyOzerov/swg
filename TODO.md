@@ -135,7 +135,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Clipping, Masking, and Compositing
 
-- [ ] `<clipPath>`.
+- [x] `<clipPath>`.
 - [ ] `clip-path`.
 - [ ] `clip-rule`.
 - [ ] `clipPathUnits`.
