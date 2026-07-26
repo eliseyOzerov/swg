@@ -4,7 +4,7 @@ Parse an SVG string, display it in SwiftUI, and convert its geometry when you ne
 
 ## Overview
 
-`swg` starts with an SVG source string or data value. ``SVGParser`` turns that source into an ``SVGDocument``, which you can inspect, edit, convert to paths, or pass directly to ``SVGView``.
+`swg` starts with an SVG source string or data value. ``SVGParser`` turns that source into an ``SVGDocument``, which you can inspect, edit, convert to paths, or pass directly to ``SVG``.
 
 ```swift
 import SwiftUI
@@ -23,14 +23,14 @@ guard let document = SVGParser().parse(source) else {
 
 ## Display the Document
 
-Use ``SWGView`` or ``SVGView`` in SwiftUI:
+Use ``SVG`` in SwiftUI:
 
 ```swift
 struct IconPreview: View {
 	let document: SVGDocument
 
 	var body: some View {
-		SWGView(document)
+		SVG(document)
 			.frame(width: 120, height: 120)
 	}
 }
@@ -39,7 +39,7 @@ struct IconPreview: View {
 If parsing belongs at the view boundary, construct the view directly from SVG source:
 
 ```swift
-let view = SVGView(svg: source)
+let view = SVG(source: source)
 ```
 
 ## Inspect the Tree

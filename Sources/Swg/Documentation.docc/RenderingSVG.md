@@ -4,21 +4,19 @@ Display parsed SVG documents with the package's native SwiftUI renderer.
 
 ## Overview
 
-``SVGView`` is a SwiftUI `View` backed by a parsed ``SVGDocument``. It maps the document's root ``SVGDocument/viewBox`` into the SwiftUI layout size, then draws supported elements through the package's ``Path`` to `CGPath` conversion.
+``SVG`` is a SwiftUI `View` backed by a parsed ``SVGDocument``. It maps the document's root ``SVGDocument/viewBox`` into the SwiftUI layout size, then draws supported elements through the package's ``Path`` to `CGPath` conversion.
 
 ```swift
-SVGView(document)
+SVG(document)
 	.frame(width: 96, height: 96)
 ```
 
-``SWGView`` is an alias for ``SVGView``.
-
 ## Render from Source
 
-Use ``SVGView/init(svg:parser:options:)`` for compact preview or asset-loading code where the source and view live together:
+Use ``SVG/init(source:parser:options:)`` for compact preview or asset-loading code where the source and view live together:
 
 ```swift
-let icon = SVGView(svg: """
+let icon = SVG(source: """
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 	<path d="M4 12 L10 18 L20 6" fill="none" stroke="blue"/>
 </svg>
@@ -32,7 +30,7 @@ If parsing failure should be surfaced to users or logs, parse with ``SVGParser``
 ``SVGRenderOptions`` controls the root rendering pass:
 
 ```swift
-SVGView(
+SVG(
 	document,
 	options: SVGRenderOptions(
 		contentMode: .fit,

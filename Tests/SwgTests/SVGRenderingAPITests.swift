@@ -20,7 +20,7 @@ import Testing
 	#expect(CGPoint(x: 1, y: 1).applying(transform.cgAffineTransform) == CGPoint(x: 8, y: 10))
 }
 
-@Test func svgViewCanBeCreatedFromDocumentOrSource() throws {
+@Test func svgCanBeCreatedFromDocumentOrSource() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 		<circle id="dot" cx="12" cy="12" r="4" fill="red"/>
@@ -28,8 +28,8 @@ import Testing
 	"""
 
 	let document = try #require(SVGParser().parse(svg))
-	let documentView = SVGView(document, options: SVGRenderOptions(opacity: 0.8))
-	let sourceView = try #require(SVGView(svg: svg))
+	let documentView = SVG(document, options: SVGRenderOptions(opacity: 0.8))
+	let sourceView = try #require(SVG(source: svg))
 
 	#expect(documentView.document.viewBox == Rect(x: 0, y: 0, width: 24, height: 24))
 	#expect(documentView.options.opacity == 0.8)

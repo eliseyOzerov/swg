@@ -6,7 +6,7 @@ Parse, edit, convert, and display SVG content in Swift.
 
 `swg` is Swift Vector Graphics: a small, dependency-free Swift package for reading SVG documents and representing their structure, geometry, paint, metadata, and reusable definitions in Swift.
 
-The package can display supported SVG geometry with ``SVGView``/``SWGView``, convert editable ``Path`` values into CoreGraphics paths, and let callers derive edited copies of an ``SVGDocument`` before rendering.
+The package can display supported SVG geometry with ``SVG``, convert editable ``Path`` values into CoreGraphics paths, and let callers derive edited copies of an ``SVGDocument`` before rendering.
 
 XML parsing is handled by Foundation's `XMLParser`, with `FoundationXML` imported where that platform separates XML support from the main Foundation module.
 
@@ -14,7 +14,7 @@ The parser/model coverage is broader than the native SwiftUI renderer. The rende
 
 ## Quick Start
 
-Create an ``SVGParser`` and parse either a `String` or `Data` value. Pass the result to ``SWGView`` to render supported SVG geometry in SwiftUI.
+Create an ``SVGParser`` and parse either a `String` or `Data` value. Pass the result to ``SVG`` to render supported SVG geometry in SwiftUI.
 
 ```swift
 import SwiftUI
@@ -33,7 +33,7 @@ guard let document = SVGParser().parse(source) else {
 print(document.viewBox)
 print(document.elementIDs)
 
-let view = SWGView(document)
+let view = SVG(document)
 ```
 
 The result is an ``SVGDocument`` containing the root view box, element tree, definitions registry, language metadata, descriptive metadata, animations, scripts, and unknown attributes preserved for callers that need round-trip or diagnostic access.
@@ -91,8 +91,7 @@ Render-affecting features also move through visual validation fixtures. See <doc
 
 ### SwiftUI Rendering
 
-- ``SVGView``
-- ``SWGView``
+- ``SVG``
 - ``SVGRenderOptions``
 
 ### Geometry and Paths

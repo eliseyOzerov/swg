@@ -1,6 +1,6 @@
 # swg
 
-Swift Vector Graphics. `swg` is an independent Swift package for parsing SVG files into a strongly typed model, converting supported geometry into `CGPath`, editing the parsed document tree, and displaying SVG content with `SVGView`/`SWGView` in SwiftUI.
+Swift Vector Graphics. `swg` is an independent Swift package for parsing SVG files into a strongly typed model, converting supported geometry into `CGPath`, editing the parsed document tree, and displaying SVG content with `SVG` in SwiftUI.
 
 The package has no third-party dependencies. XML parsing uses Foundation's `XMLParser`, with `FoundationXML` imported on platforms where that module is split out.
 
@@ -132,7 +132,7 @@ Then add the product to your target:
 
 ## Displaying SVG
 
-Use `SVGView` when you already have an `SVGDocument`, or `SWGView` if you prefer the package-flavored alias:
+Use `SVG` when you already have an `SVGDocument`:
 
 ```swift
 import SwiftUI
@@ -142,7 +142,7 @@ struct IconPreview: View {
 	let document: SVGDocument
 
 	var body: some View {
-		SWGView(document)
+		SVG(document)
 			.frame(width: 120, height: 120)
 	}
 }
@@ -157,7 +157,7 @@ let source = """
 </svg>
 """
 
-if let view = SVGView(svg: source) {
+if let view = SVG(source: source) {
 	view.frame(width: 48, height: 48)
 }
 ```
@@ -165,7 +165,7 @@ if let view = SVGView(svg: source) {
 `SVGRenderOptions` controls SwiftUI layout and root mapping:
 
 ```swift
-SVGView(
+SVG(
 	document,
 	options: SVGRenderOptions(
 		contentMode: .fit,
@@ -213,7 +213,7 @@ let highlighted = document.modifyingElement(id: "mark") { element in
 	}
 }
 
-SWGView(highlighted)
+SVG(highlighted)
 ```
 
 For broad changes, map every element recursively:
@@ -226,7 +226,7 @@ let muted = document.mapElements { element in
 }
 ```
 
-This is the intended control surface for stateful SwiftUI usage: keep the source SVG as a parsed document, derive edited copies from app state, then render the copy with `SVGView`.
+This is the intended control surface for stateful SwiftUI usage: keep the source SVG as a parsed document, derive edited copies from app state, then render the copy with `SVG`.
 
 ## Paths
 

@@ -14,7 +14,7 @@ let highlighted = document.modifyingElement(id: "mark") { element in
 	}
 }
 
-SWGView(highlighted)
+SVG(highlighted)
 ```
 
 ## Find Elements
@@ -68,7 +68,7 @@ struct StatefulIcon: View {
 	var isSelected: Bool
 
 	var body: some View {
-		SWGView(renderedDocument)
+		SVG(renderedDocument)
 	}
 
 	private var renderedDocument: SVGDocument {
