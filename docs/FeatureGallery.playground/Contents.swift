@@ -16,8 +16,9 @@ struct FeatureExample {
 	let svg: String
 }
 
-let duotoneFill = "#e5e7eb"
-let duotoneStroke = "#111827"
+let duotoneLight = "#e5e7eb"
+let duotoneDark = "#111827"
+let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
 	"paint-fill",
@@ -524,14 +525,40 @@ func example(
 func normalizedPalette(_ source: String, slug: String) -> String {
 	guard !colorSpecificSlugs.contains(slug) else { return source }
 	var normalized = source
-	normalized = normalized.replacingOccurrences(of: "fill=\"#[0-9A-Fa-f]{6}\"", with: "fill=\"\(duotoneFill)\"", options: .regularExpression)
-	normalized = normalized.replacingOccurrences(of: "stroke=\"#[0-9A-Fa-f]{6}\"", with: "stroke=\"\(duotoneStroke)\"", options: .regularExpression)
-	normalized = normalized.replacingOccurrences(of: "color=\"#[0-9A-Fa-f]{6}\"", with: "color=\"\(duotoneStroke)\"", options: .regularExpression)
-	normalized = normalized.replacingOccurrences(of: "stop-color=\"#[0-9A-Fa-f]{6}\"", with: "stop-color=\"\(duotoneStroke)\"", options: .regularExpression)
-	normalized = normalized.replacingOccurrences(of: "flood-color=\"#[0-9A-Fa-f]{6}\"", with: "flood-color=\"\(duotoneStroke)\"", options: .regularExpression)
-	normalized = normalized.replacingOccurrences(of: "fill:#[0-9A-Fa-f]{6}", with: "fill:\(duotoneFill)", options: .regularExpression)
-	normalized = normalized.replacingOccurrences(of: "stroke:#[0-9A-Fa-f]{6}", with: "stroke:\(duotoneStroke)", options: .regularExpression)
+	normalized = replacingHexColors(in: normalized, pattern: "fill=\"(#[0-9A-Fa-f]{6})\"") { "fill=\"\(duotoneFill(for: $0))\"" }
+	normalized = replacingHexColors(in: normalized, pattern: "stroke=\"(#[0-9A-Fa-f]{6})\"") { _ in "stroke=\"\(duotoneDark)\"" }
+	normalized = replacingHexColors(in: normalized, pattern: "color=\"(#[0-9A-Fa-f]{6})\"") { _ in "color=\"\(duotoneDark)\"" }
+	normalized = replacingHexColors(in: normalized, pattern: "stop-color=\"(#[0-9A-Fa-f]{6})\"") { _ in "stop-color=\"\(duotoneDark)\"" }
+	normalized = replacingHexColors(in: normalized, pattern: "flood-color=\"(#[0-9A-Fa-f]{6})\"") { _ in "flood-color=\"\(duotoneDark)\"" }
+	normalized = replacingHexColors(in: normalized, pattern: "fill:(#[0-9A-Fa-f]{6})") { "fill:\(duotoneFill(for: $0))" }
+	normalized = replacingHexColors(in: normalized, pattern: "stroke:(#[0-9A-Fa-f]{6})") { _ in "stroke:\(duotoneDark)" }
 	return normalized
+}
+
+func replacingHexColors(in source: String, pattern: String, replacement: (String) -> String) -> String {
+	let regex = try! NSRegularExpression(pattern: pattern)
+	let matches = regex.matches(in: source, range: NSRange(source.startIndex..<source.endIndex, in: source))
+	guard !matches.isEmpty else { return source }
+	var result = ""
+	var lastIndex = source.startIndex
+	for match in matches {
+		guard let fullRange = Range(match.range(at: 0), in: source), let hexRange = Range(match.range(at: 1), in: source) else { continue }
+		result += source[lastIndex..<fullRange.lowerBound]
+		result += replacement(String(source[hexRange]))
+		lastIndex = fullRange.upperBound
+	}
+	result += source[lastIndex...]
+	return result
+}
+
+func duotoneFill(for hexColor: String) -> String {
+	let hex = String(hexColor.dropFirst())
+	guard hex.count == 6, let value = Int(hex, radix: 16) else { return duotoneDark }
+	let red = Double((value >> 16) & 0xff) / 255
+	let green = Double((value >> 8) & 0xff) / 255
+	let blue = Double(value & 0xff) / 255
+	let luminance = 0.2126 * red + 0.7152 * green + 0.0722 * blue
+	return luminance > 0.68 ? duotoneLight : duotoneDark
 }
 
 func svg(_ body: String) -> String {
@@ -605,7 +632,7 @@ enum FeatureGalleryRenderer {
 			let title = markdownEscaped(example.title)
 			let note = markdownEscaped(example.note)
 			let alt = htmlEscaped(example.title)
-			let preview = example.rendererStatus == .rendered ? "<img src=\"png/\(example.slug).png\" alt=\"\(alt)\" width=\"96\">" : ""
+			let preview = example.rendererStatus == .rendered ? "<img src=\"png/\(example.slug).png\" alt=\"\(alt)\" width=\"\(previewImageWidth)\">" : ""
 			markdown += """
 			<tr>
 			<td width="33.33%">\(title)</td>
