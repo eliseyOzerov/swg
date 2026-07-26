@@ -1,0 +1,110 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: additive
+  title: SVG additive animation attribute
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for preserving the SVG `additive` animation addition attribute on parsed value animation element data.
+  non_goals:
+    - Applying additive animation during rendering or interpolation.
+    - Implementing `accumulate`, covered by the next checklist bullet.
+    - Deciding whether the target animated value supports addition.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-addition-attributes
+      title: SVG Animations Level 2, Attributes that control whether animations are additive
+      url: https://svgwg.org/specs/animations/#AdditionAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - The SVG Animations draft delegates detailed additive processing to SMIL Animation except where SVG-specific rules are stated.
+
+scope:
+  includes:
+    - "`additive` preservation for recognized values `replace` and `sum`."
+    - "`additive` default value `replace` when omitted."
+    - Raw unresolved preservation for malformed `additive` tokens.
+    - Removal of parsed `additive` from `animate`, `animateMotion`, and `animateTransform` unknown attributes.
+  excludes:
+    - Cumulative animation through `accumulate`.
+    - Runtime addition against an underlying value or lower-priority animations.
+    - Special from/to/by effects on additive behavior.
+    - "`set`, whose element definition says additive and accumulate attributes are not allowed and ignored if specified."
+  assumptions:
+    - Parser output may expose additive mode separately from value-control timing data because later evaluator code will need both.
+
+terminology:
+  - id: term-additive
+    term: additive
+    definition: Attribute that controls whether an animation replaces the underlying value or adds to it.
+    source_refs:
+      - svg-animations-addition-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: "`additive` must preserve recognized values `replace` and `sum` when specified."
+    applies_to:
+      - additive
+      - animate
+      - animateMotion
+      - animateTransform
+    source_refs:
+      - svg-animations-addition-attributes
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`additive` must default to `replace` when omitted."
+    applies_to:
+      - additive
+    source_refs:
+      - svg-animations-addition-attributes
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Parsed `additive` must not be reported as an unknown attribute on `animate`, `animateMotion`, or `animateTransform` data.
+    applies_to:
+      - unknownAttributes
+    source_refs:
+      - svg-animations-addition-attributes
+    testability: testable
+    notes: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: An `additive` token other than `replace` or `sum`.
+    source_behavior: invalid for additive.
+    required_behavior: Preserve the raw token as unresolved parser addition data.
+    decision_required: false
+    source_refs:
+      - svg-animations-addition-attributes
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-addition-attributes
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-addition-attributes
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-addition-attributes
+    map_item_refs: []

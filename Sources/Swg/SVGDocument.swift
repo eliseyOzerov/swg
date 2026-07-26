@@ -140,6 +140,22 @@ public enum SVGAnimationKeySplines: Equatable, Sendable {
 	case unresolved([String])
 }
 
+/// The SVG `additive` mode for value animation elements.
+public enum SVGAnimationAdditive: Equatable, Sendable {
+	case replace
+	case sum
+	case unresolved(String)
+}
+
+/// Addition attributes common to SVG value animation elements.
+public struct SVGAnimationAdditionData: Equatable, Sendable {
+	public let additive: SVGAnimationAdditive
+
+	public init(additive: SVGAnimationAdditive = .replace) {
+		self.additive = additive
+	}
+}
+
 /// Value-control attributes common to SVG value animation elements.
 public struct SVGAnimationValueControlData: Equatable, Sendable {
 	public let calcMode: SVGAnimationCalcMode?
@@ -197,10 +213,11 @@ public struct SVGAnimateData: Equatable, Sendable {
 	public let byValue: String?
 	public let timing: SVGAnimationTimingData
 	public let valueControl: SVGAnimationValueControlData
+	public let addition: SVGAnimationAdditionData
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), valueControl: SVGAnimationValueControlData = SVGAnimationValueControlData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), valueControl: SVGAnimationValueControlData = SVGAnimationValueControlData(), addition: SVGAnimationAdditionData = SVGAnimationAdditionData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.attributeName = attributeName
@@ -209,6 +226,7 @@ public struct SVGAnimateData: Equatable, Sendable {
 		self.byValue = byValue
 		self.timing = timing
 		self.valueControl = valueControl
+		self.addition = addition
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
@@ -228,10 +246,11 @@ public struct SVGAnimateMotionData: Equatable, Sendable {
 	public let byValue: String?
 	public let timing: SVGAnimationTimingData
 	public let valueControl: SVGAnimationValueControlData
+	public let addition: SVGAnimationAdditionData
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, path: String? = nil, keyPoints: String? = nil, rotate: String? = nil, origin: String? = nil, mpath: SVGMPathData? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), valueControl: SVGAnimationValueControlData = SVGAnimationValueControlData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, path: String? = nil, keyPoints: String? = nil, rotate: String? = nil, origin: String? = nil, mpath: SVGMPathData? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), valueControl: SVGAnimationValueControlData = SVGAnimationValueControlData(), addition: SVGAnimationAdditionData = SVGAnimationAdditionData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.path = path
@@ -244,6 +263,7 @@ public struct SVGAnimateMotionData: Equatable, Sendable {
 		self.byValue = byValue
 		self.timing = timing
 		self.valueControl = valueControl
+		self.addition = addition
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
@@ -275,10 +295,11 @@ public struct SVGAnimateTransformData: Equatable, Sendable {
 	public let byValue: String?
 	public let timing: SVGAnimationTimingData
 	public let valueControl: SVGAnimationValueControlData
+	public let addition: SVGAnimationAdditionData
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, type: String = "translate", fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), valueControl: SVGAnimationValueControlData = SVGAnimationValueControlData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, type: String = "translate", fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), valueControl: SVGAnimationValueControlData = SVGAnimationValueControlData(), addition: SVGAnimationAdditionData = SVGAnimationAdditionData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.attributeName = attributeName
@@ -288,6 +309,7 @@ public struct SVGAnimateTransformData: Equatable, Sendable {
 		self.byValue = byValue
 		self.timing = timing
 		self.valueControl = valueControl
+		self.addition = addition
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}

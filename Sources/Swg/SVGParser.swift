@@ -31,6 +31,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let animationValueControlAttributeNames: Set<String> = [
 		"calcMode", "values", "keyTimes", "keySplines"
 	]
+	private static let animationAdditionAttributeNames: Set<String> = [
+		"additive"
+	]
 	private static let namedColors: [String: Color] = [
 		"aliceblue": Color(240 / 255, 248 / 255, 1),
 		"antiquewhite": Color(250 / 255, 235 / 255, 215 / 255),
@@ -1817,8 +1820,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			byValue: attributes["by"],
 			timing: parseAnimationTiming(attributes),
 			valueControl: parseAnimationValueControl(attributes),
+			addition: parseAnimationAddition(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames))
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames).union(Self.animationAdditionAttributeNames))
 		)))
 	}
 
@@ -1843,8 +1847,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			byValue: attributes["by"],
 			timing: parseAnimationTiming(attributes),
 			valueControl: parseAnimationValueControl(attributes),
+			addition: parseAnimationAddition(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "path", "keyPoints", "rotate", "origin", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames))
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "path", "keyPoints", "rotate", "origin", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames).union(Self.animationAdditionAttributeNames))
 		)))
 		animateMotionIndexStack.append(animations.count - 1)
 	}
@@ -1868,8 +1873,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			byValue: attributes["by"],
 			timing: parseAnimationTiming(attributes),
 			valueControl: parseAnimationValueControl(attributes),
+			addition: parseAnimationAddition(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "type", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames))
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "type", "from", "to", "by"], union: Self.animationTimingAttributeNames.union(Self.animationValueControlAttributeNames).union(Self.animationAdditionAttributeNames))
 		)))
 	}
 
@@ -1935,9 +1941,28 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			byValue: motion.byValue,
 			timing: motion.timing,
 			valueControl: motion.valueControl,
+			addition: motion.addition,
 			language: motion.language,
 			unknownAttributes: motion.unknownAttributes
 		))
+	}
+
+	private func parseAnimationAddition(_ attributes: [String: String]) -> SVGAnimationAdditionData {
+		SVGAnimationAdditionData(
+			additive: attributes["additive"].map(parseAnimationAdditive) ?? .replace
+		)
+	}
+
+	private func parseAnimationAdditive(_ value: String) -> SVGAnimationAdditive {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		switch trimmed {
+		case "replace":
+			return .replace
+		case "sum":
+			return .sum
+		default:
+			return .unresolved(trimmed)
+		}
 	}
 
 	private func parseAnimationValueControl(_ attributes: [String: String]) -> SVGAnimationValueControlData {
