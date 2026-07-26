@@ -5732,6 +5732,37 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(show.unknownAttributes["accumulate"] == "sum")
 }
 
+@Test func svgParserPreservesScriptElementsAsNonRenderedData() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 20 20">
+		<script id="inline" type="application/javascript" crossorigin="anonymous" data-note="kept"><![CDATA[
+			window.swgLoaded = true;
+		]]></script>
+		<rect id="box" width="10" height="10"/>
+		<script id="external" xlink:href="scripts/app.js"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["box"])
+	#expect(document.scripts.count == 2)
+
+	let inline = document.scripts[0]
+	#expect(inline.id == "inline")
+	#expect(inline.href == nil)
+	#expect(inline.type == "application/javascript")
+	#expect(inline.crossOrigin == "anonymous")
+	#expect(inline.content.contains("window.swgLoaded = true;"))
+	#expect(inline.unknownAttributes["data-note"] == "kept")
+
+	let external = document.scripts[1]
+	#expect(external.id == "external")
+	#expect(external.href == "scripts/app.js")
+	#expect(external.type == "application/ecmascript")
+	#expect(external.content == "")
+}
+
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">

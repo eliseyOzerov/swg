@@ -20,6 +20,7 @@ public struct SVGDocument: Equatable, Sendable {
 	public var rootMetadata: [SVGMetadataData]
 	public var elementMetadata: [String: [SVGMetadataData]]
 	public var animations: [SVGAnimationElement]
+	public var scripts: [SVGScriptData]
 
 	public init(
 		id: String? = nil,
@@ -39,7 +40,8 @@ public struct SVGDocument: Equatable, Sendable {
 		selectedElementDescriptions: [String: SVGDescriptionData] = [:],
 		rootMetadata: [SVGMetadataData] = [],
 		elementMetadata: [String: [SVGMetadataData]] = [:],
-		animations: [SVGAnimationElement] = []
+		animations: [SVGAnimationElement] = [],
+		scripts: [SVGScriptData] = []
 	) {
 		self.id = id
 		self.viewBox = viewBox
@@ -59,6 +61,7 @@ public struct SVGDocument: Equatable, Sendable {
 		self.rootMetadata = rootMetadata
 		self.elementMetadata = elementMetadata
 		self.animations = animations
+		self.scripts = scripts
 	}
 
 	public var elementIDs: [String] {
@@ -359,6 +362,27 @@ public struct SVGDiscardData: Equatable, Sendable {
 		self.target = target
 		self.begin = begin
 		self.timing = timing
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Non-rendered data preserved from an SVG `<script>` element.
+public struct SVGScriptData: Equatable, Sendable {
+	public let id: String
+	public let href: String?
+	public let type: String
+	public let crossOrigin: String?
+	public let content: String
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, href: String? = nil, type: String = "application/ecmascript", crossOrigin: String? = nil, content: String = "", language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.href = href
+		self.type = type
+		self.crossOrigin = crossOrigin
+		self.content = content
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}

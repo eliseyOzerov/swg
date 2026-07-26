@@ -244,6 +244,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var elementMetadata: [String: [SVGMetadataData]] = [:]
 	private var animations: [SVGAnimationElement] = []
 	private var animateMotionIndexStack: [Int] = []
+	private var currentScript: SVGScriptBuilder?
+	private var scripts: [SVGScriptData] = []
 	private var namespaceStack: [SVGNamespaceContext] = [.empty]
 	private var languageStack: [String?] = [nil]
 	private var viewportContextStack: [SVGLengthContext] = [.default]
@@ -292,12 +294,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			selectedElementDescriptions: elementDescriptions.compactMapValues(selectDescription),
 			rootMetadata: rootMetadata,
 			elementMetadata: elementMetadata,
-			animations: animations
+			animations: animations,
+			scripts: scripts
 		)
 	}
 
 	public func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName: String?, attributes: [String: String]) {
-		if !inText && currentTitle == nil && currentDescription == nil && currentMetadata == nil {
+		if !inText && currentTitle == nil && currentDescription == nil && currentMetadata == nil && currentScript == nil {
 			characterBuffer = ""
 		}
 
@@ -321,6 +324,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if currentMetadata != nil {
 			appendMetadataElement(parsedElement: parsedElement, qualifiedName: elementName, attributes: attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .metadataContent
+			return
+		}
+		if currentScript != nil {
+			parsedElementStack[parsedElementStack.count - 1].role = .scriptContent
 			return
 		}
 		guard parsedElement.isSVGElement else { return }
@@ -386,6 +393,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "mpath":
 			parseMPath(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .animation
+		case "script":
+			parseScriptStart(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .script
 		case "style":
 			inStyleElement = true
 			styleMediaApplies = styleMediaMatches(attributes["media"])
@@ -624,6 +634,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		characterBuffer += string
 	}
 
+	public func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
+		guard let string = String(data: CDATABlock, encoding: .utf8) else { return }
+		characterBuffer += string
+	}
+
 	public func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName: String?) {
 		let parsedElement = parsedElementStack.last
 		defer {
@@ -634,12 +649,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		guard let parsedElement, parsedElement.isSVGElement else {
 			if currentMetadata != nil, let parsedElement {
 				finalizeMetadataElement(parsedElement: parsedElement)
-			} else if currentTitle == nil && currentDescription == nil {
+			} else if currentTitle == nil && currentDescription == nil && currentScript == nil {
 				characterBuffer = ""
 			}
 			return
 		}
 		if parsedElement.role == .titleContent || parsedElement.role == .descriptionContent {
+			return
+		}
+		if parsedElement.role == .scriptContent {
 			return
 		}
 		if parsedElement.role == .metadataContent {
@@ -675,6 +693,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			finalizeDescription()
 		case "metadata":
 			finalizeMetadata()
+		case "script":
+			finalizeScript()
 		case "style":
 			styleText += characterBuffer
 			characterBuffer = ""
@@ -819,6 +839,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		elementMetadata = [:]
 		animations = []
 		animateMotionIndexStack = []
+		currentScript = nil
+		scripts = []
 		namespaceStack = [.empty]
 		languageStack = [nil]
 		viewportContextStack = [.default]
@@ -1945,6 +1967,35 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			language: motion.language,
 			unknownAttributes: motion.unknownAttributes
 		))
+	}
+
+	private func parseScriptStart(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "Script")
+		setCurrentParsedElementID(id)
+		currentScript = SVGScriptBuilder(
+			id: id,
+			href: parseRawHref(attributes),
+			type: attributes["type"] ?? "application/ecmascript",
+			crossOrigin: attributes["crossorigin"],
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "type", "crossorigin"])
+		)
+		characterBuffer = ""
+	}
+
+	private func finalizeScript() {
+		guard let currentScript else { return }
+		scripts.append(SVGScriptData(
+			id: currentScript.id,
+			href: currentScript.href,
+			type: currentScript.type,
+			crossOrigin: currentScript.crossOrigin,
+			content: characterBuffer,
+			language: currentScript.language,
+			unknownAttributes: currentScript.unknownAttributes
+		))
+		self.currentScript = nil
+		characterBuffer = ""
 	}
 
 	private func parseAnimationAddition(_ attributes: [String: String]) -> SVGAnimationAdditionData {
@@ -3717,6 +3768,16 @@ private struct SVGExpandedName {
 	var namespaceURI: String?
 }
 
+/// Mutable builder used during SVG parsing to preserve script data.
+private struct SVGScriptBuilder {
+	let id: String
+	let href: String?
+	let type: String
+	let crossOrigin: String?
+	let language: String?
+	let unknownAttributes: [String: String]
+}
+
 private struct SVGParsedElement {
 	var localName: String
 	var namespaceURI: String?
@@ -3749,6 +3810,8 @@ private enum SVGParsedElementRole {
 	case descriptionContent
 	case metadata
 	case metadataContent
+	case script
+	case scriptContent
 	case animation
 	case unknownContainer
 	case skipped

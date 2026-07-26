@@ -1,0 +1,132 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: script
+  title: SVG script element
+  domain: SVG Scripting and Interactivity
+  profile: null
+  summary: Requirements for recognizing SVG `<script>` elements and preserving their non-rendered script data without executing or fetching scripts.
+  non_goals:
+    - Executing inline scripts.
+    - Fetching external script resources.
+    - Implementing the DOM `SVGScriptElement` interface.
+    - Applying CORS processing for `crossorigin`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-script-element
+      title: SVG 2, The script element
+      url: https://www.w3.org/TR/SVG/interact.html#ScriptElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 defines the `script` element as equivalent to HTML `script` for script placement, while this package only preserves parser-visible data.
+
+scope:
+  includes:
+    - Recognition of `<script>` as non-rendered SVG content.
+    - Preservation of inline script text content.
+    - Preservation of `href` and deprecated `xlink:href` URL references without fetching.
+    - Preservation of `type` with default `application/ecmascript` when omitted.
+    - Preservation of `crossorigin` raw attribute value when specified.
+    - Preservation of language and unknown attributes.
+  excludes:
+    - Script execution order, global scope behavior, async/defer handling, and fetch priority.
+    - MIME validation for `type`.
+    - CORS state normalization for `crossorigin`.
+    - External resource loading through `href`.
+  assumptions:
+    - Parser output may store scripts in document-level non-rendered data rather than as drawable `SVGElement` cases.
+
+terminology:
+  - id: term-script
+    term: script
+    definition: SVG element used to include inline script content or reference external script code.
+    source_refs:
+      - svg2-script-element
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser must recognize `<script>` as non-rendered SVG content and must not emit it as a renderable SVG element.
+    applies_to:
+      - script
+    source_refs:
+      - svg2-script-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Inline `<script>` text content must be preserved without executing it.
+    applies_to:
+      - script text
+    source_refs:
+      - svg2-script-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: A specified script `href` or deprecated `xlink:href` URL reference must be preserved without fetching.
+    applies_to:
+      - href
+      - xlink:href
+    source_refs:
+      - svg2-script-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The script `type` value must be preserved and must default to `application/ecmascript` when omitted.
+    applies_to:
+      - type
+    source_refs:
+      - svg2-script-element
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: The script `crossorigin` value must be preserved when specified.
+    applies_to:
+      - crossorigin
+    source_refs:
+      - svg2-script-element
+    testability: testable
+    notes: []
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-script-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-script-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-script-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-script-element
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-script-element
+    map_item_refs: []
