@@ -200,6 +200,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var currentFilter: SVGFilterDef?
 	private var currentComponentTransferIndex: Int?
 	private var currentLightingPrimitiveIndex: Int?
+	private var currentMergePrimitiveIndex: Int?
 	private var inMask = false
 	private var currentMaskID: String?
 	private var currentMaskUnits: SVGMaskUnits = .objectBoundingBox
@@ -468,6 +469,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				preserveAspectRatio: parsePreserveAspectRatio(attributes["preserveAspectRatio"]),
 				crossOrigin: parseCrossOriginMode(attributes["crossorigin"])
 			))
+		case "feMerge":
+			currentFilter?.primitives.append(.merge())
+			currentMergePrimitiveIndex = currentFilter?.primitives.indices.last
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2
@@ -616,6 +620,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentComponentTransferIndex = nil
 		case "feDiffuseLighting":
 			currentLightingPrimitiveIndex = nil
+		case "feMerge":
+			currentMergePrimitiveIndex = nil
 		case "mask":
 			if let id = currentMaskID {
 				defs.masks[id] = SVGMaskDef(id: id, maskUnits: currentMaskUnits, maskContentUnits: currentMaskContentUnits, children: maskElements)
@@ -666,6 +672,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		currentFilter = nil
 		currentComponentTransferIndex = nil
 		currentLightingPrimitiveIndex = nil
+		currentMergePrimitiveIndex = nil
 		inMask = false
 		currentMaskID = nil
 		currentMaskUnits = .objectBoundingBox

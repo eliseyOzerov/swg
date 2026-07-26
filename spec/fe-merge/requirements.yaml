@@ -1,0 +1,123 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-merge
+  title: SVG feMerge filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feMerge>` filter primitives as ordered merge containers for later `<feMergeNode>` inputs.
+  non_goals:
+    - Compositing input layers.
+    - Parsing `<feMergeNode>` inputs, which are tracked by a separate TODO bullet.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-merge
+      title: "Filter Effects Module Level 1: Filter primitive feMerge"
+      url: https://www.w3.org/TR/filter-effects-1/#feMergeElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-merge-interface
+      title: "Filter Effects Module Level 1: Interface SVGFEMergeElement"
+      url: https://www.w3.org/TR/filter-effects-1/#InterfaceSVGFEMergeElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`<feMerge>` is a filter primitive."
+    - "The content model allows descriptive elements, `<feMergeNode>`, and script elements in any order."
+    - "The DOM interface has no primitive-specific attributes beyond common filter primitive attributes."
+
+scope:
+  includes:
+    - "`<feMerge>` child elements inside `<filter>`."
+    - "Representation of `<feMerge>` as a filter primitive container."
+  excludes:
+    - "`<feMergeNode>` parsing."
+    - "Rendering-time layer compositing."
+    - "Filter primitive common geometry attributes."
+  assumptions:
+    - Swg stores merge inputs on the merge primitive as an ordered optional string list.
+    - The input list remains empty until `<feMergeNode>` parsing is implemented.
+
+terminology:
+  - id: T001
+    term: feMerge
+    definition: An SVG filter primitive that composites multiple input images by stacking child merge nodes.
+    source_refs:
+      - filter-effects-fe-merge
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.merge
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-merge
+      - filter-effects-merge-interface
+    fields:
+      - name: inputs
+        type: list<string?>
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to an empty list.
+        requirement_refs:
+          - R001
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feMerge>` must be represented as a filter primitive that can hold an ordered list of merge-node inputs."
+    applies_to:
+      - SVGFilterPrimitive.merge
+    source_refs:
+      - filter-effects-fe-merge
+      - filter-effects-merge-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMergePrimitive
+
+algorithms: []
+invalid_or_unsupported_inputs: []
+recommendations: []
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Merge-node deferral
+    statement: "The merge primitive stores an empty input list until `<feMergeNode>` is implemented."
+    allowed_by:
+      - R001
+    source_refs:
+      - filter-effects-fe-merge
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: "Merge node feMergeNode"
+    reason: "`<feMerge>` gets its ordered inputs from child `<feMergeNode>` elements."
+    source_refs:
+      - filter-effects-fe-merge
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-merge
+      - filter-effects-merge-interface
+    map_item_refs: []

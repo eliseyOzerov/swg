@@ -1021,6 +1021,7 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case displacementMap(input: String?, input2: String?, scale: Double = 0, xChannelSelector: SVGFilterChannelSelector = .alpha, yChannelSelector: SVGFilterChannelSelector = .alpha)
 	case flood(color: Color = .black)
 	case image(href: String?, preserveAspectRatio: SVGPreserveAspectRatio = .default, crossOrigin: SVGCrossOriginMode? = nil)
+	case merge(inputs: [String?] = [])
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }

@@ -791,6 +791,33 @@ private func expectFilterImage(
 	#expect(crossOrigin == expectedCrossOrigin)
 }
 
+@Test func svgParserPreservesMergePrimitive() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="merge">
+			<feMerge/>
+			<feMerge>
+				<title>Layer stack</title>
+			</feMerge>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["merge"])
+	#expect(filter.primitives.count == 2)
+	expectMerge(filter.primitives[0], inputs: [])
+	expectMerge(filter.primitives[1], inputs: [])
+}
+
+private func expectMerge(_ primitive: SVGFilterPrimitive, inputs expectedInputs: [String?]) {
+	guard case .merge(let inputs) = primitive else {
+		Issue.record("Expected parsed feMerge primitive")
+		return
+	}
+	#expect(inputs == expectedInputs)
+}
+
 @Test func svgParserPreservesDistantLightAttributes() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
