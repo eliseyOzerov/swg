@@ -25,6 +25,40 @@ let icon = SVG(source: """
 
 If parsing failure should be surfaced to users or logs, parse with ``SVGParser`` first and handle the optional document explicitly.
 
+## Load After Appearance
+
+Use ``SVG/init(url:document:options:)`` to load SVG XML from a network URL:
+
+```swift
+SVG(url: URL(string: "https://example.com/icons/check.svg")!)
+```
+
+Use ``SVG/init(asset:bundle:fileExtension:subdirectory:document:options:)`` to load a bundled SVG resource:
+
+```swift
+SVG(asset: "checkmark", bundle: .main)
+```
+
+Use the file URL or filesystem path initializers to load cached or downloaded SVG XML from the app's filesystem:
+
+```swift
+SVG(file: cachedSVGURL)
+SVG(file: cachedSVGPath)
+```
+
+Each loading initializer has a `document` binding variant. The parsed document is written into the binding after loading so callers can inspect or modify it:
+
+```swift
+struct RemoteIcon: View {
+	let iconURL: URL
+	@State private var document: SVGDocument?
+
+	var body: some View {
+		SVG(url: iconURL, document: $document)
+	}
+}
+```
+
 ## Configure Rendering
 
 ``SVGRenderOptions`` controls the root rendering pass:

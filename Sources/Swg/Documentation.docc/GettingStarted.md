@@ -42,6 +42,26 @@ If parsing belongs at the view boundary, construct the view directly from SVG so
 let view = SVG(source: source)
 ```
 
+You can also load SVG XML after the view appears:
+
+```swift
+SVG(url: URL(string: "https://example.com/icons/check.svg")!)
+SVG(asset: "checkmark", bundle: .main)
+SVG(file: cachedSVGURL)
+```
+
+Use a document binding when your app wants to keep the parsed document and customize it later:
+
+```swift
+struct RemoteIcon: View {
+	@State private var document: SVGDocument?
+
+	var body: some View {
+		SVG(url: iconURL, document: $document)
+	}
+}
+```
+
 ## Inspect the Tree
 
 The document exposes its root viewport, parsed elements, reusable definitions, metadata, scripts, and animation records:

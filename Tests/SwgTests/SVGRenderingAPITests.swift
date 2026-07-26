@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 import SwiftUI
 import Testing
 @testable import Swg
@@ -20,7 +21,7 @@ import Testing
 	#expect(CGPoint(x: 1, y: 1).applying(transform.cgAffineTransform) == CGPoint(x: 8, y: 10))
 }
 
-@Test func svgCanBeCreatedFromDocumentOrSource() throws {
+@MainActor @Test func svgCanBeCreatedFromDocumentOrSource() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
 		<circle id="dot" cx="12" cy="12" r="4" fill="red"/>
@@ -31,7 +32,57 @@ import Testing
 	let documentView = SVG(document, options: SVGRenderOptions(opacity: 0.8))
 	let sourceView = try #require(SVG(source: svg))
 
-	#expect(documentView.document.viewBox == Rect(x: 0, y: 0, width: 24, height: 24))
+	#expect(documentView.document?.viewBox == Rect(x: 0, y: 0, width: 24, height: 24))
 	#expect(documentView.options.opacity == 0.8)
-	#expect(sourceView.document.elementIDs == ["dot"])
+	#expect(sourceView.document?.elementIDs == ["dot"])
+}
+
+@MainActor @Test func svgCanRenderFromDocumentBindings() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+		<circle id="dot" cx="12" cy="12" r="4" fill="red"/>
+	</svg>
+	"""
+	let document = try #require(SVGParser().parse(svg))
+
+	let optionalView = SVG(Binding<SVGDocument?>.constant(document))
+	let requiredView = SVG(Binding<SVGDocument>.constant(document))
+
+	#expect(optionalView.document?.elementIDs == ["dot"])
+	#expect(requiredView.document?.elementIDs == ["dot"])
+}
+
+@MainActor @Test func svgCanBeCreatedFromURLAssetAndFileSources() throws {
+	let remoteURL = try #require(URL(string: "https://example.com/icon.svg"))
+	let assetView = SVG(asset: "basic-paint", bundle: .module, fileExtension: "svg", subdirectory: "VisualFixtures")
+	let fileURL = try #require(
+		Bundle.module.url(forResource: "basic-paint", withExtension: "svg", subdirectory: "VisualFixtures")
+			?? Bundle.module.url(forResource: "basic-paint", withExtension: "svg")
+	)
+
+	let urlView = SVG(url: remoteURL)
+	let fileURLView = SVG(file: fileURL)
+	let filePathView = SVG(file: fileURL.path)
+
+	#expect(urlView.document == nil)
+	#expect(assetView.document == nil)
+	#expect(fileURLView.document == nil)
+	#expect(filePathView.document == nil)
+}
+
+@Test func svgDocumentLoaderParsesFileSource() async throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+		<circle id="dot" cx="12" cy="12" r="4" fill="red"/>
+	</svg>
+	"""
+	let fileURL = FileManager.default.temporaryDirectory
+		.appendingPathComponent(UUID().uuidString)
+		.appendingPathExtension("svg")
+	try svg.write(to: fileURL, atomically: true, encoding: .utf8)
+	defer { try? FileManager.default.removeItem(at: fileURL) }
+
+	let document = try #require(await SVGDocumentLoader.load(from: .file(fileURL)))
+
+	#expect(document.elementIDs == ["dot"])
 }

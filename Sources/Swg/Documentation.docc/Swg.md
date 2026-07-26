@@ -38,6 +38,8 @@ let view = SVG(document)
 
 The result is an ``SVGDocument`` containing the root view box, element tree, definitions registry, language metadata, descriptive metadata, animations, scripts, and unknown attributes preserved for callers that need round-trip or diagnostic access.
 
+``SVG`` can also load SVG XML from network URLs, bundled resources, and files, optionally writing the parsed document into a binding for later customization.
+
 ## Inspect Elements
 
 Top-level and nested SVG content is represented by ``SVGElement``. Each enum case carries a typed data record for the matching SVG construct:

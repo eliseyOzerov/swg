@@ -162,6 +162,35 @@ if let view = SVG(source: source) {
 }
 ```
 
+Or let the view load SVG XML after it appears:
+
+```swift
+SVG(url: URL(string: "https://example.com/icons/check.svg")!)
+SVG(asset: "checkmark", bundle: .main)
+SVG(file: cachedSVGURL)
+```
+
+Use the `document` binding variants when the parsed document should become part of your app state:
+
+```swift
+struct RemoteIcon: View {
+	let iconURL: URL
+	@State private var document: SVGDocument?
+
+	var body: some View {
+		SVG(url: iconURL, document: $document)
+			.onChange(of: document) { _, document in
+				guard let document else { return }
+				self.document = document.modifyingElement(id: "mark") { element in
+					element.modifyingAttributes { attributes in
+						attributes.stroke = .color(.red)
+					}
+				}
+			}
+	}
+}
+```
+
 `SVGRenderOptions` controls SwiftUI layout and root mapping:
 
 ```swift

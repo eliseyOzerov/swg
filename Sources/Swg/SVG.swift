@@ -4,10 +4,21 @@ import SwiftUI
 
 /// A SwiftUI view that renders an `SVGDocument` with the package's native path renderer.
 public struct SVG: View {
-	/// The parsed SVG document this view renders.
-	public var document: SVGDocument
+	@Binding private var boundDocument: SVGDocument?
+	@State private var loadedDocument: SVGDocument?
+	@State private var loadedSourceID: String?
+
+	private var initialDocument: SVGDocument?
+	private var usesBoundDocument: Bool
+	private var loadSource: SVGLoadSource?
+
 	/// Rendering and layout options applied to the document.
 	public var options: SVGRenderOptions
+
+	/// The parsed SVG document this view renders when one is available.
+	public var document: SVGDocument? {
+		usesBoundDocument ? boundDocument : initialDocument
+	}
 
 	/// Creates a SwiftUI SVG view from a parsed document.
 	///
@@ -15,8 +26,34 @@ public struct SVG: View {
 	///   - document: The parsed SVG document to display.
 	///   - options: Rendering and layout options for the root drawing pass.
 	public init(_ document: SVGDocument, options: SVGRenderOptions = SVGRenderOptions()) {
-		self.document = document
-		self.options = options
+		self.init(initialDocument: document, boundDocument: nil, loadSource: nil, options: options)
+	}
+
+	/// Creates a SwiftUI SVG view backed by a mutable optional document binding.
+	///
+	/// Use this initializer when the document may be loaded later, or when callers want to modify the parsed document after the view appears.
+	///
+	/// - Parameters:
+	///   - document: A binding to the document the view should render.
+	///   - options: Rendering and layout options for the root drawing pass.
+	public init(_ document: Binding<SVGDocument?>, options: SVGRenderOptions = SVGRenderOptions()) {
+		self.init(initialDocument: nil, boundDocument: document, loadSource: nil, options: options)
+	}
+
+	/// Creates a SwiftUI SVG view backed by a mutable document binding.
+	///
+	/// - Parameters:
+	///   - document: A binding to the document the view should render.
+	///   - options: Rendering and layout options for the root drawing pass.
+	public init(_ document: Binding<SVGDocument>, options: SVGRenderOptions = SVGRenderOptions()) {
+		self.init(Binding<SVGDocument?>(
+			get: { document.wrappedValue },
+			set: { newValue in
+				if let newValue {
+					document.wrappedValue = newValue
+				}
+			}
+		), options: options)
 	}
 
 	/// Parses SVG source and creates a SwiftUI SVG view when parsing succeeds.
@@ -30,13 +67,106 @@ public struct SVG: View {
 		self.init(document, options: options)
 	}
 
+	/// Creates a SwiftUI SVG view that loads SVG XML from a network URL.
+	///
+	/// - Parameters:
+	///   - url: The remote URL to load with `URLSession`.
+	///   - document: An optional binding that receives the parsed document after loading.
+	///   - options: Rendering and layout options for the root drawing pass.
+	public init(url: URL, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
+		self.init(initialDocument: nil, boundDocument: document, loadSource: .url(url), options: options)
+	}
+
+	/// Creates a SwiftUI SVG view that loads SVG XML from a bundled resource.
+	///
+	/// - Parameters:
+	///   - name: The resource name in `bundle`.
+	///   - bundle: The bundle that contains the SVG resource.
+	///   - fileExtension: The resource extension, usually `"svg"`.
+	///   - subdirectory: An optional bundle subdirectory.
+	///   - document: An optional binding that receives the parsed document after loading.
+	///   - options: Rendering and layout options for the root drawing pass.
+	public init(asset name: String, bundle: Bundle = .main, fileExtension: String? = "svg", subdirectory: String? = nil, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
+		let url = bundle.url(forResource: name, withExtension: fileExtension, subdirectory: subdirectory)
+			?? bundle.url(forResource: name, withExtension: fileExtension)
+		self.init(initialDocument: nil, boundDocument: document, loadSource: url.map(SVGLoadSource.file), options: options)
+	}
+
+	/// Creates a SwiftUI SVG view that loads SVG XML from a file URL.
+	///
+	/// - Parameters:
+	///   - url: The file URL for an SVG stored in the app's filesystem.
+	///   - document: An optional binding that receives the parsed document after loading.
+	///   - options: Rendering and layout options for the root drawing pass.
+	public init(file url: URL, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
+		self.init(initialDocument: nil, boundDocument: document, loadSource: .file(url), options: options)
+	}
+
+	/// Creates a SwiftUI SVG view that loads SVG XML from a filesystem path.
+	///
+	/// - Parameters:
+	///   - path: The path for an SVG stored in the app's filesystem.
+	///   - document: An optional binding that receives the parsed document after loading.
+	///   - options: Rendering and layout options for the root drawing pass.
+	public init(file path: String, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
+		self.init(file: URL(fileURLWithPath: path), document: document, options: options)
+	}
+
 	/// The SwiftUI body that renders the document into a `Canvas`.
 	public var body: some View {
+		Group {
+			if let renderDocument {
+				render(renderDocument)
+			} else {
+				SwiftUI.Color.clear
+			}
+		}
+		.task(id: loadTaskID) {
+			await loadSourceIfNeeded()
+		}
+	}
+
+	private init(initialDocument: SVGDocument?, boundDocument: Binding<SVGDocument?>?, loadSource: SVGLoadSource?, options: SVGRenderOptions) {
+		if let boundDocument {
+			_boundDocument = boundDocument
+			usesBoundDocument = true
+		} else {
+			_boundDocument = .constant(nil)
+			usesBoundDocument = false
+		}
+		_loadedDocument = State(initialValue: initialDocument)
+		_loadedSourceID = State(initialValue: nil)
+		self.initialDocument = initialDocument
+		self.loadSource = loadSource
+		self.options = options
+	}
+
+	private var loadTaskID: String {
+		"\(loadSource?.id ?? "none"):\(renderDocument == nil)"
+	}
+
+	private var renderDocument: SVGDocument? {
+		usesBoundDocument ? boundDocument : loadedDocument ?? initialDocument
+	}
+
+	@ViewBuilder private func render(_ document: SVGDocument) -> some View {
 		Canvas { context, size in
 			let renderer = SVGCanvasRenderer(document: document, size: size, options: options)
 			renderer.render(in: &context)
 		}
 		.aspectRatio(document.viewBox.aspectRatio, contentMode: options.contentMode)
+	}
+
+	@MainActor private func loadSourceIfNeeded() async {
+		guard let loadSource else { return }
+		guard renderDocument == nil || loadedSourceID != loadSource.id else { return }
+		guard let document = try? await SVGDocumentLoader.load(from: loadSource) else { return }
+		if usesBoundDocument {
+			boundDocument = document
+		} else {
+			loadedDocument = document
+		}
+		loadedSourceID = loadSource.id
 	}
 }
 
@@ -59,6 +189,37 @@ public struct SVGRenderOptions {
 		self.contentMode = contentMode
 		self.preserveAspectRatio = preserveAspectRatio
 		self.opacity = opacity
+	}
+}
+
+enum SVGLoadSource: Equatable {
+	case url(URL)
+	case file(URL)
+
+	var id: String {
+		switch self {
+		case .url(let url):
+			return "url:\(url.absoluteString)"
+		case .file(let url):
+			return "file:\(url.path)"
+		}
+	}
+}
+
+enum SVGDocumentLoader {
+	static func load(from source: SVGLoadSource) async throws -> SVGDocument? {
+		let data: Data
+		switch source {
+		case .url(let url):
+			let response: URLResponse
+			(data, response) = try await URLSession.shared.data(from: url)
+			if let response = response as? HTTPURLResponse, !(200..<300).contains(response.statusCode) {
+				return nil
+			}
+		case .file(let url):
+			data = try Data(contentsOf: url)
+		}
+		return SVGParser().parse(data)
 	}
 }
 

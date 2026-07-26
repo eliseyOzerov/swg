@@ -17,6 +17,27 @@ let highlighted = document.modifyingElement(id: "mark") { element in
 SVG(highlighted)
 ```
 
+You can also ask ``SVG`` to load from a URL, bundled asset, or file and store the parsed document into a binding:
+
+```swift
+struct RemoteIcon: View {
+	let iconURL: URL
+	@State private var document: SVGDocument?
+
+	var body: some View {
+		SVG(url: iconURL, document: $document)
+			.onChange(of: document) { _, document in
+				guard let document else { return }
+				self.document = document.modifyingElement(id: "mark") { element in
+					element.modifyingAttributes { attributes in
+						attributes.stroke = .color(.red)
+					}
+				}
+			}
+	}
+}
+```
+
 ## Find Elements
 
 Use ``SVGDocument/element(id:)`` to find the first matching element anywhere in the render tree:
