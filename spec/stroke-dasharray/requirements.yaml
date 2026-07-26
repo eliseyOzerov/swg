@@ -1,0 +1,254 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stroke-dasharray
+  title: Stroke dasharray property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of `stroke-dasharray`, including initial `none`, inheritance, valid non-negative dash lists, explicit `none`, and invalid values.
+  non_goals:
+    - Renderer expansion of odd-length dash arrays into an even-length repeated pattern.
+    - Renderer treatment of all-zero dash arrays.
+    - Path stroking geometry, dash placement, and interaction with `pathLength`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-stroke-dasharray-property
+      title: "SVG 2 Painting: Stroke dashing: the stroke-dasharray property"
+      url: https://www.w3.org/TR/SVG/painting.html#StrokeDashing
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-25
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `stroke-dasharray` with value grammar `none | <dasharray>`, initial value `none`, inheritance yes, and percentages resolved against the normalized diagonal of the current SVG viewport.
+    - SVG 2 defines `<dasharray>` as one or more comma/whitespace-separated `<length-percentage>` or `<number>` values.
+    - SVG 2 states that negative values in `stroke-dasharray` are invalid.
+    - SVG 2 states that an odd number of dash values is repeated to yield an even number of values for rendering.
+    - SVG presentation attributes participate in styling, so `stroke-dasharray` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `stroke-dasharray` property on SVG shapes and renderable containers.
+    - Initial `stroke-dasharray` value of `none`.
+    - Explicit `none`.
+    - Explicit non-negative length, percentage, and numeric dash list declarations and presentation attributes.
+    - Inheritance from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Negative or malformed `stroke-dasharray` values leaving the current inherited or default value unchanged.
+  excludes:
+    - Renderer expansion of odd-length dash lists.
+    - Rendering behavior for all-zero dash lists.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The parser stores SVG `none` as the package's existing empty dash array representation.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+
+terminology:
+  - id: term-stroke-dasharray
+    term: stroke-dasharray
+    definition: The SVG property that controls the pattern of dashes and gaps used to stroke paths and shapes.
+    source_refs:
+      - svg2-stroke-dasharray-property
+  - id: term-dasharray
+    term: dasharray
+    definition: A comma/whitespace-separated list of non-negative length, percentage, or number values used as dash and gap lengths.
+    source_refs:
+      - svg2-stroke-dasharray-property
+
+structures:
+  - id: S001
+    name: Stroke dasharray parser state
+    kind: structure
+    source_refs:
+      - svg2-stroke-dasharray-property
+    fields:
+      - name: strokeDashArray
+        type: list of resolved lengths or none
+        cardinality: zero-or-more
+        position: null
+        constraints:
+          - Initial value is `none`.
+          - Valid parser-visible numeric values are non-negative.
+          - The property is inherited.
+          - Explicit `none` clears the dash array.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-stroke-dasharray-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `stroke-dasharray` property must accept `none` and dash lists containing one or more non-negative length-percentage or number values.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-dasharray-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `stroke-dasharray` value must be `none`.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-dasharray-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`stroke-dasharray` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-dasharray-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Explicit `none` must produce no dash array.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-stroke-dasharray-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `stroke-dasharray` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-dasharray-property
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: During rendering, an odd-length dash list must be repeated to produce an even-length list.
+    applies_to:
+      - SVG stroke rendering
+    source_refs:
+      - svg2-stroke-dasharray-property
+    testability: reviewable
+    notes:
+      - This parser-focused bullet preserves the list for renderer consumption; renderer expansion is outside this work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `stroke-dasharray` list contains a negative value.
+    source_behavior: REQUIRED
+    required_behavior: The value is invalid and must leave the current inherited or default parser-visible value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-dasharray-property
+  - id: I002
+    condition: A `stroke-dasharray` value is malformed or empty.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stroke-dasharray-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `stroke-dasharray` declaration must expose the inherited dash array from its parent.
+    derived_from:
+      - R003
+    reasoning: Because `stroke-dasharray` is inherited, parser state must preserve the parent's specified dash pattern for children.
+    source_refs:
+      - svg2-stroke-dasharray-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may represent SVG `none` with its existing empty dash array and numeric dash lists with the existing numeric list field.
+    allowed_by:
+      - The source defines value semantics, not programming-language storage details.
+    source_refs:
+      - svg2-stroke-dasharray-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`stroke-dasharray` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dasharray-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dasharray-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dasharray-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dasharray-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stroke-dasharray-property
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-stroke-dasharray-property
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-stroke-dasharray-property
+    map_item_refs: []
+  - item_id: I002
+    item_type: invalid_input
+    source_refs:
+      - svg2-stroke-dasharray-property
+    map_item_refs: []

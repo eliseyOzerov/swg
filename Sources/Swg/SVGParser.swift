@@ -1213,7 +1213,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			}
 		}
 		if let value = attributes["stroke-dasharray"] {
-			result.strokeDashArray = isInheritKeyword(value) ? inherited.strokeDashArray : parseDashArray(value)
+			if isInheritKeyword(value) {
+				result.strokeDashArray = inherited.strokeDashArray
+			} else if let dashArray = parseDashArray(value) {
+				result.strokeDashArray = dashArray
+			}
 		}
 		if let value = attributes["stroke-dashoffset"] {
 			if isInheritKeyword(value) {
@@ -1283,10 +1287,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "currentcolor"
 	}
 
-	private func parseDashArray(_ value: String) -> [Double] {
-		let trimmed = value.trimmingCharacters(in: .whitespaces)
-		if trimmed == "none" { return [] }
-		return SVGListParser.parse(trimmed, itemParser: parseNumber) ?? []
+	private func parseDashArray(_ value: String) -> [Double]? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed.lowercased() == "none" { return [] }
+		let context = currentViewportContext
+		guard let values = SVGListParser.parse(trimmed, itemParser: { parseDimension($0, context: context, percentageBasis: .normalizedDiagonal) }), !values.isEmpty else {
+			return nil
+		}
+		return values.allSatisfy { $0 >= 0 } ? values : nil
 	}
 
 	private func parseAlphaValue(_ value: String) -> Double? {

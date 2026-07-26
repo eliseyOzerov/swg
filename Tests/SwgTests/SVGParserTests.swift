@@ -755,6 +755,57 @@ import Testing
 	#expect(paths["invalid"]?.attributes.strokeMiterLimit == 7)
 }
 
+@Test func svgParserAppliesStrokeDashArrayInitialInheritanceCascadeNoneAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.dashed { stroke-dasharray: 2, 3 4; }
+			.negative { stroke-dasharray: -1 2; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" stroke-dasharray="8 4">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="attribute" d="M0 0 L10 10" stroke-dasharray="5 1 2"/>
+			<path id="length-percentage" d="M0 0 L10 10" stroke-dasharray="12px 50%"/>
+			<path id="class-rule" class="dashed" d="M0 0 L10 10"/>
+			<path id="inline" class="dashed" d="M0 0 L10 10" style="stroke-dasharray: 6, 2"/>
+			<path id="none" d="M0 0 L10 10" stroke-dasharray="none"/>
+			<path id="negative-attribute" d="M0 0 L10 10" stroke-dasharray="3 -2"/>
+			<path id="negative-class" class="negative" d="M0 0 L10 10"/>
+			<path id="invalid" d="M0 0 L10 10" stroke-dasharray="bogus"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.strokeDashArray == [])
+	#expect(paths["inherited"]?.attributes.strokeDashArray == [8, 4])
+	#expect(paths["attribute"]?.attributes.strokeDashArray == [5, 1, 2])
+	#expect(paths["length-percentage"]?.attributes.strokeDashArray == [12, 50])
+	#expect(paths["class-rule"]?.attributes.strokeDashArray == [2, 3, 4])
+	#expect(paths["inline"]?.attributes.strokeDashArray == [6, 2])
+	#expect(paths["none"]?.attributes.strokeDashArray == [])
+	#expect(paths["negative-attribute"]?.attributes.strokeDashArray == [8, 4])
+	#expect(paths["negative-class"]?.attributes.strokeDashArray == [8, 4])
+	#expect(paths["invalid"]?.attributes.strokeDashArray == [8, 4])
+}
+
 @Test func svgParserAppliesFillOpacityInitialInheritancePercentagesAndClamping() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
