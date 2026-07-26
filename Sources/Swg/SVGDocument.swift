@@ -768,13 +768,34 @@ public enum SVGTextAnchor: Sendable, Equatable, Hashable {
 /// A parsed gradient stop.
 public struct SVGGradientStop: Equatable, Sendable {
 	public let offset: Double
-	public let color: Color
+	public let stopColor: SVGGradientStopColor
+	public let currentColor: Color
 	public let opacity: Double
 
-	public init(offset: Double, color: Color, opacity: Double) {
+	public var color: Color {
+		stopColor.resolved(with: currentColor)
+	}
+
+	public init(offset: Double, color: Color, opacity: Double, stopColor: SVGGradientStopColor? = nil, currentColor: Color = .black) {
 		self.offset = offset
-		self.color = color
+		self.stopColor = stopColor ?? .color(color)
+		self.currentColor = currentColor
 		self.opacity = opacity
+	}
+}
+
+/// A parsed SVG `stop-color` value.
+public enum SVGGradientStopColor: Equatable, Sendable, Hashable {
+	case color(Color)
+	case currentColor
+
+	public func resolved(with currentColor: Color) -> Color {
+		switch self {
+		case .color(let color):
+			color
+		case .currentColor:
+			currentColor
+		}
 	}
 }
 

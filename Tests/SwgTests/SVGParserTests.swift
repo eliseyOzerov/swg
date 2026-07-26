@@ -115,6 +115,43 @@ import Testing
 	#expect(radial.stops.map(\.offset) == [0.25, 0.75])
 }
 
+@Test func svgParserAppliesGradientStopColorCascadeAndSpecialValues() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.classed { stop-color: #808080; }
+			.invalid { stop-color: definitely-not-a-color; }
+		</style>
+		<defs>
+			<linearGradient id="colors">
+				<stop offset="0"/>
+				<stop offset=".15" stop-color="red"/>
+				<stop offset=".3" class="classed" stop-color="blue"/>
+				<stop offset=".45" class="classed" style="stop-color: #00ff00"/>
+				<stop offset=".6" style="color: #336699; stop-color: currentColor"/>
+				<stop offset=".75" stop-color="transparent"/>
+				<stop offset=".9" class="invalid"/>
+			</linearGradient>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let stops = try #require(document.defs.linearGradients["colors"]?.stops)
+
+	#expect(stops.map(\.stopColor) == [
+		.color(.black),
+		.color(.red),
+		.color(Color(128 / 255, 128 / 255, 128 / 255)),
+		.color(Color(0, 1, 0)),
+		.currentColor,
+		.color(.black),
+		.color(.black)
+	])
+	#expect(stops[4].color == Color(0.2, 0.4, 0.6))
+	#expect(stops[5].opacity == 0)
+}
+
 @Test func svgParserMultipliesTransformListsFromLeftToRight() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

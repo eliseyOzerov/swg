@@ -780,9 +780,48 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseGradientStop(_ attributes: [String: String]) {
 		let parsedOffset = attributes["offset"].flatMap(parseGradientStopOffset) ?? 0
 		let offset = max(parsedOffset, currentGradientStops.last?.offset ?? 0)
-		let color = attributes["stop-color"].flatMap { parseColor($0) } ?? .black
-		let opacity = attributes["stop-opacity"].flatMap(parseNumber) ?? 1
-		currentGradientStops.append(SVGGradientStop(offset: offset, color: color, opacity: opacity))
+		var style = SVGGradientStopStyle()
+		applyGradientStopProperties(attributes, to: &style)
+		if let className = attributes["class"] {
+			for cls in className.split(separator: " ") {
+				if let cssProps = styleSheet[String(cls)] {
+					applyGradientStopProperties(cssProps, to: &style)
+				}
+			}
+		}
+		if let inlineStyle = attributes["style"] {
+			applyGradientStopProperties(parseInlineCSS(inlineStyle), to: &style)
+		}
+		currentGradientStops.append(SVGGradientStop(offset: offset, color: style.stopColor.resolved(with: style.currentColor), opacity: style.opacity, stopColor: style.stopColor, currentColor: style.currentColor))
+	}
+
+	private func applyGradientStopProperties(_ properties: [String: String], to style: inout SVGGradientStopStyle) {
+		if let color = properties["color"] {
+			if isInheritKeyword(color) || color.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "currentcolor" {
+				style.currentColor = .black
+			} else if let parsed = parseColor(color) {
+				style.currentColor = parsed
+			}
+		}
+		if let opacity = properties["stop-opacity"].flatMap(parseNumber) {
+			style.opacity = opacity
+		}
+		if let stopColor = properties["stop-color"].flatMap({ parseGradientStopColor($0, opacity: &style.opacity) }) {
+			style.stopColor = stopColor
+		}
+	}
+
+	private func parseGradientStopColor(_ value: String, opacity: inout Double) -> SVGGradientStopColor? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		switch trimmed.lowercased() {
+		case "currentcolor":
+			return .currentColor
+		case "transparent":
+			opacity = 0
+			return .color(.black)
+		default:
+			return parseColor(trimmed).map(SVGGradientStopColor.color)
+		}
 	}
 
 	private func parseGradientStopOffset(_ value: String) -> Double? {
@@ -2351,4 +2390,10 @@ private final class SVGMetadataElementBuilder {
 	func build() -> SVGMetadataElementData {
 		SVGMetadataElementData(name: name, localName: localName, namespaceURI: namespaceURI, attributes: attributes, children: children)
 	}
+}
+
+private struct SVGGradientStopStyle {
+	var stopColor: SVGGradientStopColor = .color(.black)
+	var currentColor: Color = .black
+	var opacity: Double = 1
 }

@@ -1,0 +1,227 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stop-color
+  title: Gradient stop color
+  domain: SVG 2 Paint Servers
+  profile: null
+  summary: Preserve SVG `stop-color` property values for gradient stops, including CSS cascade inputs and `currentColor`.
+  non_goals:
+    - Implementing ICC color profiles.
+    - Completing `stop-opacity` behavior except where SVG defines `transparent` stop-color as equivalent to black with zero opacity.
+    - Rendering gradient interpolation.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-stop-color-property
+      title: "SVG 2 Paint Servers: stop-color property"
+      url: https://www.w3.org/TR/SVG/pservers.html#StopColorProperty
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`stop-color` indicates the color to use at a gradient stop."
+    - "SVG 2 permits `currentColor`, CSS color values, and ICC colors for `stop-color`."
+    - "SVG treats `transparent` in gradients as transparent black, equivalent to black stop-color and zero stop-opacity."
+    - "`stop-color` is non-inherited, initially black, applies to `stop` elements, and has a presentation attribute."
+
+scope:
+  includes:
+    - Parser output for `stop-color` on `stop` elements inside linear and radial gradients.
+    - Initial black stop color.
+    - Presentation attributes, class style rules, and inline style declarations in the package's supported cascade subset.
+    - Supported CSS color syntaxes already available in the package color parser.
+    - Parser-visible preservation of `currentColor` and enough current color state to resolve it later.
+    - SVG's `transparent` stop-color behavior as black with zero opacity.
+    - Invalid or unsupported stop-color declarations leaving the current cascaded/default stop color unchanged.
+  excludes:
+    - ICC color profiles.
+    - Full CSS selector support beyond the package's current class selector subset.
+    - Complete standalone `stop-opacity` cascade and clamping, covered by the next TODO bullet.
+  assumptions:
+    - Existing concrete `SVGGradientStop.color` reads may continue to expose a resolved color for compatibility.
+    - Parser-visible stop color can be represented separately from the resolved color when the authored value is `currentColor`.
+
+terminology:
+  - id: term-stop-color
+    term: stop-color
+    definition: A non-inherited SVG property that selects the color at a gradient stop.
+    source_refs:
+      - svg2-stop-color-property
+  - id: term-currentcolor
+    term: currentColor
+    definition: A CSS color keyword whose used value is the current inherited color property value.
+    source_refs:
+      - svg2-stop-color-property
+  - id: term-transparent
+    term: transparent
+    definition: In SVG gradients, a stop-color value that is treated as black with zero stop opacity.
+    source_refs:
+      - svg2-stop-color-property
+
+structures:
+  - id: S001
+    name: Gradient stop color state
+    kind: structure
+    source_refs:
+      - svg2-stop-color-property
+    fields:
+      - name: stopColor
+        type: color-or-currentColor
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is black.
+          - Supported values include CSS colors and `currentColor`.
+          - "`transparent` is represented as black plus zero opacity."
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-stop-color-property
+      - name: currentColor
+        type: color
+        cardinality: one
+        position: null
+        constraints:
+          - Provides the used color when stopColor is `currentColor`.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg2-stop-color-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: A stop without a cascaded `stop-color` value must use black.
+    applies_to:
+      - "`stop` elements"
+    source_refs:
+      - svg2-stop-color-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Supported CSS color values for `stop-color` must be preserved as the gradient stop color.
+    applies_to:
+      - "`stop` elements"
+    source_refs:
+      - svg2-stop-color-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`currentColor` must be accepted as a parser-visible `stop-color` value and keep enough current color state for downstream resolution."
+    applies_to:
+      - "`stop` elements"
+    source_refs:
+      - svg2-stop-color-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: A `transparent` stop-color must behave as black with zero stop opacity.
+    applies_to:
+      - "`stop` elements"
+    source_refs:
+      - svg2-stop-color-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `stop-color` presentation attribute must map into the same parser-visible state as a corresponding CSS declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stop-color-property
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `stop-color` value is malformed or outside the package's supported color subset.
+    source_behavior: UNSPECIFIED
+    required_behavior: Ignore that declaration and leave the current cascaded or default stop color unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-stop-color-property
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: ICC colors
+    statement: ICC color profiles may remain unsupported for now, with unsupported ICC syntax treated as an invalid declaration.
+    allowed_by:
+      - Current package color parser scope
+    source_refs:
+      - svg2-stop-color-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`stop-color` is listed as a presentation attribute on SVG elements."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-stop-color-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-stop-color-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-stop-color-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-stop-color-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-stop-color-property
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-stop-color-property
+    map_item_refs: []

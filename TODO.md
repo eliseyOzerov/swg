@@ -122,7 +122,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<linearGradient>` element with stops.
 - [x] `<radialGradient>` element with stops.
 - [x] `<stop>` `offset`.
-- [ ] `<stop>` `stop-color`.
+- [x] `<stop>` `stop-color`.
 - [ ] `<stop>` `stop-opacity`.
 - [ ] `gradientUnits="objectBoundingBox"`.
 - [ ] `gradientUnits="userSpaceOnUse"`.
