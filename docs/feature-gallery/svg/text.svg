@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480">
+	<defs>
+		<path id="wave" d="M74 324 C178 220 266 408 370 304 S548 220 646 324"/>
+	</defs>
+	<rect width="720" height="480" fill="#f8fafc"/>
+	<text x="360" y="118" text-anchor="middle" dominant-baseline="middle" font-family="Avenir Next, Helvetica, sans-serif" font-size="62" font-weight="700" fill="#0f172a">Swift SVG</text>
+	<text x="90" y="190" font-family="Avenir Next, Helvetica, sans-serif" font-size="32" fill="#2563eb">
+		<tspan x="90" dy="0">text</tspan>
+		<tspan dx="18" fill="#f97316">tspan</tspan>
+		<tspan dx="18" fill="#16a34a" rotate="-8">rotate</tspan>
+	</text>
+	<text x="630" y="198" text-anchor="end" alignment-baseline="middle" font-family="Avenir Next, Helvetica, sans-serif" font-size="28" fill="#64748b">anchored end</text>
+	<path d="M74 324 C178 220 266 408 370 304 S548 220 646 324" fill="none" stroke="#cbd5e1" stroke-width="6" stroke-linecap="round"/>
+	<text font-family="Avenir Next, Helvetica, sans-serif" font-size="34" font-weight="700" fill="#e11d48">
+		<textPath href="#wave" startOffset="9%">textPath follows parsed path data</textPath>
+	</text>
+</svg>
