@@ -14,6 +14,10 @@ import UIKit
 	try assertVisualFixture("transforms")
 }
 
+@MainActor @Test func svgVisualValidationRendersPaintServerFixture() throws {
+	try assertVisualFixture("paint-servers")
+}
+
 @MainActor private func assertVisualFixture(_ name: String) throws {
 	let svgURL = try #require(visualFixtureURL(for: name, extension: "svg"))
 	let goldenURL = try #require(visualFixtureURL(for: name, extension: "golden.txt"))
@@ -89,6 +93,7 @@ private struct SVGVisualRaster {
 		if red > 200, green < 80, blue < 80 { return "R" }
 		if red < 80, green > 200, blue < 80 { return "G" }
 		if red < 80, green < 80, blue > 200 { return "B" }
+		if red > 80, green < 120, blue > 80 { return "P" }
 		return "?"
 	}
 }

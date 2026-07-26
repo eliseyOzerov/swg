@@ -53,4 +53,4 @@ The test renders ``SVG`` with SwiftUI `ImageRenderer`, samples the resulting ima
 
 The first visual fixtures cover basic paint and transforms through the ``SVG`` view.
 
-Future visual fixtures should be added as rendering support expands through paint order, fill rules, strokes, clipping, masking, gradients, filters, text, image handling, reuse, and viewport behavior.
+Future visual fixtures should be added as rendering support expands through paint order, fill rules, strokes, clipping, masking, advanced paint-server behavior, filters, text, image handling, reuse, and viewport behavior.

@@ -374,16 +374,17 @@ private struct SVGCanvasRenderer {
 		context.drawLayer { layer in
 			layer.concatenate(attributes.transform.cgAffineTransform)
 			let path = SwiftUI.Path(cgPath)
+			let pathBounds = cgPath.svgBounds
 			let opacity = inheritedOpacity * attributes.opacity
 			for operation in attributes.paintOrder.resolvedOperations {
 				switch operation {
 				case .fill:
-					if !forceStroke, let color = swiftUIColor(from: attributes.fill, currentColor: attributes.color, opacity: opacity * attributes.fillOpacity) {
-						layer.fill(path, with: .color(color), style: FillStyle(eoFill: attributes.fillRule == .evenOdd))
+					if !forceStroke {
+						fill(path: path, bounds: pathBounds, paint: attributes.fill, currentColor: attributes.color, opacity: opacity * attributes.fillOpacity, fillRule: attributes.fillRule, in: &layer)
 					}
 				case .stroke:
-					if let color = swiftUIColor(from: attributes.stroke, currentColor: attributes.color, opacity: opacity * attributes.strokeOpacity), attributes.strokeWidth > 0 {
-						layer.stroke(path, with: .color(color), style: StrokeStyle(
+					if let shading = shading(from: attributes.stroke, currentColor: attributes.color, opacity: opacity * attributes.strokeOpacity, bounds: pathBounds), attributes.strokeWidth > 0 {
+						layer.stroke(path, with: shading, style: StrokeStyle(
 							lineWidth: CGFloat(attributes.strokeWidth),
 							lineCap: attributes.strokeLineCap.cgLineCap,
 							lineJoin: attributes.strokeLineJoin.cgLineJoin,
@@ -399,6 +400,150 @@ private struct SVGCanvasRenderer {
 		}
 	}
 
+	private func fill(path: SwiftUI.Path, bounds: Rect, paint: SVGPaint, currentColor: Color, opacity: Double, fillRule: FillRule, in context: inout GraphicsContext) {
+		if let patternID = patternID(from: paint), let pattern = document.defs.patterns[patternID] {
+			fill(path: path, bounds: bounds, pattern: pattern, opacity: opacity, fillRule: fillRule, in: &context)
+		} else if let shading = shading(from: paint, currentColor: currentColor, opacity: opacity, bounds: bounds) {
+			context.fill(path, with: shading, style: FillStyle(eoFill: fillRule == .evenOdd))
+		}
+	}
+
+	private func fill(path: SwiftUI.Path, bounds: Rect, pattern: SVGPatternDef, opacity: Double, fillRule: FillRule, in context: inout GraphicsContext) {
+		guard let tile = tileRect(for: pattern, bounds: bounds), tile.width > 0, tile.height > 0 else { return }
+		context.drawLayer { layer in
+			layer.clip(to: path, style: FillStyle(eoFill: fillRule == .evenOdd))
+			layer.concatenate(pattern.patternTransform.cgAffineTransform)
+			let startX = Int(floor((bounds.left - tile.right) / tile.width))
+			let endX = Int(ceil((bounds.right - tile.left) / tile.width))
+			let startY = Int(floor((bounds.top - tile.bottom) / tile.height))
+			let endY = Int(ceil((bounds.bottom - tile.top) / tile.height))
+			for column in startX...endX {
+				for row in startY...endY {
+					layer.drawLayer { tileLayer in
+						tileLayer.concatenate(Transform.identity.translatedBy(
+							x: tile.x + Double(column) * tile.width,
+							y: tile.y + Double(row) * tile.height
+						).cgAffineTransform)
+						if let viewBox = pattern.viewBox, let transform = pattern.preserveAspectRatio.viewBoxTransform(
+							from: viewBox,
+							to: Rect(x: 0, y: 0, width: tile.width, height: tile.height)
+						) {
+							tileLayer.concatenate(transform.cgAffineTransform)
+						} else if pattern.patternContentUnits == .objectBoundingBox {
+							tileLayer.concatenate(Transform.identity.scaledBy(x: bounds.width, y: bounds.height).cgAffineTransform)
+						}
+						for child in pattern.children {
+							render(child, opacity: opacity * pattern.attributes.opacity, in: &tileLayer)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private func tileRect(for pattern: SVGPatternDef, bounds: Rect) -> Rect? {
+		switch pattern.patternUnits {
+		case .userSpaceOnUse:
+			Rect(x: pattern.x, y: pattern.y, width: pattern.width, height: pattern.height)
+		case .objectBoundingBox:
+			Rect(
+				x: bounds.x + pattern.x * bounds.width,
+				y: bounds.y + pattern.y * bounds.height,
+				width: pattern.width * bounds.width,
+				height: pattern.height * bounds.height
+			)
+		}
+	}
+
+	private func shading(from paint: SVGPaint, currentColor: Color, opacity: Double, bounds: Rect) -> GraphicsContext.Shading? {
+		switch paint {
+		case .none, .contextFill, .contextStroke:
+			return nil
+		case .color(let color):
+			return .color(swiftUIColor(from: color, opacity: opacity))
+		case .currentColor:
+			return .color(swiftUIColor(from: currentColor, opacity: opacity))
+		case .url(let id):
+			return paintServerShading(id: id, opacity: opacity, bounds: bounds)
+		case .urlWithFallback(let id, let fallback):
+			return paintServerShading(id: id, opacity: opacity, bounds: bounds) ?? shading(from: fallback, currentColor: currentColor, opacity: opacity, bounds: bounds)
+		}
+	}
+
+	private func paintServerShading(id: String, opacity: Double, bounds: Rect) -> GraphicsContext.Shading? {
+		let referenceID = id.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+		if let gradient = document.defs.linearGradients[referenceID] {
+			return linearGradientShading(gradient, opacity: opacity, bounds: bounds)
+		}
+		if let gradient = document.defs.radialGradients[referenceID] {
+			return radialGradientShading(gradient, opacity: opacity, bounds: bounds)
+		}
+		return nil
+	}
+
+	private func linearGradientShading(_ gradient: SVGLinearGradientDef, opacity: Double, bounds: Rect) -> GraphicsContext.Shading? {
+		let stops = gradientStops(gradient.stops, opacity: opacity)
+		guard !stops.isEmpty else { return nil }
+		let start = gradientPoint(x: gradient.x1, y: gradient.y1, units: gradient.gradientUnits, bounds: bounds)
+			.applying(gradient.gradientTransform)
+		let end = gradientPoint(x: gradient.x2, y: gradient.y2, units: gradient.gradientUnits, bounds: bounds)
+			.applying(gradient.gradientTransform)
+		return .linearGradient(
+			Gradient(stops: stops),
+			startPoint: start.cgPoint,
+			endPoint: end.cgPoint
+		)
+	}
+
+	private func radialGradientShading(_ gradient: SVGRadialGradientDef, opacity: Double, bounds: Rect) -> GraphicsContext.Shading? {
+		let stops = gradientStops(gradient.stops, opacity: opacity)
+		guard !stops.isEmpty else { return nil }
+		let center = gradientPoint(x: gradient.cx, y: gradient.cy, units: gradient.gradientUnits, bounds: bounds)
+			.applying(gradient.gradientTransform)
+		let radius = gradientRadius(gradient.r, units: gradient.gradientUnits, bounds: bounds)
+		let startRadius = gradientRadius(gradient.fr, units: gradient.gradientUnits, bounds: bounds)
+		return .radialGradient(
+			Gradient(stops: stops),
+			center: center.cgPoint,
+			startRadius: CGFloat(startRadius),
+			endRadius: CGFloat(radius)
+		)
+	}
+
+	private func gradientStops(_ stops: [SVGGradientStop], opacity: Double) -> [Gradient.Stop] {
+		stops.map { stop in
+			Gradient.Stop(color: swiftUIColor(from: stop.color, opacity: opacity * stop.opacity), location: stop.offset)
+		}
+	}
+
+	private func gradientPoint(x: Double, y: Double, units: SVGGradientUnits, bounds: Rect) -> Point {
+		switch units {
+		case .userSpaceOnUse:
+			Point(x, y)
+		case .objectBoundingBox:
+			Point(bounds.x + x * bounds.width, bounds.y + y * bounds.height)
+		}
+	}
+
+	private func gradientRadius(_ radius: Double, units: SVGGradientUnits, bounds: Rect) -> Double {
+		switch units {
+		case .userSpaceOnUse:
+			radius
+		case .objectBoundingBox:
+			radius * max(bounds.width, bounds.height)
+		}
+	}
+
+	private func patternID(from paint: SVGPaint) -> String? {
+		switch paint {
+		case .url(let id), .urlWithFallback(let id, _):
+			let referenceID = id.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+			return document.defs.patterns[referenceID] == nil ? nil : referenceID
+		case .none, .color, .currentColor, .contextFill, .contextStroke:
+			return nil
+		}
+	}
+
 	private func swiftUIColor(from paint: SVGPaint, currentColor: Color, opacity: Double) -> SwiftUI.Color? {
 		switch paint {
 		case .none, .url, .contextFill, .contextStroke:
@@ -410,6 +555,10 @@ private struct SVGCanvasRenderer {
 		case .urlWithFallback(_, let fallback):
 			return swiftUIColor(from: fallback, currentColor: currentColor, opacity: opacity)
 		}
+	}
+
+	private func swiftUIColor(from color: Color, opacity: Double) -> SwiftUI.Color {
+		SwiftUI.Color(red: color.red, green: color.green, blue: color.blue, opacity: color.alpha * opacity)
 	}
 }
 
@@ -423,5 +572,12 @@ private extension Rect {
 private extension SVGPaintAttributes {
 	var canRender: Bool {
 		display != .none && visibility == .visible && opacity > 0
+	}
+}
+
+private extension CGPath {
+	var svgBounds: Rect {
+		let bounds = boundingBoxOfPath
+		return Rect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: bounds.height)
 	}
 }

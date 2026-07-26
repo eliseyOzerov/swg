@@ -19,7 +19,7 @@ struct FeatureExample {
 let duotoneLight = "#e5e7eb"
 let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "transform-before-after"
+let galleryAssetVersion = "paint-servers"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -305,28 +305,28 @@ let paintExamples = [
 ]
 
 let gradientAndPatternExamples = [
-	example("gradient-linear", "<linearGradient>", "Gradients and Patterns", .modelOnly, "URL paint servers are parsed but skipped by the renderer.") {
+	example("gradient-linear", "<linearGradient>", "Gradients and Patterns", .rendered, "Linear gradient paint servers render natively.") {
 		##"<defs><linearGradient id="g"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#ec4899"/></linearGradient></defs><rect x="22" y="16" width="76" height="48" rx="12" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-radial", "<radialGradient>", "Gradients and Patterns", .modelOnly, "Radial gradient paint is parsed but not painted.") {
+	example("gradient-radial", "<radialGradient>", "Gradients and Patterns", .rendered, "Radial gradient paint servers render natively.") {
 		##"<defs><radialGradient id="g"><stop offset="0" stop-color="#fef08a"/><stop offset="1" stop-color="#f97316"/></radialGradient></defs><circle cx="60" cy="40" r="26" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-stop-offset", "<stop> offset", "Gradients and Patterns", .modelOnly, "Stop offsets are model data until gradient rendering exists.") {
+	example("gradient-stop-offset", "<stop> offset", "Gradients and Patterns", .rendered, "Stop offsets control native gradient interpolation.") {
 		##"<defs><linearGradient id="g"><stop offset="0.2" stop-color="#22c55e"/><stop offset="0.8" stop-color="#2563eb"/></linearGradient></defs><rect x="22" y="18" width="76" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-stop-opacity", "stop-opacity", "Gradients and Patterns", .modelOnly, "Stop opacity is parsed but has no effect without gradient paint.") {
+	example("gradient-stop-opacity", "stop-opacity", "Gradients and Patterns", .rendered, "Stop opacity contributes to native gradient stop alpha.") {
 		##"<defs><linearGradient id="g"><stop offset="0" stop-color="#ef4444" stop-opacity="0.1"/><stop offset="1" stop-color="#ef4444" stop-opacity="1"/></linearGradient></defs><rect x="22" y="18" width="76" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-object-bounding-box", "gradientUnits objectBoundingBox", "Gradients and Patterns", .modelOnly, "Object-bounding-box gradient units are preserved but not rendered.") {
+	example("gradient-object-bounding-box", "gradientUnits objectBoundingBox", "Gradients and Patterns", .rendered, "Object-bounding-box gradient units map through the target bounds.") {
 		##"<defs><linearGradient id="g" gradientUnits="objectBoundingBox" x1="0" x2="1"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#0f172a"/></linearGradient></defs><rect x="20" y="18" width="80" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-user-space", "gradientUnits userSpaceOnUse", "Gradients and Patterns", .modelOnly, "User-space gradient units are preserved but not rendered.") {
+	example("gradient-user-space", "gradientUnits userSpaceOnUse", "Gradients and Patterns", .rendered, "User-space gradient units render in SVG user coordinates.") {
 		##"<defs><linearGradient id="g" gradientUnits="userSpaceOnUse" x1="20" x2="100"><stop offset="0" stop-color="#f97316"/><stop offset="1" stop-color="#7c2d12"/></linearGradient></defs><rect x="20" y="18" width="80" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-transform", "gradientTransform", "Gradients and Patterns", .modelOnly, "Gradient transforms are parsed but skipped by native paint.") {
+	example("gradient-transform", "gradientTransform", "Gradients and Patterns", .rendered, "Gradient transforms are applied to native gradient geometry.") {
 		##"<defs><linearGradient id="g" gradientTransform="rotate(20)"><stop offset="0" stop-color="#22c55e"/><stop offset="1" stop-color="#a855f7"/></linearGradient></defs><rect x="22" y="18" width="76" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("gradient-spread-pad", "spreadMethod pad", "Gradients and Patterns", .modelOnly, "Spread methods are parsed but not rendered.") {
+	example("gradient-spread-pad", "spreadMethod pad", "Gradients and Patterns", .rendered, "Pad spread extends endpoint colors natively.") {
 		##"<defs><linearGradient id="g" x2=".35" spreadMethod="pad"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect x="22" y="18" width="76" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
 	example("gradient-spread-reflect", "spreadMethod reflect", "Gradients and Patterns", .modelOnly, "Reflect spread is model-only today.") {
@@ -335,10 +335,10 @@ let gradientAndPatternExamples = [
 	example("gradient-spread-repeat", "spreadMethod repeat", "Gradients and Patterns", .modelOnly, "Repeat spread is model-only today.") {
 		##"<defs><linearGradient id="g" x2=".35" spreadMethod="repeat"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect x="22" y="18" width="76" height="44" fill="url(#g)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("pattern", "<pattern>", "Gradients and Patterns", .modelOnly, "Pattern paint servers are parsed but skipped.") {
+	example("pattern", "<pattern>", "Gradients and Patterns", .rendered, "Simple pattern paint servers tile native SVG children.") {
 		##"<defs><pattern id="p" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#fef3c7"/><circle cx="6" cy="6" r="3" fill="#f97316"/></pattern></defs><rect x="22" y="16" width="76" height="48" fill="url(#p)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
-	example("pattern-content-units", "patternContentUnits", "Gradients and Patterns", .modelOnly, "Pattern content unit mapping is preserved but not painted.") {
+	example("pattern-content-units", "patternContentUnits", "Gradients and Patterns", .rendered, "Object-bounding-box pattern content units map tile children.") {
 		##"<defs><pattern id="p" width=".25" height=".25" patternContentUnits="objectBoundingBox"><circle cx=".12" cy=".12" r=".05" fill="#2563eb"/></pattern></defs><rect x="22" y="16" width="76" height="48" fill="url(#p)" stroke="#94a3b8" stroke-width="3"/>"##
 	},
 ]
