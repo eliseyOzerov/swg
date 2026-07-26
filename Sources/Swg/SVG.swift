@@ -277,19 +277,19 @@ private struct SVGCanvasRenderer {
 	private func render(_ element: SVGElement, opacity: Double, in context: inout GraphicsContext) {
 		switch element {
 		case .path(let data):
-			render(path: data.path.cgPath, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
 		case .rect(let data):
-			render(path: data.path.cgPath, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
 		case .circle(let data):
-			render(path: data.path.cgPath, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
 		case .ellipse(let data):
-			render(path: data.path.cgPath, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
 		case .line(let data):
-			render(path: data.path.cgPath, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: true, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: true, in: &context)
 		case .polygon(let data):
-			render(path: data.path.cgPath, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: false, in: &context)
 		case .polyline(let data):
-			render(path: data.path.cgPath, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: true, in: &context)
+			render(path: data.path, attributes: data.attributes, inheritedOpacity: opacity, forceStroke: true, in: &context)
 		case .group(let data):
 			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, in: &context)
 		case .switch(let data):
@@ -383,10 +383,11 @@ private struct SVGCanvasRenderer {
 		}
 	}
 
-	private func render(path cgPath: CGPath, attributes: SVGPaintAttributes, inheritedOpacity: Double, forceStroke: Bool, in context: inout GraphicsContext) {
+	private func render(path model: Path, attributes: SVGPaintAttributes, inheritedOpacity: Double, forceStroke: Bool, in context: inout GraphicsContext) {
 		guard attributes.canRender else { return }
 		context.drawLayer { layer in
 			layer.concatenate(attributes.transform.cgAffineTransform)
+			let cgPath = model.cgPath
 			let path = SwiftUI.Path(cgPath)
 			let pathBounds = cgPath.svgBounds
 			applyClip(attributes: attributes, bounds: pathBounds, in: &layer)
@@ -410,11 +411,249 @@ private struct SVGCanvasRenderer {
 							))
 						}
 					case .markers:
-						break
+						renderMarkers(for: model, attributes: attributes, inheritedOpacity: opacity, in: &maskedLayer)
 					}
 				}
 			}
 		}
+	}
+
+	private func renderMarkers(for path: Path, attributes: SVGPaintAttributes, inheritedOpacity: Double, in context: inout GraphicsContext) {
+		guard attributes.markerStart != .none || attributes.markerMid != .none || attributes.markerEnd != .none else { return }
+		for marker in markerPlacements(for: path, attributes: attributes) {
+			render(marker: marker, inheritedOpacity: inheritedOpacity, in: &context)
+		}
+	}
+
+	private func render(marker placement: SVGRenderMarkerPlacement, inheritedOpacity: Double, in context: inout GraphicsContext) {
+		guard placement.definition.attributes.canRender, placement.definition.markerWidth > 0, placement.definition.markerHeight > 0 else { return }
+		let markerBounds = Rect(x: 0, y: 0, width: placement.definition.markerWidth, height: placement.definition.markerHeight)
+		let viewBoxTransform = placement.definition.viewBox.flatMap {
+			placement.definition.preserveAspectRatio.viewBoxTransform(from: $0, to: markerBounds)
+		} ?? .identity
+		let referencePoint = Point(
+			markerCoordinate(placement.definition.refX, basis: .horizontal, definition: placement.definition),
+			markerCoordinate(placement.definition.refY, basis: .vertical, definition: placement.definition)
+		).applying(viewBoxTransform)
+		let unitScale = placement.definition.markerUnits == .strokeWidth ? max(0, placement.strokeWidth) : 1
+
+		context.drawLayer { layer in
+			layer.translateBy(x: placement.point.x, y: placement.point.y)
+			layer.rotate(by: .radians(placement.angle))
+			layer.scaleBy(x: unitScale, y: unitScale)
+			layer.translateBy(x: -referencePoint.x, y: -referencePoint.y)
+			layer.clip(to: SwiftUI.Path(Path(commands: [.rect(markerBounds)]).cgPath))
+			layer.concatenate(viewBoxTransform.cgAffineTransform)
+			let opacity = inheritedOpacity * placement.definition.attributes.opacity
+			for child in placement.definition.children {
+				render(child, opacity: opacity, in: &layer)
+			}
+		}
+	}
+
+	private func markerCoordinate(_ value: String, basis: SVGLengthPercentageBasis, definition: SVGMarkerDef) -> Double {
+		SVGLengthParser.parse(value, context: SVGLengthContext(
+			fontSize: 16,
+			rootFontSize: 16,
+			viewportWidth: definition.markerWidth,
+			viewportHeight: definition.markerHeight
+		), percentageBasis: basis) ?? 0
+	}
+
+	private func markerPlacements(for path: Path, attributes: SVGPaintAttributes) -> [SVGRenderMarkerPlacement] {
+		let subpaths = markerSubpaths(for: path)
+		guard !subpaths.isEmpty else { return [] }
+		var placements: [SVGRenderMarkerPlacement] = []
+		for subpath in subpaths {
+			guard let firstSegment = subpath.segments.first, let lastSegment = subpath.segments.last else { continue }
+			if let marker = markerDefinition(for: attributes.markerStart) {
+				placements.append(SVGRenderMarkerPlacement(
+					definition: marker,
+					point: firstSegment.start,
+					angle: markerAngle(for: marker.orient, incoming: nil, outgoing: firstSegment.startDirection, isStart: true),
+					strokeWidth: attributes.strokeWidth
+				))
+			}
+			if let marker = markerDefinition(for: attributes.markerMid), subpath.segments.count > 1 {
+				for index in 0..<(subpath.segments.count - 1) {
+					let incoming = subpath.segments[index].endDirection
+					let outgoing = subpath.segments[index + 1].startDirection
+					placements.append(SVGRenderMarkerPlacement(
+						definition: marker,
+						point: subpath.segments[index].end,
+						angle: markerAngle(for: marker.orient, incoming: incoming, outgoing: outgoing, isStart: false),
+						strokeWidth: attributes.strokeWidth
+					))
+				}
+			}
+			if let marker = markerDefinition(for: attributes.markerEnd) {
+				placements.append(SVGRenderMarkerPlacement(
+					definition: marker,
+					point: lastSegment.end,
+					angle: markerAngle(for: marker.orient, incoming: lastSegment.endDirection, outgoing: nil, isStart: false),
+					strokeWidth: attributes.strokeWidth
+				))
+			}
+		}
+		return placements
+	}
+
+	private func markerDefinition(for reference: SVGMarkerReference) -> SVGMarkerDef? {
+		switch reference {
+		case .none:
+			return nil
+		case .url(let id):
+			return document.defs.markers[id.trimmingCharacters(in: CharacterSet(charactersIn: "#"))]
+		}
+	}
+
+	private func markerAngle(for orient: SVGMarkerOrient, incoming: Point?, outgoing: Point?, isStart: Bool) -> Double {
+		switch orient {
+		case .angle(let angle):
+			return angle
+		case .auto:
+			return automaticMarkerAngle(incoming: incoming, outgoing: outgoing)
+		case .autoStartReverse:
+			let angle = automaticMarkerAngle(incoming: incoming, outgoing: outgoing)
+			return isStart ? angle + .pi : angle
+		}
+	}
+
+	private func automaticMarkerAngle(incoming: Point?, outgoing: Point?) -> Double {
+		switch (incoming?.normalizedDirection, outgoing?.normalizedDirection) {
+		case (.some(let incoming), .some(let outgoing)):
+			let combined = incoming + outgoing
+			guard combined.length > 0.000001 else { return atan2(outgoing.y, outgoing.x) }
+			return atan2(combined.y, combined.x)
+		case (.some(let incoming), .none):
+			return atan2(incoming.y, incoming.x)
+		case (.none, .some(let outgoing)):
+			return atan2(outgoing.y, outgoing.x)
+		case (.none, .none):
+			return 0
+		}
+	}
+
+	private func markerSubpaths(for path: Path) -> [SVGRenderMarkerSubpath] {
+		var subpaths: [SVGRenderMarkerSubpath] = []
+		var segments: [SVGRenderPathSegment] = []
+		var currentPoint: Point?
+		var subpathStart: Point?
+
+		func finishSubpath() {
+			if !segments.isEmpty {
+				subpaths.append(SVGRenderMarkerSubpath(segments: segments))
+				segments = []
+			}
+		}
+
+		func appendSegment(to end: Point, startDirection: Point, endDirection: Point) {
+			guard let start = currentPoint else {
+				currentPoint = end
+				return
+			}
+			guard start.distance(to: end) > 0.000001 else {
+				currentPoint = end
+				return
+			}
+			segments.append(SVGRenderPathSegment(start: start, end: end, startDirection: startDirection, endDirection: endDirection))
+			currentPoint = end
+		}
+
+		for command in path.commands {
+			switch command {
+			case .move(let point):
+				finishSubpath()
+				currentPoint = point
+				subpathStart = point
+			case .line(let point):
+				let direction = point - (currentPoint ?? point)
+				appendSegment(to: point, startDirection: direction, endDirection: direction)
+			case .cubic(let point, let control1, let control2):
+				let start = currentPoint ?? control1
+				appendSegment(to: point, startDirection: nonzeroDirection(control1 - start, fallback: point - start), endDirection: nonzeroDirection(point - control2, fallback: point - start))
+			case .quad(let point, let control):
+				let start = currentPoint ?? control
+				appendSegment(to: point, startDirection: nonzeroDirection(control - start, fallback: point - start), endDirection: nonzeroDirection(point - control, fallback: point - start))
+			case .arc(let center, let radius, let startAngle, let endAngle, let clockwise):
+				let start = Point(center.x + cos(startAngle) * radius, center.y + sin(startAngle) * radius)
+				if currentPoint == nil {
+					currentPoint = start
+					subpathStart = start
+				}
+				let end = Point(center.x + cos(endAngle) * radius, center.y + sin(endAngle) * radius)
+				appendSegment(to: end, startDirection: arcDirection(radiusX: radius, radiusY: radius, angle: startAngle, clockwise: clockwise), endDirection: arcDirection(radiusX: radius, radiusY: radius, angle: endAngle, clockwise: clockwise))
+			case .ellipticalArc(let center, let radiusX, let radiusY, let startAngle, let endAngle, let clockwise):
+				let start = Point(center.x + cos(startAngle) * radiusX, center.y + sin(startAngle) * radiusY)
+				if currentPoint == nil {
+					currentPoint = start
+					subpathStart = start
+				}
+				let end = Point(center.x + cos(endAngle) * radiusX, center.y + sin(endAngle) * radiusY)
+				appendSegment(to: end, startDirection: arcDirection(radiusX: radiusX, radiusY: radiusY, angle: startAngle, clockwise: clockwise), endDirection: arcDirection(radiusX: radiusX, radiusY: radiusY, angle: endAngle, clockwise: clockwise))
+			case .close:
+				if let subpathStart, let currentPoint {
+					let direction = subpathStart - currentPoint
+					appendSegment(to: subpathStart, startDirection: direction, endDirection: direction)
+				}
+			case .rect(let rect):
+				appendRectMarkerSegments(rect)
+			case .ellipse(let rect):
+				appendEllipseMarkerSegments(rect)
+			case .roundedRect(let rect, _, _):
+				appendRectMarkerSegments(rect)
+			}
+		}
+		finishSubpath()
+		return subpaths
+
+		func appendRectMarkerSegments(_ rect: Rect) {
+			guard rect.width > 0, rect.height > 0 else { return }
+			finishSubpath()
+			let points = [rect.topLeft, rect.topRight, rect.bottomRight, rect.bottomLeft]
+			currentPoint = points[0]
+			subpathStart = points[0]
+			for point in points.dropFirst() {
+				let direction = point - (currentPoint ?? point)
+				appendSegment(to: point, startDirection: direction, endDirection: direction)
+			}
+			if let subpathStart, let currentPoint {
+				let direction = subpathStart - currentPoint
+				appendSegment(to: subpathStart, startDirection: direction, endDirection: direction)
+			}
+			finishSubpath()
+			currentPoint = nil
+			subpathStart = nil
+		}
+
+		func appendEllipseMarkerSegments(_ rect: Rect) {
+			guard rect.width > 0, rect.height > 0 else { return }
+			finishSubpath()
+			let center = rect.center
+			let radiusX = rect.width / 2
+			let radiusY = rect.height / 2
+			let angles: [Double] = [0, .pi / 2, .pi, .pi * 3 / 2, .pi * 2]
+			currentPoint = Point(center.x + radiusX, center.y)
+			subpathStart = currentPoint
+			for index in 1..<angles.count {
+				let angle = angles[index]
+				let previousAngle = angles[index - 1]
+				let end = Point(center.x + cos(angle) * radiusX, center.y + sin(angle) * radiusY)
+				appendSegment(to: end, startDirection: arcDirection(radiusX: radiusX, radiusY: radiusY, angle: previousAngle, clockwise: true), endDirection: arcDirection(radiusX: radiusX, radiusY: radiusY, angle: angle, clockwise: true))
+			}
+			finishSubpath()
+			currentPoint = nil
+			subpathStart = nil
+		}
+	}
+
+	private func nonzeroDirection(_ direction: Point, fallback: Point) -> Point {
+		direction.length > 0.000001 ? direction : fallback
+	}
+
+	private func arcDirection(radiusX: Double, radiusY: Double, angle: Double, clockwise: Bool) -> Point {
+		let direction = Point(-sin(angle) * radiusX, cos(angle) * radiusY)
+		return clockwise ? direction : Point(-direction.x, -direction.y)
 	}
 
 	private func render(text data: SVGTextData, inheritedOpacity: Double, in context: inout GraphicsContext) {
@@ -1054,6 +1293,27 @@ private struct SVGRenderClipPath {
 	var fillRule: FillRule
 }
 
+/// A marker instance prepared for rendering at a path vertex.
+private struct SVGRenderMarkerPlacement {
+	var definition: SVGMarkerDef
+	var point: Point
+	var angle: Double
+	var strokeWidth: Double
+}
+
+/// A marker-relevant subpath split into drawable path segments.
+private struct SVGRenderMarkerSubpath {
+	var segments: [SVGRenderPathSegment]
+}
+
+/// A drawable path segment with endpoint tangent directions.
+private struct SVGRenderPathSegment {
+	var start: Point
+	var end: Point
+	var startDirection: Point
+	var endDirection: Point
+}
+
 /// A measured native text run prepared for drawing through `GraphicsContext`.
 private struct SVGRenderTextRun {
 	var text: String
@@ -1079,6 +1339,18 @@ private extension Rect {
 		let maxX = max(right, other.right)
 		let maxY = max(bottom, other.bottom)
 		return Rect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+	}
+}
+
+private extension Point {
+	var length: Double {
+		hypot(x, y)
+	}
+
+	var normalizedDirection: Point? {
+		let length = length
+		guard length > 0.000001 else { return nil }
+		return Point(x / length, y / length)
 	}
 }
 

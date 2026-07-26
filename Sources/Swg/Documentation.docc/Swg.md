@@ -10,7 +10,7 @@ The package can display supported SVG geometry with ``SVG``, convert editable ``
 
 XML parsing is handled by Foundation's `XMLParser`, with `FoundationXML` imported where that platform separates XML support from the main Foundation module.
 
-The parser/model coverage is broader than the native SwiftUI renderer. The renderer currently draws the path, basic-shape, container, nested viewport, simple reuse, linear-gradient, radial-gradient, gradient-spread, simple pattern, local clip-path, local mask, and basic text-run subset that can map through SwiftUI and CoreGraphics drawing APIs. Advanced text layout, filters, markers, raster images, animation, and advanced paint-server behavior are preserved in the model but are not full native-renderer features yet.
+The parser/model coverage is broader than the native SwiftUI renderer. The renderer currently draws the path, basic-shape, container, nested viewport, simple reuse, linear-gradient, radial-gradient, gradient-spread, simple pattern, local clip-path, local mask, basic text-run, and local marker subset that can map through SwiftUI and CoreGraphics drawing APIs. Advanced text layout, filters, contextual marker paint, raster images, animation, and advanced paint-server behavior are preserved in the model but are not full native-renderer features yet.
 
 ## Quick Start
 

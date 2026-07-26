@@ -19,7 +19,7 @@ struct FeatureExample {
 let duotoneLight = "#e5e7eb"
 let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "text-native"
+let galleryAssetVersion = "markers-native"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -298,7 +298,7 @@ let paintExamples = [
 	example("paint-dashoffset", "stroke-dashoffset", "Painting", .rendered, "Dash offsets shift the dash phase.") {
 		##"<path d="M18 30 H102" stroke="#cbd5e1" stroke-width="7" stroke-dasharray="10 7"/><path d="M18 52 H102" stroke="#2563eb" stroke-width="7" stroke-dasharray="10 7" stroke-dashoffset="9"/>"##
 	},
-	example("paint-order", "paint-order", "Painting", .rendered, "Paint order is honored for fill and stroke; marker painting is skipped.") {
+	example("paint-order", "paint-order", "Painting", .rendered, "Paint order is honored for fill, stroke, and marker passes.") {
 		##"<path d="M26 60 L60 16 L94 60 Z" fill="#facc15" stroke="#713f12" stroke-width="12" paint-order="stroke fill markers" stroke-linejoin="round"/>"##
 	},
 	example("paint-current-color", "currentColor", "Painting", .rendered, "currentColor resolves into fill or stroke paint.") {
@@ -428,26 +428,26 @@ let reuseAndMarkerExamples = [
 	example("xlink-href-use", "xlink:href", "Reuse, Linking, and Markers", .rendered, "Deprecated xlink:href is preserved and works for simple <use> references.") {
 		##"<defs><g id="badge"><rect x="-14" y="-14" width="28" height="28" rx="7" fill="#f97316" stroke="#7c2d12" stroke-width="4"/></g></defs><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#badge" x="42" y="40"/><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#badge" x="78" y="40"/>"##
 	},
-	example("marker-element", "<marker>", "Reuse, Linking, and Markers", .modelOnly, "Marker definitions are parsed but marker painting is skipped.") {
-		##"<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"><path d="M1 1 L9 5 L1 9 Z" fill="#2563eb"/></marker></defs><path d="M22 40 H98" stroke="#2563eb" stroke-width="8" marker-end="url(#arrow)"/>"##
+	example("marker-element", "<marker>", "Reuse, Linking, and Markers", .rendered, "Marker definitions render when referenced by path geometry.") {
+		##"<defs><marker id="arrow" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="14" markerHeight="14"><path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/></marker></defs><path d="M22 40 H94" stroke="#2563eb" stroke-width="7" marker-end="url(#arrow)"/>"##
 	},
-	example("marker-start", "marker-start", "Reuse, Linking, and Markers", .modelOnly, "Start markers are parsed but not painted.") {
-		##"<defs><marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8"><circle cx="5" cy="5" r="4" fill="#ef4444"/></marker></defs><path d="M22 40 H98" stroke="#2563eb" stroke-width="8" marker-start="url(#dot)"/>"##
+	example("marker-start", "marker-start", "Reuse, Linking, and Markers", .rendered, "Start markers paint at the first path vertex.") {
+		##"<defs><marker id="dot" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="14" markerHeight="14"><circle cx="5" cy="5" r="4" fill="#2563eb"/></marker></defs><path d="M26 40 H98" stroke="#111827" stroke-width="7" marker-start="url(#dot)"/>"##
 	},
-	example("marker-mid", "marker-mid", "Reuse, Linking, and Markers", .modelOnly, "Mid markers are parsed but not painted.") {
-		##"<defs><marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8"><circle cx="5" cy="5" r="4" fill="#ef4444"/></marker></defs><polyline points="20,58 60,22 100,58" fill="none" stroke="#2563eb" stroke-width="8" marker-mid="url(#dot)"/>"##
+	example("marker-mid", "marker-mid", "Reuse, Linking, and Markers", .rendered, "Mid markers paint at interior vertices.") {
+		##"<defs><marker id="dot" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="14" markerHeight="14"><circle cx="5" cy="5" r="4" fill="#2563eb"/></marker></defs><polyline points="20,58 60,22 100,58" fill="none" stroke="#111827" stroke-width="7" marker-mid="url(#dot)"/>"##
 	},
-	example("marker-end", "marker-end", "Reuse, Linking, and Markers", .modelOnly, "End markers are parsed but not painted.") {
-		##"<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"><path d="M1 1 L9 5 L1 9 Z" fill="#2563eb"/></marker></defs><path d="M22 40 H98" stroke="#2563eb" stroke-width="8" marker-end="url(#arrow)"/>"##
+	example("marker-end", "marker-end", "Reuse, Linking, and Markers", .rendered, "End markers paint at the final path vertex.") {
+		##"<defs><marker id="arrow" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="14" markerHeight="14"><path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/></marker></defs><path d="M22 40 H94" stroke="#111827" stroke-width="7" marker-end="url(#arrow)"/>"##
 	},
-	example("marker-orient", "marker orient", "Reuse, Linking, and Markers", .modelOnly, "Marker orientation is parsed but has no renderer effect.") {
-		##"<defs><marker id="arrow" orient="auto" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"><path d="M1 1 L9 5 L1 9 Z" fill="#2563eb"/></marker></defs><path d="M22 58 C46 20 74 20 98 58" fill="none" stroke="#2563eb" stroke-width="8" marker-end="url(#arrow)"/>"##
+	example("marker-orient", "marker orient", "Reuse, Linking, and Markers", .rendered, "Auto marker orientation follows the path tangent.") {
+		##"<defs><marker id="arrow" orient="auto" markerUnits="userSpaceOnUse" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="14" markerHeight="14"><path d="M0 0 L10 5 L0 10 Z" fill="#2563eb"/></marker></defs><path d="M22 58 C46 20 74 20 98 58" fill="none" stroke="#111827" stroke-width="7" marker-end="url(#arrow)"/>"##
 	},
-	example("marker-units", "markerUnits", "Reuse, Linking, and Markers", .modelOnly, "Marker unit scaling is parsed but not painted.") {
-		##"<defs><marker id="arrow" markerUnits="strokeWidth" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"><path d="M1 1 L9 5 L1 9 Z" fill="#2563eb"/></marker></defs><path d="M22 40 H98" stroke="#2563eb" stroke-width="8" marker-end="url(#arrow)"/>"##
+	example("marker-units", "markerUnits", "Reuse, Linking, and Markers", .rendered, "Stroke-width marker units scale marker viewports with stroke width.") {
+		##"<defs><marker id="dot" markerUnits="strokeWidth" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="2" markerHeight="2"><circle cx="5" cy="5" r="5" fill="#2563eb"/></marker></defs><path d="M20 28 H94" stroke="#111827" stroke-width="4" marker-end="url(#dot)"/><path d="M20 54 H90" stroke="#111827" stroke-width="8" marker-end="url(#dot)"/>"##
 	},
-	example("marker-viewbox", "marker viewBox", "Reuse, Linking, and Markers", .modelOnly, "Marker viewBox data is parsed but not rendered.") {
-		##"<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8"><path d="M1 1 L9 5 L1 9 Z" fill="#2563eb"/></marker></defs><path d="M22 40 H98" stroke="#2563eb" stroke-width="8" marker-end="url(#arrow)"/>"##
+	example("marker-viewbox", "marker viewBox", "Reuse, Linking, and Markers", .rendered, "Marker viewBox mapping fits marker children into the marker viewport.") {
+		##"<defs><marker id="arrow" markerUnits="userSpaceOnUse" viewBox="0 0 20 20" refX="20" refY="10" markerWidth="16" markerHeight="16"><path d="M0 0 L20 10 L0 20 Z" fill="#2563eb"/></marker></defs><path d="M22 40 H94" stroke="#111827" stroke-width="7" marker-end="url(#arrow)"/>"##
 	},
 ]
 
