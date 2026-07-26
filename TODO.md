@@ -204,7 +204,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `marker-mid`.
 - [x] `marker-end`.
 - [x] `orient`.
-- [ ] `markerUnits`.
+- [x] `markerUnits`.
 - [ ] `viewBox`.
 
 ## Animation and Dynamic SVG

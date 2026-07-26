@@ -4081,6 +4081,26 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	expectAngle(document.defs.markers["invalid"]?.orient, 0)
 }
 
+@Test func svgParserPreservesMarkerUnitsInitialValuesAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+		<defs>
+			<marker id="defaults"/>
+			<marker id="stroke-width" markerUnits="strokeWidth"/>
+			<marker id="user-space" markerUnits="userSpaceOnUse"/>
+			<marker id="invalid" markerUnits="viewport"/>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.markers["defaults"]?.markerUnits == .strokeWidth)
+	#expect(document.defs.markers["stroke-width"]?.markerUnits == .strokeWidth)
+	#expect(document.defs.markers["user-space"]?.markerUnits == .userSpaceOnUse)
+	#expect(document.defs.markers["invalid"]?.markerUnits == .strokeWidth)
+}
+
 @Test func svgParserAppliesMarkerStartInitialInheritanceCascadeAndInvalidFallback() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">

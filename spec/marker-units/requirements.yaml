@@ -1,0 +1,220 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: marker-units
+  title: SVG markerUnits attribute
+  domain: SVG 2 Painting
+  profile: null
+  summary: Requirements for parser-visible handling of the `<marker>` `markerUnits` attribute, including the two coordinate-system modes, initial value, and malformed fallback behavior.
+  non_goals:
+    - Computing marker viewport transforms from stroke width or user space.
+    - Rendering markers onto CGPath output.
+    - Implementing marker placement for marker-start, marker-mid, or marker-end.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-marker-element
+      title: "SVG 2 Painting: The marker element"
+      url: https://www.w3.org/TR/SVG/painting.html#MarkerElement
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-marker-units-attribute
+      title: "SVG 2 Painting: markerUnits attribute"
+      url: https://www.w3.org/TR/SVG/painting.html#MarkerUnitsAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 lists `markerUnits` as an attribute of the `marker` element.
+    - SVG 2 defines `markerUnits` with value grammar `strokeWidth | userSpaceOnUse`, initial value `strokeWidth`, and animatable yes.
+    - SVG 2 defines `strokeWidth` as using a coordinate system with one unit equal to the stroke width of the referencing element.
+    - SVG 2 defines `userSpaceOnUse` as using the current user coordinate system of the referencing element.
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C marker element and markerUnits attribute sections.
+
+scope:
+  includes:
+    - Parser output for the `markerUnits` attribute on `<marker>`.
+    - Initial `markerUnits` value of `strokeWidth`.
+    - Explicit `strokeWidth`.
+    - Explicit `userSpaceOnUse`.
+    - Malformed `markerUnits` values falling back to the initial value in parser output.
+  excludes:
+    - Runtime marker coordinate-system transform computation.
+    - Interaction with `markerWidth`, `markerHeight`, `refX`, `refY`, or `viewBox` during rendering.
+    - Animation of `markerUnits`.
+  assumptions:
+    - The parser may store the selected marker units mode and leave geometry transform computation to renderer work.
+    - Invalid attribute values are represented by the parser as the initial `strokeWidth` value for this bullet.
+
+terminology:
+  - id: term-marker-units
+    term: markerUnits
+    definition: The marker attribute that selects the coordinate system for marker geometry attributes and marker contents before viewBox transforms.
+    source_refs:
+      - svg2-marker-units-attribute
+  - id: term-stroke-width-units
+    term: strokeWidth
+    definition: Marker units mode where one marker unit equals the stroke width of the referencing element.
+    source_refs:
+      - svg2-marker-units-attribute
+  - id: term-user-space-on-use
+    term: userSpaceOnUse
+    definition: Marker units mode where marker contents use the current user coordinate system of the referencing element.
+    source_refs:
+      - svg2-marker-units-attribute
+
+structures:
+  - id: S001
+    name: markerUnits parser state
+    kind: structure
+    source_refs:
+      - svg2-marker-units-attribute
+    fields:
+      - name: markerUnits
+        type: strokeWidth or userSpaceOnUse
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is `strokeWidth`.
+          - Valid keyword values are `strokeWidth` and `userSpaceOnUse`.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-marker-units-attribute
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: A marker `markerUnits` attribute must accept `strokeWidth` or `userSpaceOnUse`.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-marker-units-attribute
+      - svg2-marker-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `markerUnits` value must be `strokeWidth`.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-marker-units-attribute
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: The `strokeWidth` value must be preserved distinctly from `userSpaceOnUse`.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-marker-units-attribute
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The `userSpaceOnUse` value must be preserved distinctly from `strokeWidth`.
+    applies_to:
+      - SVG marker elements
+    source_refs:
+      - svg2-marker-units-attribute
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: The `markerUnits` value determines the coordinate system used for marker geometry and contents at rendering time.
+    applies_to:
+      - SVG marker rendering
+    source_refs:
+      - svg2-marker-units-attribute
+    testability: reviewable
+    notes:
+      - Parser-visible coverage stores the requested mode; actual marker transform computation is excluded from this bullet.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`markerUnits` is neither `strokeWidth` nor `userSpaceOnUse`."
+    source_behavior: UNSPECIFIED
+    required_behavior: Parser output falls back to the initial `markerUnits` value of `strokeWidth`.
+    decision_required: false
+    source_refs:
+      - svg2-marker-units-attribute
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: Parser output for a marker must retain enough `markerUnits` state for a renderer to later choose the marker coordinate system.
+    derived_from:
+      - R001
+      - R005
+    reasoning: The spec defines markerUnits as the marker coordinate-system control, so parser output must preserve the mode before renderer geometry work can apply it.
+    source_refs:
+      - svg2-marker-units-attribute
+
+implementation_choices:
+  - id: IC001
+    topic: Invalid markerUnits fallback
+    statement: The parser may normalize malformed `markerUnits` values to the initial value rather than preserving the malformed token.
+    allowed_by:
+      - R002
+    source_refs:
+      - svg2-marker-units-attribute
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG marker element
+    reason: The `markerUnits` attribute is defined on SVG `<marker>` elements.
+    source_refs:
+      - svg2-marker-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-marker-units-attribute
+      - svg2-marker-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-marker-units-attribute
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-marker-units-attribute
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-marker-units-attribute
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-marker-units-attribute
+    map_item_refs: []
