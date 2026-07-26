@@ -1,0 +1,167 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: primitive-units
+  title: SVG primitiveUnits attribute
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve the `<filter>` element's `primitiveUnits` coordinate-space attribute with the specification default.
+  non_goals:
+    - Resolving primitive length values into user-space or object-bounding-box coordinates.
+    - Implementing filter primitive subregion geometry.
+    - Implementing individual filter primitive rendering semantics.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-filter-element-primitiveunits
+      title: "Filter Effects Module Level 1: primitiveUnits attribute"
+      url: https://www.w3.org/TR/filter-effects-1/#element-attrdef-filter-primitiveunits
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `primitiveUnits` on `<filter>` with values `userSpaceOnUse` and `objectBoundingBox`."
+    - "`primitiveUnits` specifies the coordinate system for length values inside filter primitive definitions and for attributes that define filter primitive subregions."
+    - "The initial value of `primitiveUnits` is `userSpaceOnUse`."
+
+scope:
+  includes:
+    - "`primitiveUnits=\"userSpaceOnUse\"`."
+    - "`primitiveUnits=\"objectBoundingBox\"`."
+    - "The `userSpaceOnUse` initial value when `primitiveUnits` is omitted or invalid."
+  excludes:
+    - Primitive length conversion.
+    - Filter primitive subregion clipping.
+    - Rendering-time filter evaluation.
+  assumptions:
+    - Swg exposes the parsed primitive coordinate-space choice on `SVGFilterDef` for downstream renderers.
+
+terminology:
+  - id: T001
+    term: primitiveUnits
+    definition: The `<filter>` attribute that chooses the coordinate system for filter primitive lengths and primitive subregion attributes.
+    source_refs:
+      - filter-effects-filter-element-primitiveunits
+  - id: T002
+    term: objectBoundingBox
+    definition: A coordinate system where primitive lengths are fractions or percentages of the referencing element's bounding box.
+    source_refs:
+      - filter-effects-filter-element-primitiveunits
+  - id: T003
+    term: userSpaceOnUse
+    definition: A coordinate system where primitive lengths use the current user coordinate system of the element referencing the filter.
+    source_refs:
+      - filter-effects-filter-element-primitiveunits
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitiveUnits
+    kind: enum
+    source_refs:
+      - filter-effects-filter-element-primitiveunits
+    fields:
+      - name: objectBoundingBox
+        type: case
+        cardinality: exactly-one
+        position: enum-case
+        constraints:
+          - Matches the SVG `objectBoundingBox` keyword.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-filter-element-primitiveunits
+      - name: userSpaceOnUse
+        type: case
+        cardinality: exactly-one
+        position: enum-case
+        constraints:
+          - Matches the SVG `userSpaceOnUse` keyword and the initial value.
+        requirement_refs:
+          - R001
+          - R003
+        source_refs:
+          - filter-effects-filter-element-primitiveunits
+  - id: S002
+    name: SVGFilterDef.primitiveUnits
+    kind: field
+    source_refs:
+      - filter-effects-filter-element-primitiveunits
+    fields:
+      - name: primitiveUnits
+        type: SVGFilterPrimitiveUnits
+        cardinality: exactly-one
+        position: filter-definition
+        constraints:
+          - Defaults to `userSpaceOnUse`.
+          - Stores either `userSpaceOnUse` or `objectBoundingBox`.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-filter-element-primitiveunits
+
+requirements:
+  - id: R001
+    title: Parse userSpaceOnUse
+    statement: "`primitiveUnits=\"userSpaceOnUse\"` must be preserved as the `userSpaceOnUse` primitive coordinate-space value."
+    keywords:
+      - primitiveUnits
+      - userSpaceOnUse
+    source_refs:
+      - filter-effects-filter-element-primitiveunits
+    acceptance:
+      - "`SVGFilterDef.primitiveUnits` is `.userSpaceOnUse` for `primitiveUnits=\"userSpaceOnUse\"`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesPrimitiveUnits
+  - id: R002
+    title: Parse objectBoundingBox
+    statement: "`primitiveUnits=\"objectBoundingBox\"` must be preserved as the `objectBoundingBox` primitive coordinate-space value."
+    keywords:
+      - primitiveUnits
+      - objectBoundingBox
+    source_refs:
+      - filter-effects-filter-element-primitiveunits
+    acceptance:
+      - "`SVGFilterDef.primitiveUnits` is `.objectBoundingBox` for `primitiveUnits=\"objectBoundingBox\"`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesPrimitiveUnits
+  - id: R003
+    title: Default invalid and omitted values
+    statement: Omitted or invalid `primitiveUnits` values must resolve to the initial `userSpaceOnUse` value.
+    keywords:
+      - primitiveUnits
+      - initial
+      - invalid
+    source_refs:
+      - filter-effects-filter-element-primitiveunits
+    acceptance:
+      - "A `<filter>` without `primitiveUnits` stores `.userSpaceOnUse`."
+      - "A `<filter>` with an unsupported `primitiveUnits` token stores `.userSpaceOnUse`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesPrimitiveUnits
+
+traceability:
+  source_to_requirements:
+    filter-effects-filter-element-primitiveunits:
+      - R001
+      - R002
+      - R003
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesPrimitiveUnits
+    R002:
+      - svgParserPreservesPrimitiveUnits
+    R003:
+      - svgParserPreservesPrimitiveUnits

@@ -88,6 +88,24 @@ import Testing
 	#expect(document.defs.filters["invalidUnits"]?.filterUnits == .objectBoundingBox)
 }
 
+@Test func svgParserPreservesPrimitiveUnits() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="defaultUnits"/>
+		<filter id="userSpace" primitiveUnits="userSpaceOnUse"/>
+		<filter id="objectBox" primitiveUnits="objectBoundingBox"/>
+		<filter id="invalidUnits" primitiveUnits="definitelyNotUnits"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.filters["defaultUnits"]?.primitiveUnits == .userSpaceOnUse)
+	#expect(document.defs.filters["userSpace"]?.primitiveUnits == .userSpaceOnUse)
+	#expect(document.defs.filters["objectBox"]?.primitiveUnits == .objectBoundingBox)
+	#expect(document.defs.filters["invalidUnits"]?.primitiveUnits == .userSpaceOnUse)
+}
+
 @Test func svgParserPreservesRadialGradientGeometryAndStops() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

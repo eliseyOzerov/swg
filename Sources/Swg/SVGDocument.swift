@@ -982,21 +982,30 @@ public enum SVGGradientSpreadMethod: Sendable, Equatable, Hashable {
 public struct SVGFilterDef: Equatable, Sendable {
 	public var id: String
 	public var filterUnits: SVGFilterUnits
+	public var primitiveUnits: SVGFilterPrimitiveUnits
 	public var primitives: [SVGFilterPrimitive]
 
 	public init(
 		id: String,
 		filterUnits: SVGFilterUnits = .objectBoundingBox,
+		primitiveUnits: SVGFilterPrimitiveUnits = .userSpaceOnUse,
 		primitives: [SVGFilterPrimitive] = []
 	) {
 		self.id = id
 		self.filterUnits = filterUnits
+		self.primitiveUnits = primitiveUnits
 		self.primitives = primitives
 	}
 }
 
 /// Coordinate system used for an SVG `<filter>` element's region attributes.
 public enum SVGFilterUnits: Equatable, Sendable, Hashable {
+	case objectBoundingBox
+	case userSpaceOnUse
+}
+
+/// Coordinate system used for lengths inside SVG filter primitives.
+public enum SVGFilterPrimitiveUnits: Equatable, Sendable, Hashable {
 	case objectBoundingBox
 	case userSpaceOnUse
 }

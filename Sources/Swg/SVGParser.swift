@@ -368,7 +368,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			clipPathAttributeStack.append(parsePaintAttributes(attributes))
 			inClipPath = true
 		case "filter":
-			currentFilter = SVGFilterDef(id: attributes["id"] ?? "", filterUnits: parseFilterUnits(attributes["filterUnits"]))
+			currentFilter = SVGFilterDef(
+				id: attributes["id"] ?? "",
+				filterUnits: parseFilterUnits(attributes["filterUnits"]),
+				primitiveUnits: parseFilterPrimitiveUnits(attributes["primitiveUnits"])
+			)
 		case "feGaussianBlur":
 			if let std = attributes["stdDeviation"].flatMap(parseNumber) {
 				currentFilter?.primitives.append(.gaussianBlur(stdDeviation: std))
@@ -966,6 +970,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseFilterUnits(_ value: String?) -> SVGFilterUnits {
 		value == "userSpaceOnUse" ? .userSpaceOnUse : .objectBoundingBox
+	}
+
+	private func parseFilterPrimitiveUnits(_ value: String?) -> SVGFilterPrimitiveUnits {
+		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
 	}
 
 	private func parseMaskUnits(_ value: String?) -> SVGMaskUnits {
