@@ -1693,17 +1693,29 @@ public enum SVGFilterEdgeMode: Equatable, Sendable, Hashable {
 /// A parsed SVG `<mask>` definition.
 public struct SVGMaskDef: Equatable, Sendable {
 	public let id: String
+	public var x: Double
+	public var y: Double
+	public var width: Double
+	public var height: Double
 	public var maskUnits: SVGMaskUnits
 	public var maskContentUnits: SVGMaskUnits
 	public let children: [SVGElement]
 
 	public init(
 		id: String,
+		x: Double = -0.1,
+		y: Double = -0.1,
+		width: Double = 1.2,
+		height: Double = 1.2,
 		maskUnits: SVGMaskUnits = .objectBoundingBox,
 		maskContentUnits: SVGMaskUnits = .userSpaceOnUse,
 		children: [SVGElement]
 	) {
 		self.id = id
+		self.x = x
+		self.y = y
+		self.width = width
+		self.height = height
 		self.maskUnits = maskUnits
 		self.maskContentUnits = maskContentUnits
 		self.children = children

@@ -22,6 +22,10 @@ import UIKit
 	try assertVisualFixture("clipping")
 }
 
+@MainActor @Test func svgVisualValidationRendersMaskingFixture() throws {
+	try assertVisualFixture("masking")
+}
+
 @MainActor private func assertVisualFixture(_ name: String) throws {
 	let svgURL = try #require(visualFixtureURL(for: name, extension: "svg"))
 	let goldenURL = try #require(visualFixtureURL(for: name, extension: "golden.txt"))

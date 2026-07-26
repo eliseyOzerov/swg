@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 12">
+	<defs>
+		<mask id="left" maskUnits="userSpaceOnUse" x="0" y="0" width="8" height="4">
+			<rect x="0" y="0" width="4" height="4" fill="white"/>
+		</mask>
+		<mask id="black-hole" maskUnits="userSpaceOnUse" x="0" y="4" width="8" height="4">
+			<rect x="0" y="4" width="8" height="4" fill="white"/>
+			<rect x="2" y="5" width="4" height="2" fill="black"/>
+		</mask>
+		<mask id="object" maskUnits="objectBoundingBox" x="0" y="0" width="1" height="1" maskContentUnits="objectBoundingBox">
+			<rect x="0" y="0" width=".5" height="1" fill="white"/>
+		</mask>
+	</defs>
+	<rect x="0" y="0" width="8" height="12" fill="white"/>
+	<rect x="0" y="0" width="8" height="4" fill="red" mask="url(#left)"/>
+	<rect x="0" y="4" width="8" height="4" fill="blue" mask="url(#black-hole)"/>
+	<rect x="2" y="8" width="4" height="4" fill="lime" mask="url(#object)"/>
+</svg>

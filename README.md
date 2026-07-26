@@ -8,7 +8,7 @@ The package has no third-party dependencies. XML parsing uses Foundation's `XMLP
 
 The parser is built around the SVG 2 specification and is tracked by a test-gated checklist in [TODO.md](TODO.md). A checklist item is checked only when there is a focused test for that feature.
 
-Current coverage is strongest in parser/model behavior. The native SwiftUI renderer displays the shape/path/container subset that can already map through `CGPath`, plus basic native linear gradients, radial gradients, gradient spread modes, pattern fills, and local clip paths. Browser-equivalent rendering for text, filters, masks, markers, images, animation, and advanced paint-server behavior is still renderer work in progress even though much of that structure is parsed and modeled.
+Current coverage is strongest in parser/model behavior. The native SwiftUI renderer displays the shape/path/container subset that can already map through `CGPath`, plus basic native linear gradients, radial gradients, gradient spread modes, pattern fills, local clip paths, and local masks. Browser-equivalent rendering for text, filters, markers, images, animation, and advanced paint-server behavior is still renderer work in progress even though much of that structure is parsed and modeled.
 
 The matrix below shows one SVG example per visual feature. Each source SVG is parsed by `swg` and rendered to PNG through the package's `SVG` SwiftUI view.
 
@@ -18,9 +18,9 @@ These images are generated from one SVG per visual feature by `docs/FeatureGalle
 
 The examples use a neutral light/dark duotone palette by default so shape, transform, layout, and paint mechanics are easier to compare without interpreting arbitrary colors. Filled-and-stroked elements use a light fill with a dark stroke; foreground-only fills stay dark when that makes the feature easier to see. Examples stay colorful only when the feature itself is about color or opacity-specific paint, including fills, strokes, gradients, patterns, and color-bearing filter properties.
 
-The parser/model checklist remains in [TODO.md](TODO.md). This matrix is specifically the native SwiftUI renderer truth table: 133 visual examples, 75 currently render through `SVG`, and 58 are intentionally left blank because the feature is parsed/modelled but not actually painted yet.
+The parser/model checklist remains in [TODO.md](TODO.md). This matrix is specifically the native SwiftUI renderer truth table: 133 visual examples, 79 currently render through `SVG`, and 54 are intentionally left blank because the feature is parsed/modelled but not actually painted yet.
 
-Not actually rendering yet: masking, filter primitives, native text, markers, vector-effect stroke behavior, rendering hints, embedded HTML inside `foreignObject`, and live animation. Those features are still valuable in the model, but the current `SVG` view either skips them or paints only the static/base geometry.
+Not actually rendering yet: filter primitives, native text, markers, vector-effect stroke behavior, rendering hints, embedded HTML inside `foreignObject`, and live animation. Those features are still valuable in the model, but the current `SVG` view either skips them or paints only the static/base geometry.
 
 
 ## Document and Containers
@@ -41,47 +41,47 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">Nested &lt;svg&gt; viewport</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/nested-svg-viewport.png?v=clipping-native" alt="Nested &lt;svg&gt; viewport" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/nested-svg-viewport.png?v=masking-native" alt="Nested &lt;svg&gt; viewport" width="144"></td>
 <td width="33.33%">Nested SVG children paint inside their own viewport.</td>
 </tr>
 <tr>
 <td width="33.33%">viewBox meet</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/viewbox-preserve-meet.png?v=clipping-native" alt="viewBox meet" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/viewbox-preserve-meet.png?v=masking-native" alt="viewBox meet" width="144"></td>
 <td width="33.33%">The document is uniformly fitted into the viewport.</td>
 </tr>
 <tr>
 <td width="33.33%">preserveAspectRatio none</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/preserve-aspect-none.png?v=clipping-native" alt="preserveAspectRatio none" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/preserve-aspect-none.png?v=masking-native" alt="preserveAspectRatio none" width="144"></td>
 <td width="33.33%">The nested viewport uses non-uniform scaling.</td>
 </tr>
 <tr>
 <td width="33.33%">preserveAspectRatio slice</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/preserve-aspect-slice.png?v=clipping-native" alt="preserveAspectRatio slice" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/preserve-aspect-slice.png?v=masking-native" alt="preserveAspectRatio slice" width="144"></td>
 <td width="33.33%">The nested viewport covers and crops the viewBox.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;g&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/group-container.png?v=clipping-native" alt="&lt;g&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/group-container.png?v=masking-native" alt="&lt;g&gt;" width="144"></td>
 <td width="33.33%">Groups apply transforms and inherited paint to children.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;defs&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/defs-hidden.png?v=clipping-native" alt="&lt;defs&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/defs-hidden.png?v=masking-native" alt="&lt;defs&gt;" width="144"></td>
 <td width="33.33%">Definitions stay hidden until referenced.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;symbol&gt; + &lt;use&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/symbol-use.png?v=clipping-native" alt="&lt;symbol&gt; + &lt;use&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/symbol-use.png?v=masking-native" alt="&lt;symbol&gt; + &lt;use&gt;" width="144"></td>
 <td width="33.33%">Simple symbol references render through &lt;use&gt;.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;switch&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/switch-container.png?v=clipping-native" alt="&lt;switch&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/switch-container.png?v=masking-native" alt="&lt;switch&gt;" width="144"></td>
 <td width="33.33%">The selected switch child renders as a normal container.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;a&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/link-container.png?v=clipping-native" alt="&lt;a&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/link-container.png?v=masking-native" alt="&lt;a&gt;" width="144"></td>
 <td width="33.33%">Links render their SVG children; interaction metadata is preserved separately.</td>
 </tr>
 <tr>
@@ -110,47 +110,47 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">&lt;path&gt; element</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-path.png?v=clipping-native" alt="&lt;path&gt; element" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-path.png?v=masking-native" alt="&lt;path&gt; element" width="144"></td>
 <td width="33.33%">Path elements render through CGPath.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;rect&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-rect.png?v=clipping-native" alt="&lt;rect&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-rect.png?v=masking-native" alt="&lt;rect&gt;" width="144"></td>
 <td width="33.33%">Rectangles render with fill and stroke.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;rect rx&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-rounded-rx.png?v=clipping-native" alt="&lt;rect rx&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-rounded-rx.png?v=masking-native" alt="&lt;rect rx&gt;" width="144"></td>
 <td width="33.33%">Rounded x radius is converted into the path.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;rect ry&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-rounded-ry.png?v=clipping-native" alt="&lt;rect ry&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-rounded-ry.png?v=masking-native" alt="&lt;rect ry&gt;" width="144"></td>
 <td width="33.33%">Rounded y radius is converted into the path.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;circle&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-circle.png?v=clipping-native" alt="&lt;circle&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-circle.png?v=masking-native" alt="&lt;circle&gt;" width="144"></td>
 <td width="33.33%">Circles render as CGPath ellipses.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;ellipse&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-ellipse.png?v=clipping-native" alt="&lt;ellipse&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-ellipse.png?v=masking-native" alt="&lt;ellipse&gt;" width="144"></td>
 <td width="33.33%">Ellipses render as CGPath ellipses.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;line&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-line.png?v=clipping-native" alt="&lt;line&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-line.png?v=masking-native" alt="&lt;line&gt;" width="144"></td>
 <td width="33.33%">Lines render as stroked paths.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;polyline&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-polyline.png?v=clipping-native" alt="&lt;polyline&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-polyline.png?v=masking-native" alt="&lt;polyline&gt;" width="144"></td>
 <td width="33.33%">Polylines render as open stroked paths.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;polygon&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-polygon.png?v=clipping-native" alt="&lt;polygon&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-polygon.png?v=masking-native" alt="&lt;polygon&gt;" width="144"></td>
 <td width="33.33%">Polygons render as closed paths.</td>
 </tr>
 </tbody>
@@ -174,52 +174,52 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">M/L commands</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-move-line.png?v=clipping-native" alt="M/L commands" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-move-line.png?v=masking-native" alt="M/L commands" width="144"></td>
 <td width="33.33%">Moveto and lineto path commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">H command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-horizontal.png?v=clipping-native" alt="H command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-horizontal.png?v=masking-native" alt="H command" width="144"></td>
 <td width="33.33%">Horizontal line commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">V command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-vertical.png?v=clipping-native" alt="V command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-vertical.png?v=masking-native" alt="V command" width="144"></td>
 <td width="33.33%">Vertical line commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">C command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-cubic.png?v=clipping-native" alt="C command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-cubic.png?v=masking-native" alt="C command" width="144"></td>
 <td width="33.33%">Cubic Bezier commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">S command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-smooth-cubic.png?v=clipping-native" alt="S command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-smooth-cubic.png?v=masking-native" alt="S command" width="144"></td>
 <td width="33.33%">Smooth cubic commands paint after cubic control reflection.</td>
 </tr>
 <tr>
 <td width="33.33%">Q command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-quadratic.png?v=clipping-native" alt="Q command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-quadratic.png?v=masking-native" alt="Q command" width="144"></td>
 <td width="33.33%">Quadratic Bezier commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">T command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-smooth-quadratic.png?v=clipping-native" alt="T command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-smooth-quadratic.png?v=masking-native" alt="T command" width="144"></td>
 <td width="33.33%">Smooth quadratic commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">A command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-arc.png?v=clipping-native" alt="A command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-arc.png?v=masking-native" alt="A command" width="144"></td>
 <td width="33.33%">Elliptical arcs are converted to cubic path segments.</td>
 </tr>
 <tr>
 <td width="33.33%">Z command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-close.png?v=clipping-native" alt="Z command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-close.png?v=masking-native" alt="Z command" width="144"></td>
 <td width="33.33%">Closepath fills and closes the outline.</td>
 </tr>
 <tr>
 <td width="33.33%">Implicit repeated commands</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-implicit-repeated.png?v=clipping-native" alt="Implicit repeated commands" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-implicit-repeated.png?v=masking-native" alt="Implicit repeated commands" width="144"></td>
 <td width="33.33%">Repeated command parameters become additional path segments.</td>
 </tr>
 </tbody>
@@ -243,37 +243,37 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">matrix()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-matrix.png?v=clipping-native" alt="matrix()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-matrix.png?v=masking-native" alt="matrix()" width="144"></td>
 <td width="33.33%">Matrix transforms are applied before painting.</td>
 </tr>
 <tr>
 <td width="33.33%">translate()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-translate.png?v=clipping-native" alt="translate()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-translate.png?v=masking-native" alt="translate()" width="144"></td>
 <td width="33.33%">Translation moves rendered geometry.</td>
 </tr>
 <tr>
 <td width="33.33%">scale()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-scale.png?v=clipping-native" alt="scale()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-scale.png?v=masking-native" alt="scale()" width="144"></td>
 <td width="33.33%">Scaling affects the painted path.</td>
 </tr>
 <tr>
 <td width="33.33%">rotate(angle)</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-rotate.png?v=clipping-native" alt="rotate(angle)" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-rotate.png?v=masking-native" alt="rotate(angle)" width="144"></td>
 <td width="33.33%">Rotation around the origin is applied.</td>
 </tr>
 <tr>
 <td width="33.33%">rotate(angle cx cy)</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-rotate-center.png?v=clipping-native" alt="rotate(angle cx cy)" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-rotate-center.png?v=masking-native" alt="rotate(angle cx cy)" width="144"></td>
 <td width="33.33%">Centered rotation is applied around the provided pivot.</td>
 </tr>
 <tr>
 <td width="33.33%">skewX()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-skew-x.png?v=clipping-native" alt="skewX()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-skew-x.png?v=masking-native" alt="skewX()" width="144"></td>
 <td width="33.33%">Horizontal skew transforms paint.</td>
 </tr>
 <tr>
 <td width="33.33%">skewY()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-skew-y.png?v=clipping-native" alt="skewY()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-skew-y.png?v=masking-native" alt="skewY()" width="144"></td>
 <td width="33.33%">Vertical skew transforms paint.</td>
 </tr>
 <tr>
@@ -302,17 +302,17 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">Inline style</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/style-inline.png?v=clipping-native" alt="Inline style" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/style-inline.png?v=masking-native" alt="Inline style" width="144"></td>
 <td width="33.33%">Inline style declarations feed native paint attributes.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;style&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/style-element.png?v=clipping-native" alt="&lt;style&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/style-element.png?v=masking-native" alt="&lt;style&gt;" width="144"></td>
 <td width="33.33%">Simple matching style rules affect painted geometry.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;style media&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/style-media.png?v=clipping-native" alt="&lt;style media&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/style-media.png?v=masking-native" alt="&lt;style media&gt;" width="144"></td>
 <td width="33.33%">Matching media-filtered rules are applied by the parser.</td>
 </tr>
 </tbody>
@@ -336,92 +336,92 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">fill</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill.png?v=clipping-native" alt="fill" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill.png?v=masking-native" alt="fill" width="144"></td>
 <td width="33.33%">Solid fill paint renders.</td>
 </tr>
 <tr>
 <td width="33.33%">fill-opacity</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-opacity.png?v=clipping-native" alt="fill-opacity" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-opacity.png?v=masking-native" alt="fill-opacity" width="144"></td>
 <td width="33.33%">Fill opacity multiplies solid paint.</td>
 </tr>
 <tr>
 <td width="33.33%">fill-rule nonzero</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-rule-nonzero.png?v=clipping-native" alt="fill-rule nonzero" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-rule-nonzero.png?v=masking-native" alt="fill-rule nonzero" width="144"></td>
 <td width="33.33%">Nonzero fill rule paints nested winding normally.</td>
 </tr>
 <tr>
 <td width="33.33%">fill-rule evenodd</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-rule-evenodd.png?v=clipping-native" alt="fill-rule evenodd" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-rule-evenodd.png?v=masking-native" alt="fill-rule evenodd" width="144"></td>
 <td width="33.33%">Even-odd fill rule cuts out the inner path.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke.png?v=clipping-native" alt="stroke" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke.png?v=masking-native" alt="stroke" width="144"></td>
 <td width="33.33%">Solid stroke paint renders.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-width</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke-width.png?v=clipping-native" alt="stroke-width" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke-width.png?v=masking-native" alt="stroke-width" width="144"></td>
 <td width="33.33%">Stroke width affects painted outlines.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-opacity</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke-opacity.png?v=clipping-native" alt="stroke-opacity" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke-opacity.png?v=masking-native" alt="stroke-opacity" width="144"></td>
 <td width="33.33%">Stroke opacity multiplies stroke paint.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linecap butt</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-butt.png?v=clipping-native" alt="stroke-linecap butt" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-butt.png?v=masking-native" alt="stroke-linecap butt" width="144"></td>
 <td width="33.33%">Butt caps end exactly on the path endpoints.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linecap round</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-round.png?v=clipping-native" alt="stroke-linecap round" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-round.png?v=masking-native" alt="stroke-linecap round" width="144"></td>
 <td width="33.33%">Round caps extend the path with semicircles.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linecap square</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-square.png?v=clipping-native" alt="stroke-linecap square" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-square.png?v=masking-native" alt="stroke-linecap square" width="144"></td>
 <td width="33.33%">Square caps extend the path with square ends.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linejoin miter</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-miter.png?v=clipping-native" alt="stroke-linejoin miter" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-miter.png?v=masking-native" alt="stroke-linejoin miter" width="144"></td>
 <td width="33.33%">Miter joins create pointed corners.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linejoin round</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-round.png?v=clipping-native" alt="stroke-linejoin round" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-round.png?v=masking-native" alt="stroke-linejoin round" width="144"></td>
 <td width="33.33%">Round joins create curved corners.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linejoin bevel</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-bevel.png?v=clipping-native" alt="stroke-linejoin bevel" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-bevel.png?v=masking-native" alt="stroke-linejoin bevel" width="144"></td>
 <td width="33.33%">Bevel joins flatten corners.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-miterlimit</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-miterlimit.png?v=clipping-native" alt="stroke-miterlimit" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-miterlimit.png?v=masking-native" alt="stroke-miterlimit" width="144"></td>
 <td width="33.33%">Miter limit affects sharp stroked corners.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-dasharray</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-dasharray.png?v=clipping-native" alt="stroke-dasharray" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-dasharray.png?v=masking-native" alt="stroke-dasharray" width="144"></td>
 <td width="33.33%">Dash arrays are passed to SwiftUI stroke style.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-dashoffset</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-dashoffset.png?v=clipping-native" alt="stroke-dashoffset" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-dashoffset.png?v=masking-native" alt="stroke-dashoffset" width="144"></td>
 <td width="33.33%">Dash offsets shift the dash phase.</td>
 </tr>
 <tr>
 <td width="33.33%">paint-order</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-order.png?v=clipping-native" alt="paint-order" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-order.png?v=masking-native" alt="paint-order" width="144"></td>
 <td width="33.33%">Paint order is honored for fill and stroke; marker painting is skipped.</td>
 </tr>
 <tr>
 <td width="33.33%">currentColor</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-current-color.png?v=clipping-native" alt="currentColor" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-current-color.png?v=masking-native" alt="currentColor" width="144"></td>
 <td width="33.33%">currentColor resolves into fill or stroke paint.</td>
 </tr>
 <tr>
@@ -450,62 +450,62 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">&lt;linearGradient&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-linear.png?v=clipping-native" alt="&lt;linearGradient&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-linear.png?v=masking-native" alt="&lt;linearGradient&gt;" width="144"></td>
 <td width="33.33%">Linear gradient paint servers render natively.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;radialGradient&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-radial.png?v=clipping-native" alt="&lt;radialGradient&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-radial.png?v=masking-native" alt="&lt;radialGradient&gt;" width="144"></td>
 <td width="33.33%">Radial gradient paint servers render natively.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;stop&gt; offset</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-stop-offset.png?v=clipping-native" alt="&lt;stop&gt; offset" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-stop-offset.png?v=masking-native" alt="&lt;stop&gt; offset" width="144"></td>
 <td width="33.33%">Stop offsets control native gradient interpolation.</td>
 </tr>
 <tr>
 <td width="33.33%">stop-opacity</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-stop-opacity.png?v=clipping-native" alt="stop-opacity" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-stop-opacity.png?v=masking-native" alt="stop-opacity" width="144"></td>
 <td width="33.33%">Stop opacity contributes to native gradient stop alpha.</td>
 </tr>
 <tr>
 <td width="33.33%">gradientUnits objectBoundingBox</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-object-bounding-box.png?v=clipping-native" alt="gradientUnits objectBoundingBox" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-object-bounding-box.png?v=masking-native" alt="gradientUnits objectBoundingBox" width="144"></td>
 <td width="33.33%">Object-bounding-box gradient units map through the target bounds.</td>
 </tr>
 <tr>
 <td width="33.33%">gradientUnits userSpaceOnUse</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-user-space.png?v=clipping-native" alt="gradientUnits userSpaceOnUse" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-user-space.png?v=masking-native" alt="gradientUnits userSpaceOnUse" width="144"></td>
 <td width="33.33%">User-space gradient units render in SVG user coordinates.</td>
 </tr>
 <tr>
 <td width="33.33%">gradientTransform</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-transform.png?v=clipping-native" alt="gradientTransform" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-transform.png?v=masking-native" alt="gradientTransform" width="144"></td>
 <td width="33.33%">Gradient transforms are applied to native gradient geometry.</td>
 </tr>
 <tr>
 <td width="33.33%">spreadMethod pad</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-spread-pad.png?v=clipping-native" alt="spreadMethod pad" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-spread-pad.png?v=masking-native" alt="spreadMethod pad" width="144"></td>
 <td width="33.33%">Pad spread extends endpoint colors natively.</td>
 </tr>
 <tr>
 <td width="33.33%">spreadMethod reflect</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-spread-reflect.png?v=clipping-native" alt="spreadMethod reflect" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-spread-reflect.png?v=masking-native" alt="spreadMethod reflect" width="144"></td>
 <td width="33.33%">Reflect spread mirrors gradient stops natively.</td>
 </tr>
 <tr>
 <td width="33.33%">spreadMethod repeat</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/gradient-spread-repeat.png?v=clipping-native" alt="spreadMethod repeat" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/gradient-spread-repeat.png?v=masking-native" alt="spreadMethod repeat" width="144"></td>
 <td width="33.33%">Repeat spread tiles gradient stops natively.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;pattern&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/pattern.png?v=clipping-native" alt="&lt;pattern&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/pattern.png?v=masking-native" alt="&lt;pattern&gt;" width="144"></td>
 <td width="33.33%">Simple pattern paint servers tile native SVG children.</td>
 </tr>
 <tr>
 <td width="33.33%">patternContentUnits</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/pattern-content-units.png?v=clipping-native" alt="patternContentUnits" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/pattern-content-units.png?v=masking-native" alt="patternContentUnits" width="144"></td>
 <td width="33.33%">Object-bounding-box pattern content units map tile children.</td>
 </tr>
 </tbody>
@@ -529,47 +529,47 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">&lt;clipPath&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/clip-path-element.png?v=clipping-native" alt="&lt;clipPath&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/clip-path-element.png?v=masking-native" alt="&lt;clipPath&gt;" width="144"></td>
 <td width="33.33%">Clip path definitions apply their child geometry while rendering.</td>
 </tr>
 <tr>
 <td width="33.33%">clip-path</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/clip-path-property.png?v=clipping-native" alt="clip-path" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/clip-path-property.png?v=masking-native" alt="clip-path" width="144"></td>
 <td width="33.33%">Local clip-path URL references constrain native drawing.</td>
 </tr>
 <tr>
 <td width="33.33%">clip-rule</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/clip-rule.png?v=clipping-native" alt="clip-rule" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/clip-rule.png?v=masking-native" alt="clip-rule" width="144"></td>
 <td width="33.33%">Even-odd clip rules cut holes in clip path geometry.</td>
 </tr>
 <tr>
 <td width="33.33%">clipPathUnits</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/clip-path-units.png?v=clipping-native" alt="clipPathUnits" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/clip-path-units.png?v=masking-native" alt="clipPathUnits" width="144"></td>
 <td width="33.33%">Object-bounding-box clip path units scale against the clipped element.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;mask&gt;</td>
-<td width="33.33%"></td>
-<td width="33.33%">Mask definitions are parsed but not applied.</td>
+<td width="33.33%"><img src="docs/feature-gallery/png/mask-element.png?v=masking-native" alt="&lt;mask&gt;" width="144"></td>
+<td width="33.33%">Mask definitions apply their rendered luminance coverage.</td>
 </tr>
 <tr>
 <td width="33.33%">mask</td>
-<td width="33.33%"></td>
-<td width="33.33%">The mask property is parsed but ignored by native drawing.</td>
+<td width="33.33%"><img src="docs/feature-gallery/png/mask-property.png?v=masking-native" alt="mask" width="144"></td>
+<td width="33.33%">Local mask URL references constrain native drawing.</td>
 </tr>
 <tr>
 <td width="33.33%">maskUnits</td>
-<td width="33.33%"></td>
-<td width="33.33%">Mask units are preserved but not rendered.</td>
+<td width="33.33%"><img src="docs/feature-gallery/png/mask-units.png?v=masking-native" alt="maskUnits" width="144"></td>
+<td width="33.33%">User-space mask regions clip the rendered mask source.</td>
 </tr>
 <tr>
 <td width="33.33%">maskContentUnits</td>
-<td width="33.33%"></td>
-<td width="33.33%">Mask content units are model-only today.</td>
+<td width="33.33%"><img src="docs/feature-gallery/png/mask-content-units.png?v=masking-native" alt="maskContentUnits" width="144"></td>
+<td width="33.33%">Object-bounding-box mask contents scale against the masked element.</td>
 </tr>
 <tr>
 <td width="33.33%">opacity</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/opacity.png?v=clipping-native" alt="opacity" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/opacity.png?v=masking-native" alt="opacity" width="144"></td>
 <td width="33.33%">Element and group opacity are applied while rendering.</td>
 </tr>
 </tbody>
@@ -816,12 +816,12 @@ Not actually rendering yet: masking, filter primitives, native text, markers, ve
 <tbody>
 <tr>
 <td width="33.33%">href</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/href-use.png?v=clipping-native" alt="href" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/href-use.png?v=masking-native" alt="href" width="144"></td>
 <td width="33.33%">Unprefixed href works for simple &lt;use&gt; references.</td>
 </tr>
 <tr>
 <td width="33.33%">xlink:href</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/xlink-href-use.png?v=clipping-native" alt="xlink:href" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/xlink-href-use.png?v=masking-native" alt="xlink:href" width="144"></td>
 <td width="33.33%">Deprecated xlink:href is preserved and works for simple &lt;use&gt; references.</td>
 </tr>
 <tr>

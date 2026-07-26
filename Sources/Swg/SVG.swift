@@ -313,10 +313,13 @@ private struct SVGCanvasRenderer {
 		guard attributes.canRender else { return }
 		context.drawLayer { layer in
 			layer.concatenate(attributes.transform.cgAffineTransform)
-			applyClip(attributes: attributes, bounds: bounds(for: children), in: &layer)
-			let opacity = inheritedOpacity * attributes.opacity
-			for child in children {
-				render(child, opacity: opacity, in: &layer)
+			let childBounds = bounds(for: children)
+			applyClip(attributes: attributes, bounds: childBounds, in: &layer)
+			drawMasked(attributes: attributes, bounds: childBounds, in: &layer) { maskedLayer in
+				let opacity = inheritedOpacity * attributes.opacity
+				for child in children {
+					render(child, opacity: opacity, in: &maskedLayer)
+				}
 			}
 		}
 	}
@@ -325,18 +328,21 @@ private struct SVGCanvasRenderer {
 		guard data.attributes.canRender else { return }
 		context.drawLayer { layer in
 			layer.concatenate(data.attributes.transform.cgAffineTransform)
-			applyClip(attributes: data.attributes, bounds: Rect(x: data.x, y: data.y, width: data.width, height: data.height), in: &layer)
+			let viewportBounds = Rect(x: data.x, y: data.y, width: data.width, height: data.height)
+			applyClip(attributes: data.attributes, bounds: viewportBounds, in: &layer)
 			if let viewBox = data.viewBox, let transform = data.preserveAspectRatio.viewBoxTransform(
 				from: viewBox,
-				to: Rect(x: data.x, y: data.y, width: data.width, height: data.height)
+				to: viewportBounds
 			) {
 				layer.concatenate(transform.cgAffineTransform)
 			} else {
 				layer.concatenate(Transform.identity.translatedBy(x: data.x, y: data.y).cgAffineTransform)
 			}
-			let opacity = inheritedOpacity * data.attributes.opacity
-			for child in data.children {
-				render(child, opacity: opacity, in: &layer)
+			drawMasked(attributes: data.attributes, bounds: viewportBounds, in: &layer) { maskedLayer in
+				let opacity = inheritedOpacity * data.attributes.opacity
+				for child in data.children {
+					render(child, opacity: opacity, in: &maskedLayer)
+				}
 			}
 		}
 	}
@@ -346,14 +352,17 @@ private struct SVGCanvasRenderer {
 		let referenceID = data.href.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
 		context.drawLayer { layer in
 			layer.concatenate(data.attributes.transform.translatedBy(x: data.x, y: data.y).cgAffineTransform)
-			applyClip(attributes: data.attributes, bounds: bounds(for: data), in: &layer)
-			let opacity = inheritedOpacity * data.attributes.opacity
-			if let elements = document.defs.reusableElements[referenceID] {
-				for element in elements {
-					render(element, opacity: opacity, in: &layer)
+			let useBounds = bounds(for: data)
+			applyClip(attributes: data.attributes, bounds: useBounds, in: &layer)
+			drawMasked(attributes: data.attributes, bounds: useBounds, in: &layer) { maskedLayer in
+				let opacity = inheritedOpacity * data.attributes.opacity
+				if let elements = document.defs.reusableElements[referenceID] {
+					for element in elements {
+						render(element, opacity: opacity, in: &maskedLayer)
+					}
+				} else if let symbol = document.defs.symbols[referenceID] {
+					render(symbol: symbol, use: data, opacity: opacity, in: &maskedLayer)
 				}
-			} else if let symbol = document.defs.symbols[referenceID] {
-				render(symbol: symbol, use: data, opacity: opacity, in: &layer)
 			}
 		}
 	}
@@ -379,29 +388,78 @@ private struct SVGCanvasRenderer {
 			let path = SwiftUI.Path(cgPath)
 			let pathBounds = cgPath.svgBounds
 			applyClip(attributes: attributes, bounds: pathBounds, in: &layer)
-			let opacity = inheritedOpacity * attributes.opacity
-			for operation in attributes.paintOrder.resolvedOperations {
-				switch operation {
-				case .fill:
-					if !forceStroke {
-						fill(path: path, bounds: pathBounds, paint: attributes.fill, currentColor: attributes.color, opacity: opacity * attributes.fillOpacity, fillRule: attributes.fillRule, in: &layer)
+			drawMasked(attributes: attributes, bounds: pathBounds, in: &layer) { maskedLayer in
+				let opacity = inheritedOpacity * attributes.opacity
+				for operation in attributes.paintOrder.resolvedOperations {
+					switch operation {
+					case .fill:
+						if !forceStroke {
+							fill(path: path, bounds: pathBounds, paint: attributes.fill, currentColor: attributes.color, opacity: opacity * attributes.fillOpacity, fillRule: attributes.fillRule, in: &maskedLayer)
+						}
+					case .stroke:
+						if let shading = shading(from: attributes.stroke, currentColor: attributes.color, opacity: opacity * attributes.strokeOpacity, bounds: pathBounds), attributes.strokeWidth > 0 {
+							maskedLayer.stroke(path, with: shading, style: StrokeStyle(
+								lineWidth: CGFloat(attributes.strokeWidth),
+								lineCap: attributes.strokeLineCap.cgLineCap,
+								lineJoin: attributes.strokeLineJoin.cgLineJoin,
+								miterLimit: CGFloat(attributes.strokeMiterLimit),
+								dash: attributes.strokeDashArray.map { CGFloat($0) },
+								dashPhase: CGFloat(attributes.strokeDashOffset)
+							))
+						}
+					case .markers:
+						break
 					}
-				case .stroke:
-					if let shading = shading(from: attributes.stroke, currentColor: attributes.color, opacity: opacity * attributes.strokeOpacity, bounds: pathBounds), attributes.strokeWidth > 0 {
-						layer.stroke(path, with: shading, style: StrokeStyle(
-							lineWidth: CGFloat(attributes.strokeWidth),
-							lineCap: attributes.strokeLineCap.cgLineCap,
-							lineJoin: attributes.strokeLineJoin.cgLineJoin,
-							miterLimit: CGFloat(attributes.strokeMiterLimit),
-							dash: attributes.strokeDashArray.map { CGFloat($0) },
-							dashPhase: CGFloat(attributes.strokeDashOffset)
-						))
-					}
-				case .markers:
-					break
 				}
 			}
 		}
+	}
+
+	private func drawMasked(attributes: SVGPaintAttributes, bounds: Rect?, in context: inout GraphicsContext, draw: (inout GraphicsContext) -> Void) {
+		guard let maskID = attributes.maskID else {
+			draw(&context)
+			return
+		}
+		let referenceID = maskID.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+		guard let definition = document.defs.masks[referenceID], let region = maskRegion(for: definition, bounds: bounds) else {
+			draw(&context)
+			return
+		}
+
+		context.drawLayer { maskedLayer in
+			maskedLayer.clipToLayer { maskLayer in
+				maskLayer.addFilter(.luminanceToAlpha)
+				maskLayer.drawLayer { sourceLayer in
+					sourceLayer.clip(to: SwiftUI.Path(Path(commands: [.rect(region)]).cgPath))
+					if definition.maskContentUnits == .objectBoundingBox {
+						guard let bounds, bounds.width > 0, bounds.height > 0 else { return }
+						sourceLayer.concatenate(Transform.identity.translatedBy(x: bounds.x, y: bounds.y).scaledBy(x: bounds.width, y: bounds.height).cgAffineTransform)
+					}
+					for child in definition.children {
+						render(child, opacity: 1, in: &sourceLayer)
+					}
+				}
+			}
+			draw(&maskedLayer)
+		}
+	}
+
+	private func maskRegion(for definition: SVGMaskDef, bounds: Rect?) -> Rect? {
+		let region: Rect
+		switch definition.maskUnits {
+		case .userSpaceOnUse:
+			region = Rect(x: definition.x, y: definition.y, width: definition.width, height: definition.height)
+		case .objectBoundingBox:
+			guard let bounds, bounds.width > 0, bounds.height > 0 else { return nil }
+			region = Rect(
+				x: bounds.x + definition.x * bounds.width,
+				y: bounds.y + definition.y * bounds.height,
+				width: definition.width * bounds.width,
+				height: definition.height * bounds.height
+			)
+		}
+		guard region.width > 0, region.height > 0 else { return nil }
+		return region
 	}
 
 	private func applyClip(attributes: SVGPaintAttributes, bounds: Rect?, in context: inout GraphicsContext) {

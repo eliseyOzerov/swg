@@ -214,6 +214,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var currentMergePrimitiveIndex: Int?
 	private var inMask = false
 	private var currentMaskID: String?
+	private var currentMaskX: Double = -0.1
+	private var currentMaskY: Double = -0.1
+	private var currentMaskWidth: Double = 1.2
+	private var currentMaskHeight: Double = 1.2
 	private var currentMaskUnits: SVGMaskUnits = .objectBoundingBox
 	private var currentMaskContentUnits: SVGMaskUnits = .userSpaceOnUse
 	private var maskElements: [SVGElement] = []
@@ -593,6 +597,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentMaskID = attributes["id"]
 			currentMaskUnits = parseMaskUnits(attributes["maskUnits"])
 			currentMaskContentUnits = parseMaskContentUnits(attributes["maskContentUnits"])
+			currentMaskX = parseMaskCoord(attributes["x"] ?? "-10%", units: currentMaskUnits, percentageBasis: .horizontal)
+			currentMaskY = parseMaskCoord(attributes["y"] ?? "-10%", units: currentMaskUnits, percentageBasis: .vertical)
+			currentMaskWidth = parseNonnegativeMaskCoord(attributes["width"] ?? "120%", units: currentMaskUnits, percentageBasis: .horizontal) ?? 1.2
+			currentMaskHeight = parseNonnegativeMaskCoord(attributes["height"] ?? "120%", units: currentMaskUnits, percentageBasis: .vertical) ?? 1.2
 			maskElements = []
 		case "use":
 			parseUse(attributes)
@@ -750,10 +758,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentMergePrimitiveIndex = nil
 		case "mask":
 			if let id = currentMaskID {
-				defs.masks[id] = SVGMaskDef(id: id, maskUnits: currentMaskUnits, maskContentUnits: currentMaskContentUnits, children: maskElements)
+				defs.masks[id] = SVGMaskDef(id: id, x: currentMaskX, y: currentMaskY, width: currentMaskWidth, height: currentMaskHeight, maskUnits: currentMaskUnits, maskContentUnits: currentMaskContentUnits, children: maskElements)
 			}
 			inMask = false
 			currentMaskID = nil
+			currentMaskX = -0.1
+			currentMaskY = -0.1
+			currentMaskWidth = 1.2
+			currentMaskHeight = 1.2
 			currentMaskUnits = .objectBoundingBox
 			currentMaskContentUnits = .userSpaceOnUse
 		case "text":
@@ -809,6 +821,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		currentMergePrimitiveIndex = nil
 		inMask = false
 		currentMaskID = nil
+		currentMaskX = -0.1
+		currentMaskY = -0.1
+		currentMaskWidth = 1.2
+		currentMaskHeight = 1.2
 		currentMaskUnits = .objectBoundingBox
 		currentMaskContentUnits = .userSpaceOnUse
 		maskElements = []
@@ -1242,6 +1258,26 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parsePatternContentUnits(_ value: String?) -> SVGPatternUnits {
 		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
+	}
+
+	private func parseMaskCoord(_ value: String, units: SVGMaskUnits, percentageBasis: SVGLengthPercentageBasis) -> Double {
+		parseMaskCoordValue(value, units: units, percentageBasis: percentageBasis) ?? 0
+	}
+
+	private func parseNonnegativeMaskCoord(_ value: String, units: SVGMaskUnits, percentageBasis: SVGLengthPercentageBasis) -> Double? {
+		guard let coordinate = parseMaskCoordValue(value, units: units, percentageBasis: percentageBasis), coordinate >= 0 else { return nil }
+		return coordinate
+	}
+
+	private func parseMaskCoordValue(_ value: String, units: SVGMaskUnits, percentageBasis: SVGLengthPercentageBasis) -> Double? {
+		if units == .userSpaceOnUse {
+			return parseDimension(value, context: currentViewportContext, percentageBasis: percentageBasis)
+		}
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed.hasSuffix("%") {
+			return parseNumber(String(trimmed.dropLast())).map { $0 / 100 }
+		}
+		return parseNumber(trimmed)
 	}
 
 	private func parseMarkerUnits(_ value: String?) -> SVGMarkerUnits {

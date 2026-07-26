@@ -1839,7 +1839,7 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 			<path id="defaultChild" d="M0 0 L10 0 L10 10 Z"/>
 		</mask>
 		<mask id="objectBox" maskUnits="objectBoundingBox"/>
-		<mask id="userSpace" maskUnits="userSpaceOnUse">
+		<mask id="userSpace" maskUnits="userSpaceOnUse" x="2" y="3" width="12" height="14">
 			<path id="userSpaceChild" d="M0 0 L10 0 L10 10 Z"/>
 		</mask>
 		<mask id="invalidUnits" maskUnits="definitelyNotUnits"/>
@@ -1852,6 +1852,14 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(document.defs.masks["objectBox"]?.maskUnits == .objectBoundingBox)
 	#expect(document.defs.masks["userSpace"]?.maskUnits == .userSpaceOnUse)
 	#expect(document.defs.masks["invalidUnits"]?.maskUnits == .objectBoundingBox)
+	#expect(document.defs.masks["defaultUnits"]?.x == -0.1)
+	#expect(document.defs.masks["defaultUnits"]?.y == -0.1)
+	#expect(document.defs.masks["defaultUnits"]?.width == 1.2)
+	#expect(document.defs.masks["defaultUnits"]?.height == 1.2)
+	#expect(document.defs.masks["userSpace"]?.x == 2)
+	#expect(document.defs.masks["userSpace"]?.y == 3)
+	#expect(document.defs.masks["userSpace"]?.width == 12)
+	#expect(document.defs.masks["userSpace"]?.height == 14)
 	#expect(document.defs.masks["defaultUnits"]?.children.flatMap { $0.collectIDs() } == ["defaultChild"])
 	#expect(document.defs.masks["userSpace"]?.children.flatMap { $0.collectIDs() } == ["userSpaceChild"])
 }

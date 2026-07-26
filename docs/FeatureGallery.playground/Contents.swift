@@ -19,7 +19,7 @@ struct FeatureExample {
 let duotoneLight = "#e5e7eb"
 let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "clipping-native"
+let galleryAssetVersion = "masking-native"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -40,6 +40,10 @@ let colorSpecificSlugs: Set<String> = [
 	"gradient-spread-repeat",
 	"pattern",
 	"pattern-content-units",
+	"mask-element",
+	"mask-property",
+	"mask-units",
+	"mask-content-units",
 	"fe-drop-shadow",
 	"fe-flood",
 ]
@@ -356,16 +360,16 @@ let clipMaskExamples = [
 	example("clip-path-units", "clipPathUnits", "Clipping, Masking, and Compositing", .rendered, "Object-bounding-box clip path units scale against the clipped element.") {
 		##"<defs><clipPath id="clip" clipPathUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".35"/></clipPath></defs><rect x="20" y="14" width="80" height="52" fill="#f97316" clip-path="url(#clip)"/>"##
 	},
-	example("mask-element", "<mask>", "Clipping, Masking, and Compositing", .modelOnly, "Mask definitions are parsed but not applied.") {
+	example("mask-element", "<mask>", "Clipping, Masking, and Compositing", .rendered, "Mask definitions apply their rendered luminance coverage.") {
 		##"<defs><mask id="mask"><rect width="120" height="80" fill="white"/><circle cx="60" cy="40" r="20" fill="black"/></mask></defs><rect x="22" y="14" width="76" height="52" fill="#2563eb" mask="url(#mask)"/>"##
 	},
-	example("mask-property", "mask", "Clipping, Masking, and Compositing", .modelOnly, "The mask property is parsed but ignored by native drawing.") {
+	example("mask-property", "mask", "Clipping, Masking, and Compositing", .rendered, "Local mask URL references constrain native drawing.") {
 		##"<defs><mask id="mask"><circle cx="60" cy="40" r="28" fill="white"/></mask></defs><rect x="20" y="12" width="80" height="56" fill="#ec4899" mask="url(#mask)"/>"##
 	},
-	example("mask-units", "maskUnits", "Clipping, Masking, and Compositing", .modelOnly, "Mask units are preserved but not rendered.") {
-		##"<defs><mask id="mask" maskUnits="userSpaceOnUse" x="20" y="12" width="80" height="56"><rect x="20" y="12" width="80" height="56" fill="white"/></mask></defs><rect x="20" y="12" width="80" height="56" fill="#14b8a6" mask="url(#mask)"/>"##
+	example("mask-units", "maskUnits", "Clipping, Masking, and Compositing", .rendered, "User-space mask regions clip the rendered mask source.") {
+		##"<defs><mask id="mask" maskUnits="userSpaceOnUse" x="28" y="18" width="64" height="44"><rect width="120" height="80" fill="white"/></mask></defs><rect width="120" height="80" fill="#14b8a6" mask="url(#mask)"/>"##
 	},
-	example("mask-content-units", "maskContentUnits", "Clipping, Masking, and Compositing", .modelOnly, "Mask content units are model-only today.") {
+	example("mask-content-units", "maskContentUnits", "Clipping, Masking, and Compositing", .rendered, "Object-bounding-box mask contents scale against the masked element.") {
 		##"<defs><mask id="mask" maskContentUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".35" fill="white"/></mask></defs><rect x="20" y="12" width="80" height="56" fill="#facc15" mask="url(#mask)"/>"##
 	},
 	example("opacity", "opacity", "Clipping, Masking, and Compositing", .rendered, "Element and group opacity are applied while rendering.") {
