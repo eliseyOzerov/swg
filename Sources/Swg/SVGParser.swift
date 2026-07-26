@@ -392,6 +392,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "feComponentTransfer":
 			currentFilter?.primitives.append(.componentTransfer(input: attributes["in"]))
 			currentComponentTransferIndex = currentFilter?.primitives.indices.last
+		case "feComposite":
+			currentFilter?.primitives.append(.composite(
+				input: attributes["in"],
+				input2: attributes["in2"],
+				operator: parseCompositeOperator(attributes["operator"]),
+				k1: attributes["k1"].flatMap(parseNumber) ?? 0,
+				k2: attributes["k2"].flatMap(parseNumber) ?? 0,
+				k3: attributes["k3"].flatMap(parseNumber) ?? 0,
+				k4: attributes["k4"].flatMap(parseNumber) ?? 0
+			))
 		case "feFuncR":
 			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .red)
 		case "feFuncG":
@@ -1145,6 +1155,25 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		functions[channel] = function
 		filter.primitives[index] = .componentTransfer(input: input, functions: functions)
 		currentFilter = filter
+	}
+
+	private func parseCompositeOperator(_ value: String?) -> SVGCompositeOperator {
+		switch value {
+		case "in":
+			.in
+		case "out":
+			.out
+		case "atop":
+			.atop
+		case "xor":
+			.xor
+		case "lighter":
+			.lighter
+		case "arithmetic":
+			.arithmetic
+		default:
+			.over
+		}
 	}
 
 	private func parseFilterEdgeMode(_ value: String?) -> SVGFilterEdgeMode {

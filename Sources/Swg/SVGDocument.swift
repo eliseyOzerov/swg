@@ -1015,6 +1015,7 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case blend(input: String?, input2: String?, mode: SVGBlendMode = .normal, noComposite: Bool = false)
 	case colorMatrix(input: String?, type: SVGColorMatrixType = .matrix, values: [Double], isPassThrough: Bool = false)
 	case componentTransfer(input: String?, functions: [SVGComponentTransferChannel: SVGComponentTransferFunction] = [:])
+	case composite(input: String?, input2: String?, operator: SVGCompositeOperator = .over, k1: Double = 0, k2: Double = 0, k3: Double = 0, k4: Double = 0)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }
@@ -1091,6 +1092,17 @@ public enum SVGComponentTransferFunctionType: Equatable, Sendable, Hashable {
 	case discrete
 	case linear
 	case gamma
+}
+
+/// Compositing operator used by an SVG `<feComposite>` primitive.
+public enum SVGCompositeOperator: Equatable, Sendable, Hashable {
+	case over
+	case `in`
+	case out
+	case atop
+	case xor
+	case lighter
+	case arithmetic
 }
 
 /// Edge handling behavior for an SVG `<feGaussianBlur>` primitive.

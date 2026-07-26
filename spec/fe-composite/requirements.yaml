@@ -1,0 +1,220 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-composite
+  title: SVG feComposite filter primitive
+  domain: SVG Filter Effects / Compositing
+  profile: null
+  summary: Preserve SVG `<feComposite>` filter primitives, including both inputs, operator selection, and arithmetic coefficients.
+  non_goals:
+    - Executing Porter-Duff compositing operations.
+    - Executing arithmetic pixel formulas.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-composite
+      title: "Filter Effects Module Level 1: Filter primitive feComposite"
+      url: https://www.w3.org/TR/filter-effects-1/#feCompositeElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feComposite>` as a filter primitive."
+    - "The primitive combines two input images using a Porter-Duff operator or an arithmetic operation."
+    - "The `in` attribute maps to the first input image and `in2` maps to the second input image."
+    - "The `operator` attribute accepts `over`, `in`, `out`, `atop`, `xor`, `lighter`, and `arithmetic`; its initial value is `over`."
+    - "The arithmetic formula uses coefficients `k1`, `k2`, `k3`, and `k4`, each with initial value `0`."
+
+scope:
+  includes:
+    - "`<feComposite>` child elements inside `<filter>`."
+    - "`in` and `in2` input reference attributes."
+    - "All seven `operator` keywords."
+    - "`k1`, `k2`, `k3`, and `k4` arithmetic coefficient attributes."
+    - "Initial values for omitted or unsupported operator/coefficient values."
+  excludes:
+    - "Rendering-time compositing and clamping behavior."
+    - "Filter primitive common geometry attributes."
+    - "Subregion extent growth rules."
+  assumptions:
+    - Swg stores parsed filter primitives as `SVGFilterPrimitive` values for later renderer support.
+    - Malformed numeric coefficient attributes fall back to their initial value `0`.
+
+terminology:
+  - id: T001
+    term: feComposite
+    definition: An SVG filter primitive that combines two input images using a compositing operator.
+    source_refs:
+      - filter-effects-fe-composite
+  - id: T002
+    term: arithmetic operator
+    definition: A component-wise composite operation parameterized by coefficients k1 through k4.
+    source_refs:
+      - filter-effects-fe-composite
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.composite
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-composite
+    fields:
+      - name: input
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in` attribute when present.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-composite
+      - name: input2
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in2` attribute when present.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-composite
+      - name: operator
+        type: SVGCompositeOperator
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `over`.
+          - Stores `over`, `in`, `out`, `atop`, `xor`, `lighter`, and `arithmetic`.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-fe-composite
+      - name: k1
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - filter-effects-fe-composite
+      - name: k2
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - filter-effects-fe-composite
+      - name: k3
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - filter-effects-fe-composite
+      - name: k4
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+        requirement_refs:
+          - R004
+        source_refs:
+          - filter-effects-fe-composite
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feComposite>` input attributes `in` and `in2` must be preserved when present."
+    applies_to:
+      - SVGFilterPrimitive.composite
+    source_refs:
+      - filter-effects-fe-composite
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesCompositePrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: "`operator` must preserve `over`, `in`, `out`, `atop`, `xor`, `lighter`, and `arithmetic` keywords."
+    applies_to:
+      - SVGFilterPrimitive.composite
+      - SVGCompositeOperator
+    source_refs:
+      - filter-effects-fe-composite
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesCompositePrimitiveAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "Omitted or unsupported `operator` values on `<feComposite>` must resolve to the initial value `over`."
+    applies_to:
+      - SVGFilterPrimitive.composite
+    source_refs:
+      - filter-effects-fe-composite
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesCompositePrimitiveAttributes
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`k1`, `k2`, `k3`, and `k4` must parse as numbers and default to `0` when omitted or malformed."
+    applies_to:
+      - SVGFilterPrimitive.composite
+    source_refs:
+      - filter-effects-fe-composite
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesCompositePrimitiveAttributes
+
+implementation_choices:
+  - id: IC001
+    topic: Arithmetic coefficient applicability
+    statement: "The parser preserves coefficient attributes regardless of selected operator; renderers can decide whether to apply them only for `arithmetic`."
+    allowed_by:
+      - filter-effects-fe-composite
+    source_refs:
+      - filter-effects-fe-composite
+
+traceability:
+  source_to_requirements:
+    filter-effects-fe-composite:
+      - R001
+      - R002
+      - R003
+      - R004
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesCompositePrimitiveAttributes
+    R002:
+      - svgParserPreservesCompositePrimitiveAttributes
+    R003:
+      - svgParserPreservesCompositePrimitiveAttributes
+    R004:
+      - svgParserPreservesCompositePrimitiveAttributes

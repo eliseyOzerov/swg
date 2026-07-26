@@ -407,6 +407,51 @@ import Testing
 	expectComponentTransferFunction(primitive, channel: .alpha, function: SVGComponentTransferFunction(type: .discrete, tableValues: [0, 0.5, 1]))
 }
 
+@Test func svgParserPreservesCompositePrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="composite">
+			<feComposite/>
+			<feComposite in="SourceGraphic" in2="BackgroundImage" operator="arithmetic" k1="0.1" k2="0.2" k3="0.3" k4="0.4"/>
+			<feComposite operator="over"/>
+			<feComposite operator="in"/>
+			<feComposite operator="out"/>
+			<feComposite operator="atop"/>
+			<feComposite operator="xor"/>
+			<feComposite operator="lighter"/>
+			<feComposite operator="unsupported" k1="bad" k2="bad" k3="bad" k4="bad"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["composite"])
+	#expect(filter.primitives.count == 9)
+	expectComposite(filter.primitives[0], input: nil, input2: nil, operator: .over, k1: 0, k2: 0, k3: 0, k4: 0)
+	expectComposite(filter.primitives[1], input: "SourceGraphic", input2: "BackgroundImage", operator: .arithmetic, k1: 0.1, k2: 0.2, k3: 0.3, k4: 0.4)
+	expectComposite(filter.primitives[2], input: nil, input2: nil, operator: .over, k1: 0, k2: 0, k3: 0, k4: 0)
+	expectComposite(filter.primitives[3], input: nil, input2: nil, operator: .in, k1: 0, k2: 0, k3: 0, k4: 0)
+	expectComposite(filter.primitives[4], input: nil, input2: nil, operator: .out, k1: 0, k2: 0, k3: 0, k4: 0)
+	expectComposite(filter.primitives[5], input: nil, input2: nil, operator: .atop, k1: 0, k2: 0, k3: 0, k4: 0)
+	expectComposite(filter.primitives[6], input: nil, input2: nil, operator: .xor, k1: 0, k2: 0, k3: 0, k4: 0)
+	expectComposite(filter.primitives[7], input: nil, input2: nil, operator: .lighter, k1: 0, k2: 0, k3: 0, k4: 0)
+	expectComposite(filter.primitives[8], input: nil, input2: nil, operator: .over, k1: 0, k2: 0, k3: 0, k4: 0)
+}
+
+private func expectComposite(_ primitive: SVGFilterPrimitive, input expectedInput: String?, input2 expectedInput2: String?, operator expectedOperator: SVGCompositeOperator, k1 expectedK1: Double, k2 expectedK2: Double, k3 expectedK3: Double, k4 expectedK4: Double) {
+	guard case .composite(let input, let input2, let compositeOperator, let k1, let k2, let k3, let k4) = primitive else {
+		Issue.record("Expected parsed feComposite primitive")
+		return
+	}
+	#expect(input == expectedInput)
+	#expect(input2 == expectedInput2)
+	#expect(compositeOperator == expectedOperator)
+	#expect(k1 == expectedK1)
+	#expect(k2 == expectedK2)
+	#expect(k3 == expectedK3)
+	#expect(k4 == expectedK4)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")
