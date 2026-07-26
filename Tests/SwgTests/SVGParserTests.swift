@@ -389,6 +389,24 @@ import Testing
 	expectComponentTransferFunction(primitive, channel: .blue, function: SVGComponentTransferFunction(type: .gamma, amplitude: 1.5, exponent: 2.5, offset: 0.125))
 }
 
+@Test func svgParserPreservesAlphaComponentTransferFunctionAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="alpha">
+			<feComponentTransfer>
+				<feFuncA type="linear" slope="0.5"/>
+				<feFuncA type="discrete" tableValues="0 0.5 1"/>
+			</feComponentTransfer>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["alpha"])
+	let primitive = try #require(filter.primitives.first)
+	expectComponentTransferFunction(primitive, channel: .alpha, function: SVGComponentTransferFunction(type: .discrete, tableValues: [0, 0.5, 1]))
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")

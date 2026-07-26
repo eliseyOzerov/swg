@@ -158,7 +158,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feFuncR>`.
 - [x] `<feFuncG>`.
 - [x] `<feFuncB>`.
-- [ ] `<feFuncA>`.
+- [x] `<feFuncA>`.
 - [ ] `<feComposite>`.
 - [ ] `<feConvolveMatrix>`.
 - [ ] `<feDiffuseLighting>`.
