@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
 	<rect width="120" height="80" fill="#f8fafc"/>
-<defs><pattern id="p" width=".25" height=".25" patternContentUnits="objectBoundingBox"><circle cx=".12" cy=".12" r=".05" fill="#2563eb"/></pattern></defs><rect x="22" y="16" width="76" height="48" fill="url(#p)" stroke="#94a3b8" stroke-width="3"/>
+<defs><pattern id="p" width=".25" height=".25" patternContentUnits="objectBoundingBox"><circle cx=".12" cy=".12" r=".05" fill="#2563eb"/></pattern></defs><rect width="120" height="80" fill="url(#p)"/>
 </svg>

@@ -19,7 +19,7 @@ struct FeatureExample {
 let duotoneLight = "#e5e7eb"
 let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "gradient-full-bleed"
+let galleryAssetVersion = "paint-server-full-bleed"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -336,10 +336,10 @@ let gradientAndPatternExamples = [
 		##"<defs><linearGradient id="g" x2=".35" spreadMethod="repeat"><stop offset="0" stop-color="#38bdf8"/><stop offset="1" stop-color="#2563eb"/></linearGradient></defs><rect width="120" height="80" fill="url(#g)"/>"##
 	},
 	example("pattern", "<pattern>", "Gradients and Patterns", .rendered, "Simple pattern paint servers tile native SVG children.") {
-		##"<defs><pattern id="p" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#fef3c7"/><circle cx="6" cy="6" r="3" fill="#f97316"/></pattern></defs><rect x="22" y="16" width="76" height="48" fill="url(#p)" stroke="#94a3b8" stroke-width="3"/>"##
+		##"<defs><pattern id="p" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#fef3c7"/><circle cx="6" cy="6" r="3" fill="#f97316"/></pattern></defs><rect width="120" height="80" fill="url(#p)"/>"##
 	},
 	example("pattern-content-units", "patternContentUnits", "Gradients and Patterns", .rendered, "Object-bounding-box pattern content units map tile children.") {
-		##"<defs><pattern id="p" width=".25" height=".25" patternContentUnits="objectBoundingBox"><circle cx=".12" cy=".12" r=".05" fill="#2563eb"/></pattern></defs><rect x="22" y="16" width="76" height="48" fill="url(#p)" stroke="#94a3b8" stroke-width="3"/>"##
+		##"<defs><pattern id="p" width=".25" height=".25" patternContentUnits="objectBoundingBox"><circle cx=".12" cy=".12" r=".05" fill="#2563eb"/></pattern></defs><rect width="120" height="80" fill="url(#p)"/>"##
 	},
 ]
 
