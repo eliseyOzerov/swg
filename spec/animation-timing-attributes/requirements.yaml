@@ -1,0 +1,301 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: animation-timing-attributes
+  title: SVG animation timing attributes begin dur end min max
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for preserving the SVG animation timing attributes `begin`, `dur`, `end`, `min`, and `max` on parsed animation element data.
+  non_goals:
+    - Animation scheduling, playback, event dispatch, restart behavior, repeat behavior, or rendering.
+    - Full resolution of event, syncbase, repeat, accessKey, wallclock, hyperlink, or DOM-method timing values.
+    - Error processing for malformed timing lists or invalid duration values.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-timing-attributes
+      title: SVG Animations Level 2, Attributes to control the timing of the animation
+      url: https://svgwg.org/specs/animations/#TimingAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-clock-values
+      title: SVG Animations Level 2, Clock values
+      url: https://svgwg.org/specs/animations/#ClockValueSyntax
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - The SVG Animations draft delegates timing processing rules to SMIL Animation except where SVG-specific rules are stated.
+    - This work item is parser-scoped; preserving timing data enables later scheduling work without requiring time-container evaluation here.
+
+scope:
+  includes:
+    - Timing data on all parsed SVG animation elements.
+    - "`begin` value-list preservation with the initial value `0s`."
+    - "`dur` preservation with the initial value `indefinite`."
+    - "`end` value-list preservation with no initial value."
+    - "`min` preservation with the initial value `0s`."
+    - "`max` preservation with no initial value."
+    - Clock-value recognition in parsed timing values using the existing reusable clock parser.
+    - Raw preservation of unresolved timing syntaxes for later scheduling.
+  excludes:
+    - Evaluating begin or end lists into resolved times.
+    - "Ignoring `media` during scheduling for SVG animation elements."
+    - Enforcing greater-than-zero constraints for `dur`, `min`, or `max`.
+    - Attributes `restart`, `repeatCount`, `repeatDur`, and animation `fill`, covered by later checklist bullets.
+  assumptions:
+    - Parser output may expose both normalized recognized timing cases and unresolved raw timing values.
+    - Defaults may be materialized in parser output because they are spec initial values needed for later animation evaluation.
+
+terminology:
+  - id: term-animation-timing-attribute
+    term: animation timing attribute
+    definition: One of the attributes common to animation elements that controls when an animation starts, ends, or constrains its active duration.
+    source_refs:
+      - svg-animations-timing-attributes
+  - id: term-begin-value-list
+    term: begin-value-list
+    definition: A semicolon-separated list of values that describe when an animation element should begin.
+    source_refs:
+      - svg-animations-timing-attributes
+  - id: term-end-value-list
+    term: end-value-list
+    definition: A semicolon-separated list of values that describe the active end of an animation.
+    source_refs:
+      - svg-animations-timing-attributes
+  - id: term-clock-value
+    term: Clock-value
+    definition: A presentation-time value in full clock, partial clock, or timecount form.
+    source_refs:
+      - svg-animations-clock-values
+
+structures:
+  - id: S001
+    name: animation timing data
+    kind: structure
+    source_refs:
+      - svg-animations-timing-attributes
+    fields:
+      - name: begin
+        type: begin-value-list
+        cardinality: one-or-more
+        position: attribute
+        constraints:
+          - Initial value is `0s`.
+          - Attribute value is a semicolon-separated list of begin values when specified.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg-animations-timing-attributes
+      - name: dur
+        type: Clock-value | media | indefinite
+        cardinality: one
+        position: attribute
+        constraints:
+          - Initial value is `indefinite`.
+          - Clock-value durations must be greater than zero during full validation or scheduling.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg-animations-timing-attributes
+      - name: end
+        type: end-value-list
+        cardinality: zero-or-more
+        position: attribute
+        constraints:
+          - No initial value.
+          - Attribute value is a semicolon-separated list of end values when specified.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg-animations-timing-attributes
+      - name: min
+        type: Clock-value | media
+        cardinality: one
+        position: attribute
+        constraints:
+          - Initial value is `0s`.
+          - Clock-value durations must be greater than zero during full validation or scheduling.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg-animations-timing-attributes
+      - name: max
+        type: Clock-value | media
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - No initial value.
+          - Clock-value durations must be greater than zero during full validation or scheduling.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg-animations-timing-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: All parsed SVG animation elements must expose timing data for `begin`, `dur`, `end`, `min`, and `max`.
+    applies_to:
+      - animate
+      - animateMotion
+      - animateTransform
+      - set
+      - discard
+    source_refs:
+      - svg-animations-timing-attributes
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`begin` must preserve the specified semicolon-separated begin value list and default to `0s` when omitted."
+    applies_to:
+      - begin
+    source_refs:
+      - svg-animations-timing-attributes
+    testability: testable
+    notes:
+      - Full resolution of non-clock begin values is deferred.
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`dur` must preserve a specified Clock-value, `media`, `indefinite`, or unresolved raw value and default to `indefinite` when omitted."
+    applies_to:
+      - dur
+    source_refs:
+      - svg-animations-timing-attributes
+      - svg-animations-clock-values
+    testability: testable
+    notes:
+      - SVG-specific ignoring of `media` is a later scheduling concern.
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`end` must preserve the specified semicolon-separated end value list and remain empty when omitted."
+    applies_to:
+      - end
+    source_refs:
+      - svg-animations-timing-attributes
+    testability: testable
+    notes:
+      - Full resolution of non-clock end values is deferred.
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: "`min` must preserve a specified Clock-value, `media`, or unresolved raw value and default to `0s` when omitted."
+    applies_to:
+      - min
+    source_refs:
+      - svg-animations-timing-attributes
+      - svg-animations-clock-values
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: "`max` must preserve a specified Clock-value, `media`, or unresolved raw value and remain absent when omitted."
+    applies_to:
+      - max
+    source_refs:
+      - svg-animations-timing-attributes
+      - svg-animations-clock-values
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: Recognized Clock-value timing attributes must expose their parsed duration in seconds.
+    applies_to:
+      - Clock-value
+    source_refs:
+      - svg-animations-clock-values
+    testability: testable
+    notes: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Event, syncbase, repeat, accessKey, wallclock, or hyperlink timing values.
+    source_behavior: valid timing forms requiring scheduling and event model processing.
+    required_behavior: Preserve the raw value as unresolved parser timing data.
+    decision_required: false
+    source_refs:
+      - svg-animations-timing-attributes
+  - id: I002
+    condition: "`media` specified on SVG animation elements."
+    source_behavior: ignored for SVG animation elements during timing evaluation.
+    required_behavior: Preserve the `media` token as parser timing data; scheduling behavior is deferred.
+    decision_required: false
+    source_refs:
+      - svg-animations-timing-attributes
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-only timing representation
+    statement: The package may preserve unresolved timing syntaxes as raw strings while exposing recognized clock values in seconds.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+      - R006
+    source_refs:
+      - svg-animations-timing-attributes
+
+dependencies:
+  - id: DEP001
+    kind: local-artifact
+    title: SVG animation time units
+    reason: Clock-value recognition and conversion was implemented by the earlier reusable time parser work item.
+    source_refs:
+      - svg-animations-clock-values
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+      - svg-animations-clock-values
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+      - svg-animations-clock-values
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+      - svg-animations-clock-values
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg-animations-clock-values
+    map_item_refs: []

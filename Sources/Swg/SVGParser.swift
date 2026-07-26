@@ -25,6 +25,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let basicShapeGeometryPropertyNames: Set<String> = [
 		"x", "y", "cx", "cy", "r", "rx", "ry", "width", "height"
 	]
+	private static let animationTimingAttributeNames: Set<String> = [
+		"begin", "dur", "end", "min", "max"
+	]
 	private static let namedColors: [String: Color] = [
 		"aliceblue": Color(240 / 255, 248 / 255, 1),
 		"antiquewhite": Color(250 / 255, 235 / 255, 215 / 255),
@@ -1809,8 +1812,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fromValue: attributes["from"],
 			toValue: attributes["to"],
 			byValue: attributes["by"],
+			timing: parseAnimationTiming(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "from", "to", "by"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "from", "to", "by"], union: Self.animationTimingAttributeNames)
 		)))
 	}
 
@@ -1833,8 +1837,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fromValue: attributes["from"],
 			toValue: attributes["to"],
 			byValue: attributes["by"],
+			timing: parseAnimationTiming(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "path", "keyPoints", "rotate", "origin", "from", "to", "by"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "path", "keyPoints", "rotate", "origin", "from", "to", "by"], union: Self.animationTimingAttributeNames)
 		)))
 		animateMotionIndexStack.append(animations.count - 1)
 	}
@@ -1856,8 +1861,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fromValue: attributes["from"],
 			toValue: attributes["to"],
 			byValue: attributes["by"],
+			timing: parseAnimationTiming(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "type", "from", "to", "by"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "type", "from", "to", "by"], union: Self.animationTimingAttributeNames)
 		)))
 	}
 
@@ -1875,8 +1881,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			target: target,
 			attributeName: attributes["attributeName"],
 			toValue: attributes["to"],
+			timing: parseAnimationTiming(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "to"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "to"], union: Self.animationTimingAttributeNames)
 		)))
 	}
 
@@ -1893,8 +1900,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			id: id,
 			target: target,
 			begin: attributes["begin"] ?? "0s",
+			timing: parseAnimationTiming(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "begin"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href"], union: Self.animationTimingAttributeNames)
 		)))
 	}
 
@@ -1919,9 +1927,43 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fromValue: motion.fromValue,
 			toValue: motion.toValue,
 			byValue: motion.byValue,
+			timing: motion.timing,
 			language: motion.language,
 			unknownAttributes: motion.unknownAttributes
 		))
+	}
+
+	private func parseAnimationTiming(_ attributes: [String: String]) -> SVGAnimationTimingData {
+		SVGAnimationTimingData(
+			begin: parseAnimationTimeList(attributes["begin"], defaultValue: [.clock(rawValue: "0s", seconds: 0)]),
+			dur: attributes["dur"].map(parseAnimationTimeValue) ?? .indefinite,
+			end: parseAnimationTimeList(attributes["end"], defaultValue: []),
+			min: attributes["min"].map(parseAnimationTimeValue) ?? .clock(rawValue: "0s", seconds: 0),
+			max: attributes["max"].flatMap(parseAnimationTimeValue)
+		)
+	}
+
+	private func parseAnimationTimeList(_ value: String?, defaultValue: [SVGAnimationTimeValue]) -> [SVGAnimationTimeValue] {
+		guard let value else { return defaultValue }
+		let values = value.split(separator: ";", omittingEmptySubsequences: false)
+			.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+			.filter { !$0.isEmpty }
+			.map(parseAnimationTimeValue)
+		return values.isEmpty ? defaultValue : values
+	}
+
+	private func parseAnimationTimeValue(_ value: String) -> SVGAnimationTimeValue {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed == "indefinite" {
+			return .indefinite
+		}
+		if trimmed == "media" {
+			return .media
+		}
+		if let seconds = SVGClockValueParser.parse(trimmed) {
+			return .clock(rawValue: trimmed, seconds: seconds)
+		}
+		return .unresolved(trimmed)
 	}
 
 	private func parseTextSpanPositioning(_ attributes: [String: String]) -> SVGTextSpanPositioning {
@@ -2606,6 +2648,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return attributes.filter { name, _ in
 			!name.isNamespaceDeclaration && !interpreted.contains(name)
 		}
+	}
+
+	private func parseUnknownAttributes(_ attributes: [String: String], known: Set<String>, union extraKnown: Set<String>) -> [String: String] {
+		parseUnknownAttributes(attributes, known: known.union(extraKnown))
 	}
 
 	private func parseBasicShapeGeometryProperties(_ attributes: [String: String]) -> [String: String] {

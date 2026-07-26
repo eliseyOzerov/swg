@@ -81,6 +81,37 @@ public enum SVGAnimationTarget: Equatable, Sendable {
 	case href(String)
 }
 
+/// A parsed SVG animation timing value used by `SVGAnimationTimingData`.
+public enum SVGAnimationTimeValue: Equatable, Sendable {
+	case clock(rawValue: String, seconds: Double)
+	case indefinite
+	case media
+	case unresolved(String)
+}
+
+/// Timing attributes common to SVG animation elements such as `SVGAnimateData`.
+public struct SVGAnimationTimingData: Equatable, Sendable {
+	public let begin: [SVGAnimationTimeValue]
+	public let dur: SVGAnimationTimeValue
+	public let end: [SVGAnimationTimeValue]
+	public let min: SVGAnimationTimeValue
+	public let max: SVGAnimationTimeValue?
+
+	public init(
+		begin: [SVGAnimationTimeValue] = [.clock(rawValue: "0s", seconds: 0)],
+		dur: SVGAnimationTimeValue = .indefinite,
+		end: [SVGAnimationTimeValue] = [],
+		min: SVGAnimationTimeValue = .clock(rawValue: "0s", seconds: 0),
+		max: SVGAnimationTimeValue? = nil
+	) {
+		self.begin = begin
+		self.dur = dur
+		self.end = end
+		self.min = min
+		self.max = max
+	}
+}
+
 /// Data for an SVG `<animate>` element that changes one attribute or property over time.
 public struct SVGAnimateData: Equatable, Sendable {
 	public let id: String
@@ -89,16 +120,18 @@ public struct SVGAnimateData: Equatable, Sendable {
 	public let fromValue: String?
 	public let toValue: String?
 	public let byValue: String?
+	public let timing: SVGAnimationTimingData
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.attributeName = attributeName
 		self.fromValue = fromValue
 		self.toValue = toValue
 		self.byValue = byValue
+		self.timing = timing
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
@@ -116,10 +149,11 @@ public struct SVGAnimateMotionData: Equatable, Sendable {
 	public let fromValue: String?
 	public let toValue: String?
 	public let byValue: String?
+	public let timing: SVGAnimationTimingData
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, path: String? = nil, keyPoints: String? = nil, rotate: String? = nil, origin: String? = nil, mpath: SVGMPathData? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, path: String? = nil, keyPoints: String? = nil, rotate: String? = nil, origin: String? = nil, mpath: SVGMPathData? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.path = path
@@ -130,6 +164,7 @@ public struct SVGAnimateMotionData: Equatable, Sendable {
 		self.fromValue = fromValue
 		self.toValue = toValue
 		self.byValue = byValue
+		self.timing = timing
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
@@ -159,10 +194,11 @@ public struct SVGAnimateTransformData: Equatable, Sendable {
 	public let fromValue: String?
 	public let toValue: String?
 	public let byValue: String?
+	public let timing: SVGAnimationTimingData
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, type: String = "translate", fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, type: String = "translate", fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.attributeName = attributeName
@@ -170,6 +206,7 @@ public struct SVGAnimateTransformData: Equatable, Sendable {
 		self.fromValue = fromValue
 		self.toValue = toValue
 		self.byValue = byValue
+		self.timing = timing
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
@@ -181,14 +218,16 @@ public struct SVGSetData: Equatable, Sendable {
 	public let target: SVGAnimationTarget?
 	public let attributeName: String?
 	public let toValue: String?
+	public let timing: SVGAnimationTimingData
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, toValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, toValue: String? = nil, timing: SVGAnimationTimingData = SVGAnimationTimingData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.attributeName = attributeName
 		self.toValue = toValue
+		self.timing = timing
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
@@ -199,13 +238,15 @@ public struct SVGDiscardData: Equatable, Sendable {
 	public let id: String
 	public let target: SVGAnimationTarget?
 	public let begin: String
+	public let timing: SVGAnimationTimingData
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, begin: String = "0s", language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, begin: String = "0s", timing: SVGAnimationTimingData = SVGAnimationTimingData(), language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.begin = begin
+		self.timing = timing
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}

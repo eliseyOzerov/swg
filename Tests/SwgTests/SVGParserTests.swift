@@ -5281,7 +5281,8 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(fade.fromValue == "1")
 	#expect(fade.toValue == "0")
 	#expect(fade.byValue == nil)
-	#expect(fade.unknownAttributes["dur"] == "5s")
+	#expect(fade.timing.dur == .clock(rawValue: "5s", seconds: 5))
+	#expect(fade.unknownAttributes["dur"] == nil)
 	#expect(fade.unknownAttributes["repeatCount"] == "indefinite")
 	#expect(fade.unknownAttributes["attributeType"] == "XML")
 
@@ -5295,6 +5296,11 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(move.fromValue == nil)
 	#expect(move.toValue == nil)
 	#expect(move.byValue == "4")
+	#expect(move.timing.begin == [.clock(rawValue: "0s", seconds: 0)])
+	#expect(move.timing.dur == .indefinite)
+	#expect(move.timing.end == [])
+	#expect(move.timing.min == .clock(rawValue: "0s", seconds: 0))
+	#expect(move.timing.max == nil)
 }
 
 @Test func svgParserPreservesAnimateMotionElementsAsAnimationData() throws {
@@ -5322,7 +5328,8 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(patrol.keyPoints == "0;0.5;1")
 	#expect(patrol.rotate == "auto")
 	#expect(patrol.origin == "default")
-	#expect(patrol.unknownAttributes["dur"] == "3s")
+	#expect(patrol.timing.dur == .clock(rawValue: "3s", seconds: 3))
+	#expect(patrol.unknownAttributes["dur"] == nil)
 
 	guard case .animateMotion(let nudge) = document.animations[1] else {
 		Issue.record("Expected second animation to be animateMotion")
@@ -5361,7 +5368,8 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(spin.fromValue == "0 5 5")
 	#expect(spin.toValue == "90 5 5")
 	#expect(spin.byValue == nil)
-	#expect(spin.unknownAttributes["dur"] == "2s")
+	#expect(spin.timing.dur == .clock(rawValue: "2s", seconds: 2))
+	#expect(spin.unknownAttributes["dur"] == nil)
 
 	guard case .animateTransform(let slide) = document.animations[1] else {
 		Issue.record("Expected second animation to be animateTransform")
@@ -5400,7 +5408,8 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(show.target == .parent(id: "label"))
 	#expect(show.attributeName == "visibility")
 	#expect(show.toValue == "visible")
-	#expect(show.unknownAttributes["begin"] == "1s")
+	#expect(show.timing.begin == [.clock(rawValue: "1s", seconds: 1)])
+	#expect(show.unknownAttributes["begin"] == nil)
 	#expect(show.unknownAttributes["additive"] == "sum")
 	#expect(show.unknownAttributes["accumulate"] == "sum")
 
@@ -5438,6 +5447,7 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(drop.id == "drop")
 	#expect(drop.target == .parent(id: "layer"))
 	#expect(drop.begin == "2s")
+	#expect(drop.timing.begin == [.clock(rawValue: "2s", seconds: 2)])
 
 	guard case .discard(let legacy) = document.animations[1] else {
 		Issue.record("Expected second animation to be discard")
@@ -5446,6 +5456,7 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(legacy.id == "legacy")
 	#expect(legacy.target == .parent(id: "layer"))
 	#expect(legacy.begin == "0s")
+	#expect(legacy.timing.begin == [.clock(rawValue: "0s", seconds: 0)])
 	#expect(legacy.unknownAttributes["xlink:href"] == "#tile")
 
 	guard case .discard(let clear) = document.animations[2] else {
@@ -5455,6 +5466,7 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(clear.id == "clear")
 	#expect(clear.target == .href("#tile"))
 	#expect(clear.begin == "0s")
+	#expect(clear.timing.begin == [.clock(rawValue: "0s", seconds: 0)])
 }
 
 @Test func svgParserPreservesMPathAsAnimateMotionChildData() throws {
@@ -5481,11 +5493,54 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(follow.id == "follow")
 	#expect(follow.target == .parent(id: "dot"))
 	#expect(follow.path == "M0 0 L1 1")
+	#expect(follow.timing.dur == .clock(rawValue: "4s", seconds: 4))
 
 	let mpath = try #require(follow.mpath)
 	#expect(mpath.id == "motionPath")
 	#expect(mpath.href == "#track")
 	#expect(mpath.unknownAttributes["data-note"] == "kept")
+}
+
+@Test func svgParserPreservesCommonAnimationTimingAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<rect id="box" width="10" height="10">
+			<animate id="timed" attributeName="opacity" from="0" to="1"
+				begin="0s; click + 2s; indefinite"
+				dur="02:03"
+				end="other.end - 5ms; wallclock(2026-07-26T10:00:00Z)"
+				min="500ms"
+				max="media"
+				data-note="kept"/>
+		</rect>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	guard case .animate(let timed) = try #require(document.animations.first) else {
+		Issue.record("Expected animation to be animate")
+		return
+	}
+
+	#expect(timed.timing.begin == [
+		.clock(rawValue: "0s", seconds: 0),
+		.unresolved("click + 2s"),
+		.indefinite
+	])
+	#expect(timed.timing.dur == .clock(rawValue: "02:03", seconds: 123))
+	#expect(timed.timing.end == [
+		.unresolved("other.end - 5ms"),
+		.unresolved("wallclock(2026-07-26T10:00:00Z)")
+	])
+	#expect(timed.timing.min == .clock(rawValue: "500ms", seconds: 0.5))
+	#expect(timed.timing.max == .media)
+	#expect(timed.unknownAttributes["begin"] == nil)
+	#expect(timed.unknownAttributes["dur"] == nil)
+	#expect(timed.unknownAttributes["end"] == nil)
+	#expect(timed.unknownAttributes["min"] == nil)
+	#expect(timed.unknownAttributes["max"] == nil)
+	#expect(timed.unknownAttributes["data-note"] == "kept")
 }
 
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
