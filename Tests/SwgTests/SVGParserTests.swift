@@ -5256,6 +5256,47 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(child.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
 }
 
+@Test func svgParserPreservesAnimateElementsAsAnimationData() throws {
+	let svg = """
+	<svg id="root" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<rect id="box" width="10" height="10">
+			<animate id="fade" attributeName="opacity" from="1" to="0" dur="5s" repeatCount="indefinite" attributeType="XML"/>
+		</rect>
+		<animate id="move" href="#box" attributeName="x" by="4"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["box"])
+	#expect(document.animations.count == 2)
+
+	guard case .animate(let fade) = document.animations[0] else {
+		Issue.record("Expected first animation to be animate")
+		return
+	}
+	#expect(fade.id == "fade")
+	#expect(fade.target == .parent(id: "box"))
+	#expect(fade.attributeName == "opacity")
+	#expect(fade.fromValue == "1")
+	#expect(fade.toValue == "0")
+	#expect(fade.byValue == nil)
+	#expect(fade.unknownAttributes["dur"] == "5s")
+	#expect(fade.unknownAttributes["repeatCount"] == "indefinite")
+	#expect(fade.unknownAttributes["attributeType"] == "XML")
+
+	guard case .animate(let move) = document.animations[1] else {
+		Issue.record("Expected second animation to be animate")
+		return
+	}
+	#expect(move.id == "move")
+	#expect(move.target == .href("#box"))
+	#expect(move.attributeName == "x")
+	#expect(move.fromValue == nil)
+	#expect(move.toValue == nil)
+	#expect(move.byValue == "4")
+}
+
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">

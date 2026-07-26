@@ -233,6 +233,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var currentMetadata: SVGMetadataBuilder?
 	private var rootMetadata: [SVGMetadataData] = []
 	private var elementMetadata: [String: [SVGMetadataData]] = [:]
+	private var animations: [SVGAnimationElement] = []
 	private var namespaceStack: [SVGNamespaceContext] = [.empty]
 	private var languageStack: [String?] = [nil]
 	private var viewportContextStack: [SVGLengthContext] = [.default]
@@ -280,7 +281,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			selectedDescription: selectDescription(rootDescriptions),
 			selectedElementDescriptions: elementDescriptions.compactMapValues(selectDescription),
 			rootMetadata: rootMetadata,
-			elementMetadata: elementMetadata
+			elementMetadata: elementMetadata,
+			animations: animations
 		)
 	}
 
@@ -356,6 +358,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "metadata":
 			parseMetadataStart(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .metadata
+		case "animate":
+			parseAnimate(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .animation
 		case "style":
 			inStyleElement = true
 			styleMediaApplies = styleMediaMatches(attributes["media"])
@@ -783,6 +788,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		currentMetadata = nil
 		rootMetadata = []
 		elementMetadata = [:]
+		animations = []
 		namespaceStack = [.empty]
 		languageStack = [nil]
 		viewportContextStack = [.default]
@@ -1766,6 +1772,27 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		))
 	}
 
+	private func parseAnimate(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "Animate")
+		setCurrentParsedElementID(id)
+		let target: SVGAnimationTarget?
+		if let href = parseRawHref(attributes) {
+			target = .href(href)
+		} else {
+			target = currentAnimationParent()
+		}
+		animations.append(.animate(SVGAnimateData(
+			id: id,
+			target: target,
+			attributeName: attributes["attributeName"],
+			fromValue: attributes["from"],
+			toValue: attributes["to"],
+			byValue: attributes["by"],
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "from", "to", "by"])
+		)))
+	}
+
 	private func parseTextSpanPositioning(_ attributes: [String: String]) -> SVGTextSpanPositioning {
 		SVGTextSpanPositioning(
 			xValues: parseTextCoordinateList(attributes["x"], percentageBasis: .horizontal) ?? [],
@@ -2357,6 +2384,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		guard parsedElementStack.count > 1 else { return (false, nil) }
 		let parent = parsedElementStack[parsedElementStack.count - 2]
 		return (parent.role == .svgRoot, parent.id)
+	}
+
+	private func currentAnimationParent() -> SVGAnimationTarget? {
+		guard parsedElementStack.count > 1 else { return nil }
+		let parent = parsedElementStack[parsedElementStack.count - 2]
+		return .parent(id: parent.id)
 	}
 
 	private func setCurrentParsedElementID(_ id: String?) {
@@ -3405,6 +3438,7 @@ private enum SVGParsedElementRole {
 	case descriptionContent
 	case metadata
 	case metadataContent
+	case animation
 	case unknownContainer
 	case skipped
 }

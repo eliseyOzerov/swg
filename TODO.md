@@ -209,7 +209,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Animation and Dynamic SVG
 
-- [ ] `<animate>`.
+- [x] `<animate>`.
 - [ ] `<animateMotion>`.
 - [ ] `<animateTransform>`.
 - [ ] `<set>`.

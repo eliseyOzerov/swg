@@ -19,6 +19,7 @@ public struct SVGDocument: Equatable, Sendable {
 	public var selectedElementDescriptions: [String: SVGDescriptionData]
 	public var rootMetadata: [SVGMetadataData]
 	public var elementMetadata: [String: [SVGMetadataData]]
+	public var animations: [SVGAnimationElement]
 
 	public init(
 		id: String? = nil,
@@ -37,7 +38,8 @@ public struct SVGDocument: Equatable, Sendable {
 		selectedDescription: SVGDescriptionData? = nil,
 		selectedElementDescriptions: [String: SVGDescriptionData] = [:],
 		rootMetadata: [SVGMetadataData] = [],
-		elementMetadata: [String: [SVGMetadataData]] = [:]
+		elementMetadata: [String: [SVGMetadataData]] = [:],
+		animations: [SVGAnimationElement] = []
 	) {
 		self.id = id
 		self.viewBox = viewBox
@@ -56,10 +58,45 @@ public struct SVGDocument: Equatable, Sendable {
 		self.selectedElementDescriptions = selectedElementDescriptions
 		self.rootMetadata = rootMetadata
 		self.elementMetadata = elementMetadata
+		self.animations = animations
 	}
 
 	public var elementIDs: [String] {
 		elements.flatMap { $0.collectIDs() }
+	}
+}
+
+/// An SVG animation element preserved for later target-time evaluation.
+public enum SVGAnimationElement: Equatable, Sendable {
+	case animate(SVGAnimateData)
+}
+
+/// The target relationship for an SVG animation element.
+public enum SVGAnimationTarget: Equatable, Sendable {
+	case parent(id: String?)
+	case href(String)
+}
+
+/// Data for an SVG `<animate>` element that changes one attribute or property over time.
+public struct SVGAnimateData: Equatable, Sendable {
+	public let id: String
+	public let target: SVGAnimationTarget?
+	public let attributeName: String?
+	public let fromValue: String?
+	public let toValue: String?
+	public let byValue: String?
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.target = target
+		self.attributeName = attributeName
+		self.fromValue = fromValue
+		self.toValue = toValue
+		self.byValue = byValue
+		self.language = language
+		self.unknownAttributes = unknownAttributes
 	}
 }
 

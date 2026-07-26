@@ -1,0 +1,324 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: animate
+  title: SVG animate element
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for recognizing SVG `<animate>` elements and preserving their target relationship plus basic attribute/property value endpoints for later animation evaluation.
+  non_goals:
+    - Animation playback, scheduling, interpolation, or rendering.
+    - Full timing attribute parsing for `begin`, `dur`, `end`, `min`, `max`, `restart`, `repeatCount`, `repeatDur`, or animation `fill`.
+    - Full keyframe parsing for `calcMode`, `values`, `keyTimes`, or `keySplines`.
+    - Additive or cumulative animation behavior.
+    - Scripting or animation event dispatch.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-overview
+      title: SVG Animations Level 2, Animation elements overview
+      url: https://svgwg.org/specs/animations/#AnimationElements
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-target-element
+      title: SVG Animations Level 2, Attributes to identify the target element for an animation
+      url: https://svgwg.org/specs/animations/#TargetElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-target-attribute
+      title: SVG Animations Level 2, Attributes to identify the target attribute or property for an animation
+      url: https://svgwg.org/specs/animations/#TargetAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-animate-element
+      title: SVG Animations Level 2, The animate element
+      url: https://svgwg.org/specs/animations/#AnimateElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-value-attributes
+      title: SVG Animations Level 2, Attributes that define animation values over time
+      url: https://svgwg.org/specs/animations/#ValueAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C SVG Animations draft.
+    - The SVG Animations draft delegates general SMIL behavior to SMIL Animation except where SVG-specific rules are stated.
+
+scope:
+  includes:
+    - Recognition of `<animate>` as an SVG animation element.
+    - Preservation of each parsed `<animate>` outside the normal renderable element tree.
+    - Preservation of the target relationship from `href` or, when omitted, the immediate parent element.
+    - Preservation of the target `attributeName`.
+    - Preservation of basic endpoint value attributes `from`, `to`, and `by` as raw strings.
+    - Preservation of language and uninterpreted non-namespace attributes for later animation bullets.
+  excludes:
+    - Applying animation values to CGPath output or SwiftUI rendering.
+    - Validating whether the target attribute or property is animatable.
+    - Resolving namespace prefixes in `attributeName` beyond preserving the specified name.
+    - Deprecated `attributeType` behavior; SVG 2 does not support this attribute.
+  assumptions:
+    - Parser output may store animation elements in a document-level collection with a target descriptor for later render-time evaluation.
+    - Raw string preservation is sufficient for this bullet because interpolation, timing, additive, and cumulative behavior are covered by later checklist items.
+
+terminology:
+  - id: term-animation-element
+    term: animation element
+    definition: An SVG element that can animate an attribute or property value of another element.
+    source_refs:
+      - svg-animations-overview
+  - id: term-target-element
+    term: target element
+    definition: The element whose attribute or property value is modified by an animation element.
+    source_refs:
+      - svg-animations-target-element
+  - id: term-target-attribute
+    term: target attribute or property
+    definition: The attribute or property identified by `attributeName` whose value changes over time.
+    source_refs:
+      - svg-animations-target-attribute
+
+structures:
+  - id: S001
+    name: animate
+    kind: element
+    source_refs:
+      - svg-animations-animate-element
+    fields:
+      - name: id
+        type: string
+        cardinality: optional
+        position: core-attribute
+        constraints:
+          - Identifies the animation element.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg-animations-animate-element
+      - name: href
+        type: URL
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Explicitly identifies the target element when provided.
+          - If omitted, the immediate parent element is the target.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg-animations-target-element
+      - name: attributeName
+        type: Name
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the target attribute or property.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg-animations-target-attribute
+      - name: from
+        type: value
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Provides an endpoint value for the animation function.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg-animations-value-attributes
+      - name: to
+        type: value
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Provides an endpoint value for the animation function.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg-animations-value-attributes
+      - name: by
+        type: value
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Provides a relative endpoint value for the animation function.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg-animations-value-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must recognize `<animate>` as an SVG animation element.
+    applies_to:
+      - animate
+    source_refs:
+      - svg-animations-overview
+      - svg-animations-animate-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A parsed `<animate>` element must be preserved as animation data and must not be emitted as a directly rendered SVG element.
+    applies_to:
+      - animate
+    source_refs:
+      - svg-animations-overview
+      - svg-animations-animate-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` is present on `<animate>`, its URL reference must be preserved as the explicit animation target reference.
+    applies_to:
+      - animate href
+    source_refs:
+      - svg-animations-target-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` and `xlink:href` are both omitted, the animation target must be represented as the immediate parent element.
+    applies_to:
+      - animate implicit target
+    source_refs:
+      - svg-animations-target-element
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: structure
+    statement: The `attributeName` value must be preserved so later processing can identify the target attribute or property.
+    applies_to:
+      - animate attributeName
+    source_refs:
+      - svg-animations-target-attribute
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: structure
+    statement: The `<animate>` value endpoint attributes `from`, `to`, and `by` must be preserved when specified.
+    applies_to:
+      - animate values
+    source_refs:
+      - svg-animations-value-attributes
+      - svg-animations-animate-element
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: SVG 2 does not support `attributeType`; parser-only support must not interpret it as a target-selection field.
+    applies_to:
+      - animate attributeType
+    source_refs:
+      - svg-animations-target-attribute
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: The `href` target does not resolve to exactly one animatable element in the current document.
+    source_behavior: NO_EFFECT_ON_TARGET
+    required_behavior: Preserve the parsed animation record and leave target resolution or no-effect handling to later animation processing.
+    decision_required: false
+    source_refs:
+      - svg-animations-target-element
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The parser may store `<animate>` elements in `SVGDocument` animation data rather than as `SVGElement` cases because animation elements affect targets over time but are not themselves drawable geometry.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+      - R004
+    source_refs:
+      - svg-animations-overview
+      - svg-animations-animate-element
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: work-item
+    title: Animation timing attributes
+    reason: Timing fields such as `begin`, `dur`, and animation `fill` need separate parsing and scheduling requirements.
+    source_refs:
+      - svg-animations-animate-element
+  - id: DEP002
+    kind: work-item
+    title: Animation interpolation and addition attributes
+    reason: "`calcMode`, `values`, `keyTimes`, `keySplines`, `additive`, and `accumulate` determine evaluation behavior after this element is recognized."
+    source_refs:
+      - svg-animations-value-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-overview
+      - svg-animations-animate-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-overview
+      - svg-animations-animate-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-element
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-attribute
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg-animations-value-attributes
+      - svg-animations-animate-element
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-attribute
+    map_item_refs: []
