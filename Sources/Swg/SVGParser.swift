@@ -519,6 +519,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			))
 		case "feTile":
 			currentFilter?.primitives.append(.tile(input: attributes["in"]))
+		case "feTurbulence":
+			let baseFrequency = parseNonNegativeNumberOptionalNumber(attributes["baseFrequency"], defaultValue: 0)
+			currentFilter?.primitives.append(.turbulence(
+				baseFrequencyX: baseFrequency.first,
+				baseFrequencyY: baseFrequency.second,
+				numOctaves: parseNonNegativeInteger(attributes["numOctaves"], defaultValue: 1),
+				seed: attributes["seed"].flatMap(parseNumber) ?? 0,
+				stitchTiles: parseTurbulenceStitchTiles(attributes["stitchTiles"]),
+				type: parseTurbulenceType(attributes["type"])
+			))
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2
@@ -1430,6 +1440,31 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		return (x, y)
 	}
 
+	private func parseNonNegativeNumberOptionalNumber(_ value: String?, defaultValue: Double) -> (first: Double, second: Double) {
+		guard
+			let value,
+			let values = SVGListParser.parse(value, itemParser: parseNumber),
+			values.count == 1 || values.count == 2
+		else {
+			return (defaultValue, defaultValue)
+		}
+		let first = values[0]
+		let second = values.count == 2 ? values[1] : values[0]
+		guard first >= 0, second >= 0 else { return (defaultValue, defaultValue) }
+		return (first, second)
+	}
+
+	private func parseNonNegativeInteger(_ value: String?, defaultValue: Int) -> Int {
+		guard
+			let value,
+			let integer = SVGIntegerParser.parse(value),
+			integer >= 0
+		else {
+			return defaultValue
+		}
+		return integer
+	}
+
 	private func parseNonNegativeNumber(_ value: String) -> Double? {
 		guard let number = parseNumber(value), number >= 0 else { return nil }
 		return number
@@ -1450,6 +1485,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseMorphologyOperator(_ value: String?) -> SVGMorphologyOperator {
 		value == "dilate" ? .dilate : .erode
+	}
+
+	private func parseTurbulenceStitchTiles(_ value: String?) -> SVGTurbulenceStitchTiles {
+		value == "stitch" ? .stitch : .noStitch
+	}
+
+	private func parseTurbulenceType(_ value: String?) -> SVGTurbulenceType {
+		value == "fractalNoise" ? .fractalNoise : .turbulence
 	}
 
 	private func parseCrossOriginMode(_ value: String?) -> SVGCrossOriginMode? {

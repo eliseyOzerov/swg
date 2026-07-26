@@ -1171,6 +1171,50 @@ private func expectTile(_ primitive: SVGFilterPrimitive, input expectedInput: St
 	#expect(input == expectedInput)
 }
 
+@Test func svgParserPreservesTurbulencePrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="turbulence">
+			<feTurbulence/>
+			<feTurbulence baseFrequency="0.05" numOctaves="2" seed="7.9" stitchTiles="stitch" type="fractalNoise"/>
+			<feTurbulence baseFrequency="0.1 0.2" numOctaves="0" seed="-3" stitchTiles="noStitch" type="turbulence"/>
+			<feTurbulence baseFrequency="-1 0.2" numOctaves="-1" seed="bad" stitchTiles="bad" type="bad"/>
+			<feTurbulence baseFrequency="bad"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["turbulence"])
+	#expect(filter.primitives.count == 5)
+	expectTurbulence(filter.primitives[0], baseFrequencyX: 0, baseFrequencyY: 0, numOctaves: 1, seed: 0, stitchTiles: .noStitch, type: .turbulence)
+	expectTurbulence(filter.primitives[1], baseFrequencyX: 0.05, baseFrequencyY: 0.05, numOctaves: 2, seed: 7.9, stitchTiles: .stitch, type: .fractalNoise)
+	expectTurbulence(filter.primitives[2], baseFrequencyX: 0.1, baseFrequencyY: 0.2, numOctaves: 0, seed: -3, stitchTiles: .noStitch, type: .turbulence)
+	expectTurbulence(filter.primitives[3], baseFrequencyX: 0, baseFrequencyY: 0, numOctaves: 1, seed: 0, stitchTiles: .noStitch, type: .turbulence)
+	expectTurbulence(filter.primitives[4], baseFrequencyX: 0, baseFrequencyY: 0, numOctaves: 1, seed: 0, stitchTiles: .noStitch, type: .turbulence)
+}
+
+private func expectTurbulence(
+	_ primitive: SVGFilterPrimitive,
+	baseFrequencyX expectedBaseFrequencyX: Double,
+	baseFrequencyY expectedBaseFrequencyY: Double,
+	numOctaves expectedNumOctaves: Int,
+	seed expectedSeed: Double,
+	stitchTiles expectedStitchTiles: SVGTurbulenceStitchTiles,
+	type expectedType: SVGTurbulenceType
+) {
+	guard case .turbulence(let baseFrequencyX, let baseFrequencyY, let numOctaves, let seed, let stitchTiles, let type) = primitive else {
+		Issue.record("Expected parsed feTurbulence primitive")
+		return
+	}
+	#expect(baseFrequencyX == expectedBaseFrequencyX)
+	#expect(baseFrequencyY == expectedBaseFrequencyY)
+	#expect(numOctaves == expectedNumOctaves)
+	#expect(seed == expectedSeed)
+	#expect(stitchTiles == expectedStitchTiles)
+	#expect(type == expectedType)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")

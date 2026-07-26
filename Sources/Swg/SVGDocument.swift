@@ -1026,6 +1026,7 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case offset(input: String?, dx: Double = 0, dy: Double = 0)
 	case specularLighting(input: String?, surfaceScale: Double = 1, specularConstant: Double = 1, specularExponent: Double = 1, kernelUnitLengthX: Double? = nil, kernelUnitLengthY: Double? = nil, lightSource: SVGFilterLightSource? = nil)
 	case tile(input: String?)
+	case turbulence(baseFrequencyX: Double = 0, baseFrequencyY: Double = 0, numOctaves: Int = 1, seed: Double = 0, stitchTiles: SVGTurbulenceStitchTiles = .noStitch, type: SVGTurbulenceType = .turbulence)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }
@@ -1049,6 +1050,18 @@ public enum SVGFilterChannelSelector: Equatable, Sendable, Hashable {
 	case green
 	case blue
 	case alpha
+}
+
+/// Stitching behavior used by an SVG `<feTurbulence>` primitive.
+public enum SVGTurbulenceStitchTiles: Equatable, Sendable, Hashable {
+	case stitch
+	case noStitch
+}
+
+/// Noise function used by an SVG `<feTurbulence>` primitive.
+public enum SVGTurbulenceType: Equatable, Sendable, Hashable {
+	case fractalNoise
+	case turbulence
 }
 
 /// Morphology operation used by an SVG `<feMorphology>` primitive.

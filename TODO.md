@@ -174,7 +174,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feSpecularLighting>`.
 - [x] `<feSpotLight>`.
 - [x] `<feTile>`.
-- [ ] `<feTurbulence>`.
+- [x] `<feTurbulence>`.
 
 ## Text
 

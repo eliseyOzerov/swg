@@ -1,0 +1,285 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-turbulence
+  title: SVG feTurbulence filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Requirements for preserving feTurbulence primitive attributes used to synthesize Perlin noise.
+  non_goals:
+    - Raster execution of the Perlin turbulence algorithm.
+    - Full DOM IDL reflection or animation support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-turbulence
+      title: Filter Effects Module Level 1, feTurbulence element
+      url: https://www.w3.org/TR/filter-effects-1/#feTurbulenceElement
+      version: Editor-independent W3C Working Draft snapshot
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C section.
+
+scope:
+  includes:
+    - feTurbulence element recognition inside SVG filters.
+    - The baseFrequency, numOctaves, seed, stitchTiles, and type attributes.
+    - Initial values and unsupported negative values for baseFrequency and numOctaves.
+    - Enumeration values for stitchTiles and type.
+  excludes:
+    - Pixel-level noise generation.
+    - Color interpolation filter processing.
+    - Animation and DOM mutation behavior.
+  assumptions:
+    - A parser may preserve seed as the authored number; truncation is an algorithm step for future raster execution.
+
+terminology:
+  - id: term-turbulence
+    term: Turbulence
+    definition: A filter primitive that creates artificial texture using a Perlin turbulence function.
+    source_refs:
+      - filter-effects-fe-turbulence
+
+structures:
+  - id: S001
+    name: feTurbulence
+    kind: element
+    source_refs:
+      - filter-effects-fe-turbulence
+    fields:
+      - name: baseFrequency
+        type: number-optional-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - One number applies to both X and Y frequency components.
+          - Two numbers supply X and Y frequency components respectively.
+          - Initial value is 0.
+          - Negative values are unsupported.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-turbulence
+      - name: numOctaves
+        type: integer
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 1.
+          - Negative values are unsupported.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-fe-turbulence
+      - name: seed
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - The algorithm truncates the value toward zero before using it.
+        requirement_refs:
+          - R003
+        source_refs:
+          - filter-effects-fe-turbulence
+      - name: stitchTiles
+        type: enumeration
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Allowed values are stitch and noStitch.
+          - Initial value is noStitch.
+        requirement_refs:
+          - R004
+        source_refs:
+          - filter-effects-fe-turbulence
+      - name: type
+        type: enumeration
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Allowed values are fractalNoise and turbulence.
+          - Initial value is turbulence.
+        requirement_refs:
+          - R005
+        source_refs:
+          - filter-effects-fe-turbulence
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The baseFrequency attribute is a number-optional-number value with initial value 0; one number applies to both X and Y, and negative values are unsupported.
+    applies_to:
+      - feTurbulence.baseFrequency
+    source_refs:
+      - filter-effects-fe-turbulence
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: range
+    statement: The numOctaves attribute is an integer value with initial value 1; negative values are unsupported.
+    applies_to:
+      - feTurbulence.numOctaves
+    source_refs:
+      - filter-effects-fe-turbulence
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: The seed attribute is a number value with initial value 0, and the turbulence algorithm truncates it toward zero before use.
+    applies_to:
+      - feTurbulence.seed
+    source_refs:
+      - filter-effects-fe-turbulence
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: The stitchTiles attribute accepts stitch and noStitch values and has initial value noStitch.
+    applies_to:
+      - feTurbulence.stitchTiles
+    source_refs:
+      - filter-effects-fe-turbulence
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: structure
+    statement: The type attribute accepts fractalNoise and turbulence values and has initial value turbulence.
+    applies_to:
+      - feTurbulence.type
+    source_refs:
+      - filter-effects-fe-turbulence
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Perlin turbulence generation
+    kind: algorithm
+    summary: The primitive uses seeded pseudo-random lattice gradients and a Perlin noise function to generate color and alpha values over the filter primitive subregion.
+    steps: []
+    preconditions:
+      - baseFrequency, numOctaves, seed, stitchTiles, and type are available.
+    postconditions:
+      - fractalNoise output is normalized from an expected -1 to 1 range, while turbulence output is clamped from an expected 0 to 1 range.
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+    source_refs:
+      - filter-effects-fe-turbulence
+  - id: ALG002
+    name: Stitching adjustment
+    kind: algorithm
+    summary: When stitchTiles is stitch, base frequencies are adjusted so the active subregion contains an integral number of Perlin tile widths and heights for the first octave.
+    steps: []
+    preconditions:
+      - stitchTiles is stitch.
+      - The current filter primitive subregion width and height are known.
+    postconditions:
+      - Lattice vectors on right and bottom edges copy from opposite edges for seamless tiling.
+    requirement_refs:
+      - R004
+    source_refs:
+      - filter-effects-fe-turbulence
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: baseFrequency has a negative X or Y component.
+    source_behavior: unsupported
+    required_behavior: The value must not be treated as a supported baseFrequency.
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-turbulence
+  - id: I002
+    condition: numOctaves is negative.
+    source_behavior: unsupported
+    required_behavior: The value must not be treated as a supported numOctaves.
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-turbulence
+  - id: I003
+    condition: stitchTiles or type is not one of its defined values.
+    source_behavior: unknown enumeration value
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - filter-effects-fe-turbulence
+
+recommendations:
+  - id: N001
+    normative_strength: MAY
+    statement: User agents may clamp numOctaves during processing depending on supported color depth.
+    source_refs:
+      - filter-effects-fe-turbulence
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Unsupported negative values
+    statement: A parser may fall back to the initial value for unsupported negative baseFrequency or numOctaves attributes when preserving a usable primitive representation.
+    allowed_by:
+      - I001
+      - I002
+    source_refs:
+      - filter-effects-fe-turbulence
+  - id: IC002
+    topic: Malformed values
+    statement: A parser may fall back to initial values for malformed numeric or enumeration attributes.
+    allowed_by:
+      - I003
+    source_refs:
+      - filter-effects-fe-turbulence
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG filter primitive subregion
+    reason: The turbulence algorithm and stitchTiles adjustment use the filter primitive subregion.
+    source_refs:
+      - filter-effects-fe-turbulence
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-turbulence
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-turbulence
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-turbulence
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-turbulence
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-turbulence
+    map_item_refs: []
