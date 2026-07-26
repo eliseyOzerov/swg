@@ -1,0 +1,214 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: href
+  title: SVG href URL reference attribute
+  domain: SVG Linking
+  profile: null
+  summary: Requirements for preserving the unnamespaced SVG 2 `href` URL reference attribute on elements that use external or same-document resources.
+  non_goals:
+    - Deprecated `xlink:href` support.
+    - Network fetching, CORS, security mode, or external resource loading.
+    - Full validation of every element-specific target type.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-url-reference-attributes
+      title: SVG 2, Linking - URL reference attributes
+      url: https://www.w3.org/TR/SVG/linking.html#URLReferenceAttributes
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-valid-url-targets
+      title: SVG 2, Linking - Valid URL targets
+      url: https://www.w3.org/TR/SVG/linking.html#ValidURLTargets
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-links-a-element
+      title: SVG 2, Links out of SVG content - a element
+      url: https://www.w3.org/TR/SVG/linking.html#Links
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C linking chapter.
+
+scope:
+  includes:
+    - Recognition of unnamespaced `href` as a URL reference attribute.
+    - Preservation of `href` on supported SVG resource-reference elements.
+    - Preservation of local fragment references for same-document resources.
+    - Preservation of full URL references for external resources and hyperlinks.
+  excludes:
+    - Deprecated `xlink:href`, covered by a separate checklist item.
+    - Resolving or fetching referenced resources.
+    - Enforcing every element-specific valid target type.
+  assumptions:
+    - Parser output may preserve references as strings while leaving target lookup and fetching to later rendering or document-linking layers.
+
+terminology:
+  - id: term-url-reference
+    term: URL reference
+    definition: A URL used by an SVG attribute or property to identify a linked destination or referenced resource.
+    source_refs:
+      - svg2-url-reference-attributes
+  - id: term-same-document-reference
+    term: same-document URL reference
+    definition: A URL reference whose non-fragment parts identify the current document and whose fragment identifies a target element in that document.
+    source_refs:
+      - svg2-valid-url-targets
+
+structures:
+  - id: S001
+    name: href
+    kind: attribute
+    source_refs:
+      - svg2-url-reference-attributes
+    fields:
+      - name: value
+        type: URL
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the linked destination or referenced resource.
+          - Uses the unnamespaced SVG 2 attribute form.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-url-reference-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: SVG URL references should be represented with the unnamespaced `href` attribute in SVG 2 content.
+    applies_to:
+      - href
+    source_refs:
+      - svg2-url-reference-attributes
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must preserve `href` URL reference values on supported elements that reference linked destinations or resources.
+    applies_to:
+      - a
+      - image
+      - linearGradient
+      - radialGradient
+      - pattern
+      - textPath
+      - use
+      - feImage
+    source_refs:
+      - svg2-valid-url-targets
+      - svg2-links-a-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: A hyperlink `a` element forms a link when it has an `href` attribute; the `href` value defines the link destination.
+    applies_to:
+      - a
+    source_refs:
+      - svg2-links-a-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: For URL references to specific elements, the fragment target must be retained so later processing can identify the referenced element.
+    applies_to:
+      - same-document URL references
+    source_refs:
+      - svg2-valid-url-targets
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: External URL references must be preserved without fetching during parser-only processing.
+    applies_to:
+      - external URL references
+    source_refs:
+      - svg2-valid-url-targets
+    testability: testable
+    notes:
+      - Fetching behavior is a downstream renderer or user-agent concern outside this parser bullet.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A referenced resource cannot be resolved or fetched during parser-only processing.
+    source_behavior: INVALID_REFERENCE
+    required_behavior: Preserve the parsed URL reference and leave resolution or fetch failure handling to downstream resource processing.
+    decision_required: false
+    source_refs:
+      - svg2-valid-url-targets
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Stored reference form
+    statement: The parser may normalize same-document fragment references into local IDs for internal-resource elements while preserving complete URLs for external-resource and hyperlink values.
+    allowed_by:
+      - R002
+      - R004
+      - R005
+    source_refs:
+      - svg2-valid-url-targets
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: Element-specific resource attributes
+    reason: Individual elements define whether `href` points to a paint server, reusable element, image, geometry element, or hyperlink destination.
+    source_refs:
+      - svg2-valid-url-targets
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-url-reference-attributes
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-valid-url-targets
+      - svg2-links-a-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-links-a-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-valid-url-targets
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-valid-url-targets
+    map_item_refs: []

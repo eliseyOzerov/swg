@@ -3883,6 +3883,61 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(use.href == "preferred")
 }
 
+@Test func svgParserPreservesUnnamespacedHrefURLReferences() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+		<defs>
+			<path id="curve" d="M0 20 L40 20"/>
+			<symbol id="pin"><path id="pin-path" d="M0 0 L4 4"/></symbol>
+			<linearGradient id="base-gradient"/>
+			<linearGradient id="child-gradient" href="#base-gradient"/>
+			<radialGradient id="child-radial" href="#base-gradient"/>
+			<pattern id="base-pattern"/>
+			<pattern id="child-pattern" href="#base-pattern"/>
+			<filter id="asset-filter"><feImage href="icons.svg?name=A&amp;mode=1#glyph"/></filter>
+		</defs>
+		<a id="link" href="https://example.com/doc.svg#target"><path id="linked-path" d="M1 1 L2 2"/></a>
+		<use id="copy" href="#pin"/>
+		<image id="asset" href="icons.svg?name=A&amp;mode=1#bitmap" x="0" y="0" width="10" height="10"/>
+		<text id="label" x="0" y="30"><textPath href="#curve">Along</textPath></text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.linearGradients["child-gradient"]?.href == "base-gradient")
+	#expect(document.defs.radialGradients["child-radial"]?.href == "base-gradient")
+	#expect(document.defs.patterns["child-pattern"]?.href == "base-pattern")
+	let filter = try #require(document.defs.filters["asset-filter"])
+	let filterImage = try #require(filter.primitives.first)
+	expectFilterImage(filterImage, href: "icons.svg?name=A&mode=1#glyph", preserveAspectRatio: .default, crossOrigin: nil)
+
+	guard case .link(let link) = document.elements.first else {
+		Issue.record("Expected first root element to be an anchor link")
+		return
+	}
+	#expect(link.href == "https://example.com/doc.svg#target")
+
+	guard case .use(let use) = document.elements.dropFirst().first else {
+		Issue.record("Expected second root element to be use")
+		return
+	}
+	#expect(use.href == "pin")
+
+	guard case .image(let image) = document.elements.dropFirst(2).first else {
+		Issue.record("Expected third root element to be image")
+		return
+	}
+	#expect(image.href == "icons.svg?name=A&mode=1#bitmap")
+
+	guard case .text(let text) = document.elements.dropFirst(3).first else {
+		Issue.record("Expected fourth root element to be text")
+		return
+	}
+	let textPath = try #require(text.spans.first?.textPath)
+	#expect(textPath.href == "#curve")
+}
+
 @Test func svgParserPreservesUseGeometryAndReferenceOverrides() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100">
