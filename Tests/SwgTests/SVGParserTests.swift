@@ -239,6 +239,48 @@ import Testing
 	#expect(radialTransformed.gradientTransform == Transform(a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6))
 }
 
+@Test func svgParserPreservesPadGradientSpreadMethod() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<defs>
+			<linearGradient id="linearDefault">
+				<stop offset="0" stop-color="red"/>
+				<stop offset="1" stop-color="blue"/>
+			</linearGradient>
+			<linearGradient id="linearPad" spreadMethod="pad">
+				<stop offset="0" stop-color="red"/>
+				<stop offset="1" stop-color="blue"/>
+			</linearGradient>
+			<linearGradient id="linearInvalid" spreadMethod="definitelyNotSpread">
+				<stop offset="0" stop-color="red"/>
+				<stop offset="1" stop-color="blue"/>
+			</linearGradient>
+			<radialGradient id="radialDefault">
+				<stop offset="0" stop-color="white"/>
+				<stop offset="1" stop-color="black"/>
+			</radialGradient>
+			<radialGradient id="radialPad" spreadMethod="pad">
+				<stop offset="0" stop-color="white"/>
+				<stop offset="1" stop-color="black"/>
+			</radialGradient>
+			<radialGradient id="radialInvalid" spreadMethod="definitelyNotSpread">
+				<stop offset="0" stop-color="white"/>
+				<stop offset="1" stop-color="black"/>
+			</radialGradient>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.linearGradients["linearDefault"]?.spreadMethod == .pad)
+	#expect(document.defs.linearGradients["linearPad"]?.spreadMethod == .pad)
+	#expect(document.defs.linearGradients["linearInvalid"]?.spreadMethod == .pad)
+	#expect(document.defs.radialGradients["radialDefault"]?.spreadMethod == .pad)
+	#expect(document.defs.radialGradients["radialPad"]?.spreadMethod == .pad)
+	#expect(document.defs.radialGradients["radialInvalid"]?.spreadMethod == .pad)
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

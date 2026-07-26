@@ -127,7 +127,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `gradientUnits="objectBoundingBox"`.
 - [x] `gradientUnits="userSpaceOnUse"`.
 - [x] `gradientTransform`.
-- [ ] `spreadMethod="pad"`.
+- [x] `spreadMethod="pad"`.
 - [ ] `spreadMethod="reflect"`.
 - [ ] `spreadMethod="repeat"`.
 - [ ] `<pattern>`.

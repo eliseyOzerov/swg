@@ -808,6 +808,7 @@ public struct SVGLinearGradientDef: Equatable, Sendable {
 	public var y2: Double
 	public var gradientUnits: SVGGradientUnits
 	public var gradientTransform: Transform
+	public var spreadMethod: SVGGradientSpreadMethod
 	public var stops: [SVGGradientStop]
 	public var href: String?
 
@@ -819,6 +820,7 @@ public struct SVGLinearGradientDef: Equatable, Sendable {
 		y2: Double = 0,
 		gradientUnits: SVGGradientUnits = .objectBoundingBox,
 		gradientTransform: Transform = .identity,
+		spreadMethod: SVGGradientSpreadMethod = .pad,
 		stops: [SVGGradientStop] = [],
 		href: String? = nil
 	) {
@@ -829,6 +831,7 @@ public struct SVGLinearGradientDef: Equatable, Sendable {
 		self.y2 = y2
 		self.gradientUnits = gradientUnits
 		self.gradientTransform = gradientTransform
+		self.spreadMethod = spreadMethod
 		self.stops = stops
 		self.href = href
 	}
@@ -845,6 +848,7 @@ public struct SVGRadialGradientDef: Equatable, Sendable {
 	public var fr: Double
 	public var gradientUnits: SVGGradientUnits
 	public var gradientTransform: Transform
+	public var spreadMethod: SVGGradientSpreadMethod
 	public var stops: [SVGGradientStop]
 	public var href: String?
 
@@ -858,6 +862,7 @@ public struct SVGRadialGradientDef: Equatable, Sendable {
 		fr: Double = 0,
 		gradientUnits: SVGGradientUnits = .objectBoundingBox,
 		gradientTransform: Transform = .identity,
+		spreadMethod: SVGGradientSpreadMethod = .pad,
 		stops: [SVGGradientStop] = [],
 		href: String? = nil
 	) {
@@ -870,6 +875,7 @@ public struct SVGRadialGradientDef: Equatable, Sendable {
 		self.fr = fr
 		self.gradientUnits = gradientUnits
 		self.gradientTransform = gradientTransform
+		self.spreadMethod = spreadMethod
 		self.stops = stops
 		self.href = href
 	}
@@ -879,6 +885,11 @@ public struct SVGRadialGradientDef: Equatable, Sendable {
 public enum SVGGradientUnits: Sendable, Equatable, Hashable {
 	case objectBoundingBox
 	case userSpaceOnUse
+}
+
+/// Behavior for extending a gradient outside its defined vector or circles.
+public enum SVGGradientSpreadMethod: Sendable, Equatable, Hashable {
+	case pad
 }
 
 /// A parsed SVG `<filter>` definition.

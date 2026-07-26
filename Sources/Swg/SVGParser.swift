@@ -761,6 +761,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let v = attributes["x2"] { gradient.x2 = parseGradientCoord(v, units: units, percentageBasis: .horizontal) }
 		if let v = attributes["y2"] { gradient.y2 = parseGradientCoord(v, units: units, percentageBasis: .vertical) }
 		if let transform = attributes["gradientTransform"] { gradient.gradientTransform = parseTransform(transform) }
+		if let spreadMethod = parseGradientSpreadMethod(attributes["spreadMethod"]) { gradient.spreadMethod = spreadMethod }
 		gradient.href = parseHref(attributes)
 		currentLinearGradient = gradient
 		currentGradientStops = []
@@ -782,6 +783,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		if let v = attributes["fy"] { gradient.fy = parseGradientCoord(v, units: units, percentageBasis: .vertical) }
 		if let v = attributes["fr"], let radius = parseNonnegativeGradientCoord(v, units: units, percentageBasis: .normalizedDiagonal) { gradient.fr = radius }
 		if let transform = attributes["gradientTransform"] { gradient.gradientTransform = parseTransform(transform) }
+		if let spreadMethod = parseGradientSpreadMethod(attributes["spreadMethod"]) { gradient.spreadMethod = spreadMethod }
 		gradient.href = parseHref(attributes)
 		currentRadialGradient = gradient
 		currentGradientStops = []
@@ -867,6 +869,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseGradientUnits(_ value: String?) -> SVGGradientUnits {
 		value == "userSpaceOnUse" ? .userSpaceOnUse : .objectBoundingBox
+	}
+
+	private func parseGradientSpreadMethod(_ value: String?) -> SVGGradientSpreadMethod? {
+		switch value {
+		case "pad":
+			.pad
+		default:
+			nil
+		}
 	}
 
 	private func defaultLinearGradientX2(units: SVGGradientUnits) -> Double {
