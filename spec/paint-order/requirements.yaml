@@ -1,0 +1,257 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: paint-order
+  title: Paint order property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Capture parser-visible handling of `paint-order`, including `normal`, explicit paint operation lists, inheritance, cascade, invalid fallback, and renderer-facing resolved order.
+  non_goals:
+    - Implementing marker elements or marker rendering.
+    - Implementing fill, stroke, and marker drawing order in a renderer.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-paint-order-property
+      title: "SVG 2 Painting: Controlling paint operation order: the paint-order property"
+      url: https://www.w3.org/TR/SVG/painting.html#PaintOrder
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `paint-order` with value grammar `normal | [ fill || stroke || markers ]`, initial value `normal`, inheritance yes, and computed value as specified.
+    - SVG 2 defines the normal paint operation order as fill, then stroke, then markers.
+    - SVG 2 states that explicit keyword values give the order from left to right; omitted operations are painted last in their normal order.
+    - SVG presentation attributes participate in styling, so `paint-order` may appear as either a property declaration or presentation attribute where supported.
+
+scope:
+  includes:
+    - Parser output for the supported `paint-order` property on SVG shapes and renderable containers.
+    - Initial `paint-order` value of `normal`.
+    - Explicit `normal`.
+    - Explicit keyword lists containing `fill`, `stroke`, and/or `markers`.
+    - Renderer-facing resolution of omitted operations after specified operations in normal order.
+    - Inheritance from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Malformed or duplicate `paint-order` keyword lists leaving the current inherited or default value unchanged.
+  excludes:
+    - Marker element parsing and marker painting.
+    - Renderer execution of the paint operation order.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The parser may expose both the specified `paint-order` state and a derived resolved order for renderer use.
+    - Invalid property values are ignored by the parser-visible cascade for this bullet.
+
+terminology:
+  - id: term-paint-order
+    term: paint-order
+    definition: The SVG property that controls whether fill, stroke, and markers are painted in normal order or an author-specified order.
+    source_refs:
+      - svg2-paint-order-property
+  - id: term-paint-operation
+    term: paint operation
+    definition: One of the fill, stroke, or marker painting steps for a shape or text content element.
+    source_refs:
+      - svg2-paint-order-property
+
+structures:
+  - id: S001
+    name: Paint order parser state
+    kind: structure
+    source_refs:
+      - svg2-paint-order-property
+    fields:
+      - name: paintOrder
+        type: normal or list of paint operations
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is `normal`.
+          - Explicit operation lists contain each operation at most once.
+          - The property is inherited.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-paint-order-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `paint-order` property must accept `normal` or a keyword list containing `fill`, `stroke`, and/or `markers`.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-paint-order-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial `paint-order` value must be `normal`.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-paint-order-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`paint-order` must inherit from parent elements."
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-paint-order-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Explicit keyword lists must resolve to the listed paint operations followed by omitted operations in normal paint order.
+    applies_to:
+      - SVG shapes
+      - SVG text content elements
+    source_refs:
+      - svg2-paint-order-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `paint-order` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-paint-order-property
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Resolve paint operation order
+    kind: algorithm
+    summary: Resolve `normal` or a specified operation list into the concrete fill, stroke, marker order.
+    steps:
+      - If the specified value is `normal`, return fill, stroke, markers.
+      - Otherwise, start with the explicitly specified operations in their listed order.
+      - Append each operation from the normal order that was not explicitly specified.
+    preconditions:
+      - The specified value has already been parsed as valid.
+    postconditions:
+      - The resolved list contains fill, stroke, and markers exactly once.
+    requirement_refs:
+      - R004
+    source_refs:
+      - svg2-paint-order-property
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `paint-order` list contains an unknown keyword.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-paint-order-property
+  - id: I002
+    condition: A `paint-order` list repeats a paint operation keyword.
+    source_behavior: REQUIRED
+    required_behavior: The value is invalid because the grammar accepts each keyword at most once; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-paint-order-property
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A child element without its own `paint-order` declaration must expose the inherited value from its parent.
+    derived_from:
+      - R003
+    reasoning: Because `paint-order` is inherited, parser state must preserve the parent's specified paint order for children.
+    source_refs:
+      - svg2-paint-order-property
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may represent `paint-order` with a Swift enum that distinguishes `normal` from a specified operation list and derives a resolved order for renderer consumption.
+    allowed_by:
+      - The source defines value semantics, not programming-language storage details.
+    source_refs:
+      - svg2-paint-order-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`paint-order` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-paint-order-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-paint-order-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-paint-order-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-paint-order-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-paint-order-property
+    map_item_refs: []
+  - item_id: ALG001
+    item_type: algorithm
+    source_refs:
+      - svg2-paint-order-property
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-paint-order-property
+    map_item_refs: []
+  - item_id: I002
+    item_type: invalid_input
+    source_refs:
+      - svg2-paint-order-property
+    map_item_refs: []

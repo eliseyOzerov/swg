@@ -17,7 +17,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		"title", "tspan", "use", "view"
 	]
 	private static let globalAttributeNames: Set<String> = [
-		"class", "clip-path", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "stroke",
+		"class", "clip-path", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "paint-order", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
 		"stroke-width", "style", "transform", "vector-effect", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
 		"zoomAndPan"
@@ -1127,6 +1127,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		result.strokeDashArray = parent.strokeDashArray
 		result.strokeDashOffset = parent.strokeDashOffset
 		result.strokeOpacity = parent.strokeOpacity
+		result.paintOrder = parent.paintOrder
 		result.visibility = parent.visibility
 		return result
 	}
@@ -1233,6 +1234,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				result.strokeOpacity = alpha
 			}
 		}
+		if let value = attributes["paint-order"] {
+			if isInheritKeyword(value) {
+				result.paintOrder = inherited.paintOrder
+			} else if let paintOrder = parsePaintOrder(value) {
+				result.paintOrder = paintOrder
+			}
+		}
 		if let value = attributes["opacity"] {
 			if isInheritKeyword(value) {
 				result.opacity = inherited.opacity
@@ -1295,6 +1303,30 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			return nil
 		}
 		return values.allSatisfy { $0 >= 0 } ? values : nil
+	}
+
+	private func parsePaintOrder(_ value: String) -> SVGPaintOrder? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+		if trimmed == "normal" { return .normal }
+		let tokens = trimmed.split { $0.isWhitespace }.map(String.init)
+		guard !tokens.isEmpty else { return nil }
+		var operations: [SVGPaintOperation] = []
+		for token in tokens {
+			let operation: SVGPaintOperation
+			switch token {
+			case "fill":
+				operation = .fill
+			case "stroke":
+				operation = .stroke
+			case "markers":
+				operation = .markers
+			default:
+				return nil
+			}
+			guard !operations.contains(operation) else { return nil }
+			operations.append(operation)
+		}
+		return .specified(operations)
 	}
 
 	private func parseAlphaValue(_ value: String) -> Double? {

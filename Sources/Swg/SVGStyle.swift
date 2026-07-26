@@ -14,6 +14,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var strokeDashArray: [Double]
 	public var strokeDashOffset: Double
 	public var strokeOpacity: Double
+	public var paintOrder: SVGPaintOrder
 	public var opacity: Double
 	public var transform: Transform
 	public var visibility: SVGVisibility
@@ -36,6 +37,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		strokeDashArray: [Double] = [],
 		strokeDashOffset: Double = 0,
 		strokeOpacity: Double = 1,
+		paintOrder: SVGPaintOrder = .normal,
 		opacity: Double = 1,
 		transform: Transform = .identity,
 		visibility: SVGVisibility = .visible,
@@ -57,6 +59,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.strokeDashArray = strokeDashArray
 		self.strokeDashOffset = strokeDashOffset
 		self.strokeOpacity = strokeOpacity
+		self.paintOrder = paintOrder
 		self.opacity = opacity
 		self.transform = transform
 		self.visibility = visibility
@@ -79,6 +82,30 @@ public enum SVGPaint: Equatable, Sendable {
 	indirect case urlWithFallback(String, SVGPaint)
 	case contextFill
 	case contextStroke
+}
+
+/// SVG `paint-order` value for arranging fill, stroke, and marker painting.
+public enum SVGPaintOrder: Equatable, Sendable {
+	case normal
+	case specified([SVGPaintOperation])
+
+	public var resolvedOperations: [SVGPaintOperation] {
+		switch self {
+		case .normal:
+			SVGPaintOperation.normalOrder
+		case .specified(let operations):
+			operations + SVGPaintOperation.normalOrder.filter { !operations.contains($0) }
+		}
+	}
+}
+
+/// Individual SVG paint operation used by `SVGPaintOrder`.
+public enum SVGPaintOperation: Equatable, Sendable, Hashable {
+	case fill
+	case stroke
+	case markers
+
+	static let normalOrder: [SVGPaintOperation] = [.fill, .stroke, .markers]
 }
 
 /// SVG visibility property value.
