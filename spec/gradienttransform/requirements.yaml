@@ -1,0 +1,205 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: gradienttransform
+  title: Gradient transform
+  domain: SVG 2 Paint Servers
+  profile: null
+  summary: Preserve the SVG `gradientTransform` transform list on linear and radial gradients, with identity as the initial value.
+  non_goals:
+    - Applying the transform during gradient rendering.
+    - Implementing additional transform functions beyond the package's current transform-list parser.
+    - Template inheritance through `href`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-linear-gradient-transform
+      title: "SVG 2 Paint Servers: linearGradient gradientTransform"
+      url: https://www.w3.org/TR/SVG/pservers.html#LinearGradientElementGradientTransformAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-radial-gradient-transform
+      title: "SVG 2 Paint Servers: radialGradient gradientTransform"
+      url: https://www.w3.org/TR/SVG/pservers.html#RadialGradientElementGradientTransformAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`gradientTransform` contains an optional additional transformation from the gradient coordinate system onto the target coordinate system."
+    - "`gradientTransform` uses a `<transform-list>` value."
+    - "The initial value is the identity transform."
+    - "The additional transformation matrix is post-multiplied to prior transformations, including the implicit object-bounding-box conversion when applicable."
+
+scope:
+  includes:
+    - Parser output for `gradientTransform` on `linearGradient` elements.
+    - Parser output for `gradientTransform` on `radialGradient` elements.
+    - Identity transform when the attribute is omitted.
+    - Supported transform-list syntax already handled by the package transform parser.
+  excludes:
+    - Renderer-time application of gradient transforms.
+    - Unsupported transform syntaxes.
+    - CSS cascade behavior for `gradientTransform` as a presentation attribute for the transform property.
+    - "`href` inheritance of gradient transform values."
+  assumptions:
+    - The parser can preserve `gradientTransform` as the package's existing `Transform` value.
+    - Invalid transform lists may leave the parser-visible transform at identity until broader transform error handling is implemented.
+
+terminology:
+  - id: term-gradienttransform
+    term: gradientTransform
+    definition: An SVG gradient attribute containing a transform list that maps the gradient coordinate system onto the target coordinate system.
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+  - id: term-transform-list
+    term: transform-list
+    definition: A sequence of SVG transform functions interpreted as a transformation matrix.
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+
+structures:
+  - id: S001
+    name: Gradient transform state
+    kind: structure
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+    fields:
+      - name: gradientTransform
+        type: transform-list
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is identity transform.
+          - Applies to linear and radial gradient elements.
+          - Supported values are parsed with SVG transform-list semantics.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-linear-gradient-transform
+          - svg2-radial-gradient-transform
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: A linear gradient without `gradientTransform` must expose the identity transform.
+    applies_to:
+      - "`linearGradient` elements"
+    source_refs:
+      - svg2-linear-gradient-transform
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A radial gradient without `gradientTransform` must expose the identity transform.
+    applies_to:
+      - "`radialGradient` elements"
+    source_refs:
+      - svg2-radial-gradient-transform
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Supported `gradientTransform` transform lists must be preserved on linear and radial gradient definitions.
+    applies_to:
+      - "`linearGradient` elements"
+      - "`radialGradient` elements"
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `gradientTransform` value is malformed or unsupported by the package transform parser.
+    source_behavior: UNSPECIFIED
+    required_behavior: Leave the parser-visible gradient transform at identity until the syntax is supported by a later work item.
+    decision_required: false
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must prove identity defaults and supported transform-list preservation for both linear and radial gradients.
+    derived_from:
+      - R001
+      - R002
+      - R003
+    reasoning: These cases prove the parser-visible state needed by later renderer composition.
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-visible representation
+    statement: The package may expose `gradientTransform` as an existing `Transform` value on gradient definitions.
+    allowed_by:
+      - Current parser architecture
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG transform-list parsing
+    reason: "`gradientTransform` consumes the same transform-list syntax used elsewhere in SVG."
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-transform
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradient-transform
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-linear-gradient-transform
+      - svg2-radial-gradient-transform
+    map_item_refs: []

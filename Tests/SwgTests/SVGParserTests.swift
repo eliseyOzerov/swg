@@ -203,6 +203,42 @@ import Testing
 	#expect(abs(radialExplicit.fr - 7.905694150420949) < 0.000001)
 }
 
+@Test func svgParserPreservesGradientTransformLists() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<defs>
+			<linearGradient id="linearDefault">
+				<stop offset="0" stop-color="red"/>
+				<stop offset="1" stop-color="blue"/>
+			</linearGradient>
+			<linearGradient id="linearTransformed" gradientTransform="translate(10 20) scale(2)">
+				<stop offset="0" stop-color="red"/>
+				<stop offset="1" stop-color="blue"/>
+			</linearGradient>
+			<radialGradient id="radialDefault">
+				<stop offset="0" stop-color="white"/>
+				<stop offset="1" stop-color="black"/>
+			</radialGradient>
+			<radialGradient id="radialTransformed" gradientTransform="matrix(1 2 3 4 5 6)">
+				<stop offset="0" stop-color="white"/>
+				<stop offset="1" stop-color="black"/>
+			</radialGradient>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let linearDefault = try #require(document.defs.linearGradients["linearDefault"])
+	let linearTransformed = try #require(document.defs.linearGradients["linearTransformed"])
+	let radialDefault = try #require(document.defs.radialGradients["radialDefault"])
+	let radialTransformed = try #require(document.defs.radialGradients["radialTransformed"])
+
+	#expect(linearDefault.gradientTransform == .identity)
+	#expect(radialDefault.gradientTransform == .identity)
+	#expect(linearTransformed.gradientTransform == Transform(a: 2, b: 0, c: 0, d: 2, tx: 10, ty: 20))
+	#expect(radialTransformed.gradientTransform == Transform(a: 1, b: 2, c: 3, d: 4, tx: 5, ty: 6))
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
