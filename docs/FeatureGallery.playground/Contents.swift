@@ -16,6 +16,31 @@ struct FeatureExample {
 	let svg: String
 }
 
+let duotoneFill = "#e5e7eb"
+let duotoneStroke = "#111827"
+
+let colorSpecificSlugs: Set<String> = [
+	"paint-fill",
+	"paint-fill-opacity",
+	"paint-stroke",
+	"paint-stroke-opacity",
+	"paint-current-color",
+	"gradient-linear",
+	"gradient-radial",
+	"gradient-stop-offset",
+	"gradient-stop-opacity",
+	"gradient-object-bounding-box",
+	"gradient-user-space",
+	"gradient-transform",
+	"gradient-spread-pad",
+	"gradient-spread-reflect",
+	"gradient-spread-repeat",
+	"pattern",
+	"pattern-content-units",
+	"fe-drop-shadow",
+	"fe-flood",
+]
+
 enum RendererStatus: String {
 	case rendered = "Rendered"
 	case partial = "Partial"
@@ -492,8 +517,21 @@ func example(
 		note: note,
 		width: width,
 		height: height,
-		svg: svg(body())
+		svg: svg(normalizedPalette(body(), slug: slug))
 	)
+}
+
+func normalizedPalette(_ source: String, slug: String) -> String {
+	guard !colorSpecificSlugs.contains(slug) else { return source }
+	var normalized = source
+	normalized = normalized.replacingOccurrences(of: "fill=\"#[0-9A-Fa-f]{6}\"", with: "fill=\"\(duotoneFill)\"", options: .regularExpression)
+	normalized = normalized.replacingOccurrences(of: "stroke=\"#[0-9A-Fa-f]{6}\"", with: "stroke=\"\(duotoneStroke)\"", options: .regularExpression)
+	normalized = normalized.replacingOccurrences(of: "color=\"#[0-9A-Fa-f]{6}\"", with: "color=\"\(duotoneStroke)\"", options: .regularExpression)
+	normalized = normalized.replacingOccurrences(of: "stop-color=\"#[0-9A-Fa-f]{6}\"", with: "stop-color=\"\(duotoneStroke)\"", options: .regularExpression)
+	normalized = normalized.replacingOccurrences(of: "flood-color=\"#[0-9A-Fa-f]{6}\"", with: "flood-color=\"\(duotoneStroke)\"", options: .regularExpression)
+	normalized = normalized.replacingOccurrences(of: "fill:#[0-9A-Fa-f]{6}", with: "fill:\(duotoneFill)", options: .regularExpression)
+	normalized = normalized.replacingOccurrences(of: "stroke:#[0-9A-Fa-f]{6}", with: "stroke:\(duotoneStroke)", options: .regularExpression)
+	return normalized
 }
 
 func svg(_ body: String) -> String {
@@ -535,13 +573,32 @@ enum FeatureGalleryRenderer {
 		var currentCategory: String?
 		for example in examples {
 			if currentCategory != example.category {
+				if currentCategory != nil {
+					markdown += """
+					</tbody>
+					</table>
+
+					"""
+				}
 				currentCategory = example.category
 				markdown += """
 
 				## \(markdownEscaped(example.category))
 
-				| Feature | Preview | Notes |
-				| --- | --- | --- |
+				<table width="100%">
+				<colgroup>
+				<col width="33.33%">
+				<col width="33.33%">
+				<col width="33.33%">
+				</colgroup>
+				<thead>
+				<tr>
+				<th>Feature</th>
+				<th>Preview</th>
+				<th>Notes</th>
+				</tr>
+				</thead>
+				<tbody>
 
 				"""
 			}
@@ -549,7 +606,21 @@ enum FeatureGalleryRenderer {
 			let note = markdownEscaped(example.note)
 			let alt = htmlEscaped(example.title)
 			let preview = example.rendererStatus == .rendered ? "<img src=\"png/\(example.slug).png\" alt=\"\(alt)\" width=\"96\">" : ""
-			markdown += "| \(title) | \(preview) | \(note) |\n"
+			markdown += """
+			<tr>
+			<td width="33.33%">\(title)</td>
+			<td width="33.33%">\(preview)</td>
+			<td width="33.33%">\(note)</td>
+			</tr>
+
+			"""
+		}
+		if currentCategory != nil {
+			markdown += """
+			</tbody>
+			</table>
+
+			"""
 		}
 		try markdown.write(to: indexURL, atomically: true, encoding: .utf8)
 	}

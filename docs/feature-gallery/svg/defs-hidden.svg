@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
 	<rect width="120" height="80" fill="#f8fafc"/>
 <defs>
-	<rect id="hidden-def" x="12" y="12" width="96" height="56" fill="#ef4444"/>
+	<rect id="hidden-def" x="12" y="12" width="96" height="56" fill="#e5e7eb"/>
 </defs>
-<rect x="36" y="24" width="48" height="32" rx="8" fill="#22c55e"/>
+<rect x="36" y="24" width="48" height="32" rx="8" fill="#e5e7eb"/>
 </svg>

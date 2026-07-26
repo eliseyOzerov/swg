@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
 	<rect width="120" height="80" fill="#f8fafc"/>
-<defs><clipPath id="clip"><path d="M18 12 H102 V68 H18 Z M40 30 H80 V50 H40 Z" clip-rule="evenodd"/></clipPath></defs><rect x="18" y="12" width="84" height="56" fill="#a855f7" clip-path="url(#clip)"/>
+<defs><clipPath id="clip"><path d="M18 12 H102 V68 H18 Z M40 30 H80 V50 H40 Z" clip-rule="evenodd"/></clipPath></defs><rect x="18" y="12" width="84" height="56" fill="#e5e7eb" clip-path="url(#clip)"/>
 </svg>

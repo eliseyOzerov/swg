@@ -1,4 +1,4 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
 	<rect width="120" height="80" fill="#f8fafc"/>
-<circle cx="60" cy="40" r="20" fill="#22c55e"><animate attributeName="r" values="12;28;12" dur="2s" repeatCount="indefinite"/></circle>
+<circle cx="60" cy="40" r="20" fill="#e5e7eb"><animate attributeName="r" values="12;28;12" dur="2s" repeatCount="indefinite"/></circle>
 </svg>

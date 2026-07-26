@@ -5,8 +5,8 @@
 		<div style="background:#fff;color:#000">HTML</div>
 	</body>
 	<svg x="24" y="18" width="48" height="30" viewBox="0 0 48 30">
-		<rect width="48" height="30" rx="8" fill="#0f172a"/>
-		<circle cx="18" cy="15" r="8" fill="#22c55e"/>
+		<rect width="48" height="30" rx="8" fill="#e5e7eb"/>
+		<circle cx="18" cy="15" r="8" fill="#e5e7eb"/>
 	</svg>
 </foreignObject>
 </svg>

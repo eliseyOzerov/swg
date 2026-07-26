@@ -3,5 +3,5 @@
 <defs>
 	<view id="detail" viewBox="20 20 60 40"/>
 </defs>
-<rect x="24" y="22" width="72" height="36" rx="10" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3"/>
+<rect x="24" y="22" width="72" height="36" rx="10" fill="#e5e7eb" stroke="#111827" stroke-width="3"/>
 </svg>

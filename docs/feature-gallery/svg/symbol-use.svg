@@ -2,7 +2,7 @@
 	<rect width="120" height="80" fill="#f8fafc"/>
 <defs>
 	<symbol id="spark" viewBox="0 0 64 64">
-		<path d="M32 4 L40 24 L60 32 L40 40 L32 60 L24 40 L4 32 L24 24 Z" fill="#facc15" stroke="#92400e" stroke-width="4" stroke-linejoin="round"/>
+		<path d="M32 4 L40 24 L60 32 L40 40 L32 60 L24 40 L4 32 L24 24 Z" fill="#e5e7eb" stroke="#111827" stroke-width="4" stroke-linejoin="round"/>
 	</symbol>
 </defs>
 <use href="#spark" x="22" y="12" width="34" height="34"/>
