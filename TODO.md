@@ -190,7 +190,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 ## Embedded Content
 
-- [ ] `<foreignObject>`.
+- [x] `<foreignObject>`.
 
 ## Reuse and Linking
 

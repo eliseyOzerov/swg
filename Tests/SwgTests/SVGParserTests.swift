@@ -4845,6 +4845,46 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(child.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
 }
 
+@Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+		<style>.panel { x: 20; y: 5; width: 80; height: 50; }</style>
+		<foreignObject id="panel" class="panel" style="height: 60" fill="#336699" data-note="kept">
+			<body xmlns="http://www.w3.org/1999/xhtml">
+				<g id="html-local-name-collision"></g>
+			</body>
+			<svg id="fragment" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">
+				<rect id="fallback" width="10" height="10"/>
+			</svg>
+		</foreignObject>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["panel", "fragment", "fallback"])
+	guard case .foreignObject(let foreignObject) = document.elements.first else {
+		Issue.record("Expected root element to be foreignObject")
+		return
+	}
+	#expect(foreignObject.x == 20)
+	#expect(foreignObject.y == 5)
+	#expect(foreignObject.width == 80)
+	#expect(foreignObject.height == 60)
+	#expect(foreignObject.attributes.fill == .color(Color(0.2, 0.4, 0.6)))
+	#expect(foreignObject.unknownAttributes["data-note"] == "kept")
+
+	guard case .svg(let nestedSVG) = foreignObject.children.first else {
+		Issue.record("Expected foreignObject to preserve nested SVG fragment")
+		return
+	}
+	guard case .rect(let fallback) = nestedSVG.children.first else {
+		Issue.record("Expected nested SVG child rectangle")
+		return
+	}
+	#expect(fallback.id == "fallback")
+}
+
 @Test func svgParserPreservesUnknownAttributes() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" xmlns:tool="https://example.com/tool" viewBox="0 0 20 20" data-root="root-value" tool:root-note="root-note">

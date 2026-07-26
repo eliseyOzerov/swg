@@ -1,0 +1,213 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: foreignObject
+  title: SVG foreignObject element
+  domain: SVG Embedded Content
+  profile: null
+  summary: Requirements for preserving SVG `<foreignObject>` elements as renderable embedded-content containers with geometry and child SVG content.
+  non_goals:
+    - Rendering arbitrary non-SVG XML languages such as XHTML or MathML.
+    - Implementing CSS layout, form controls, or browser embedding behavior for foreign content.
+    - Mapping requiredExtensions values to external language support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-foreign-object
+      title: SVG 2, Embedded content - foreignObject element
+      url: https://www.w3.org/TR/SVG/embedded.html#ForeignObjectElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C embedded content chapter.
+
+scope:
+  includes:
+    - Recognition of `<foreignObject>` as a renderable SVG graphics element.
+    - Preservation of the `x`, `y`, `width`, and `height` geometry rectangle.
+    - Preservation of SVG-namespaced descendants that are parsed by the SVG parser.
+    - Preservation of presentation attributes and unknown non-namespace attributes on the foreignObject element.
+  excludes:
+    - Rendering or serializing arbitrary foreign-language children.
+    - Foreign content layout, intrinsic sizing, events, focus, or DOM integration.
+    - User-agent support detection for non-SVG namespaces.
+  assumptions:
+    - Parser output can represent `foreignObject` as an SVG container and leave non-SVG child rendering to a later renderer or embedding layer.
+
+terminology:
+  - id: term-foreign-object
+    term: foreignObject
+    definition: An SVG element that includes elements from non-SVG namespaces inside a rectangular region of the SVG graphic.
+    source_refs:
+      - svg2-foreign-object
+
+structures:
+  - id: S001
+    name: foreignObject
+    kind: element
+    source_refs:
+      - svg2-foreign-object
+    fields:
+      - name: x
+        type: length-percentage
+        cardinality: optional
+        position: attribute-or-geometry-property
+        constraints:
+          - Defines the horizontal position of the embedded content region.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-foreign-object
+      - name: y
+        type: length-percentage
+        cardinality: optional
+        position: attribute-or-geometry-property
+        constraints:
+          - Defines the vertical position of the embedded content region.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-foreign-object
+      - name: width
+        type: length-percentage
+        cardinality: optional
+        position: attribute-or-geometry-property
+        constraints:
+          - Defines the width of the embedded content region.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-foreign-object
+      - name: height
+        type: length-percentage
+        cardinality: optional
+        position: attribute-or-geometry-property
+        constraints:
+          - Defines the height of the embedded content region.
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg2-foreign-object
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must recognize `<foreignObject>` as an SVG embedded-content element that can participate in SVG rendering as a graphics element.
+    applies_to:
+      - foreignObject
+    source_refs:
+      - svg2-foreign-object
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must preserve the `x`, `y`, `width`, and `height` geometry values that define the foreignObject rectangular region.
+    applies_to:
+      - foreignObject geometry
+    source_refs:
+      - svg2-foreign-object
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser must allow `<foreignObject>` to contain child content and must not discard parseable SVG-namespaced descendants solely because they occur inside foreignObject.
+    applies_to:
+      - foreignObject children
+    source_refs:
+      - svg2-foreign-object
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Included foreign graphical content is subject to SVG transforms, filters, clipping, masking, and compositing.
+    applies_to:
+      - foreignObject rendering
+    source_refs:
+      - svg2-foreign-object
+    testability: reviewable
+    notes:
+      - Parser-level support should preserve the element and paint attributes needed by later renderers.
+  - id: R005
+    normative_strength: MAY
+    kind: conformance
+    statement: User agents are not required to invoke arbitrary external user agents to handle embedded foreign object content.
+    applies_to:
+      - foreign content rendering
+    source_refs:
+      - svg2-foreign-object
+    testability: reviewable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Foreign non-SVG child content cannot be interpreted by the SVG parser.
+    source_behavior: OPTIONAL
+    required_behavior: Preserve the foreignObject element and any parseable SVG descendants; leave arbitrary foreign content rendering unsupported.
+    decision_required: false
+    source_refs:
+      - svg2-foreign-object
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Foreign child representation
+    statement: A parser may choose not to model arbitrary non-SVG children while still preserving the foreignObject region and SVG-namespaced child fragments for later rendering decisions.
+    allowed_by:
+      - R003
+      - R005
+    source_refs:
+      - svg2-foreign-object
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG geometry properties
+    reason: foreignObject exposes x, y, width, and height as geometry properties.
+    source_refs:
+      - svg2-foreign-object
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-foreign-object
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-foreign-object
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-foreign-object
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-foreign-object
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-foreign-object
+    map_item_refs: []

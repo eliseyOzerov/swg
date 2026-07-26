@@ -554,6 +554,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			parseUse(attributes)
 		case "image":
 			parseImage(attributes)
+		case "foreignObject":
+			parseForeignObjectStart(attributes)
 		case "text":
 			parseTextStart(attributes)
 		case "tspan":
@@ -628,6 +630,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "switch":
 			finalizeContainerElement()
 		case "a":
+			finalizeContainerElement()
+		case "foreignObject":
 			finalizeContainerElement()
 		case "title":
 			finalizeTitle()
@@ -1615,6 +1619,34 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		setCurrentParsedElementID(id)
 		let href = (attributes["href"] ?? xlinkAttribute("href", in: attributes)).flatMap { SVGURLParser.parse($0)?.rawValue } ?? ""
 		appendElement(.image(SVGImageData(id: id, x: double(attributes["x"]), y: double(attributes["y"]), width: double(attributes["width"]), height: double(attributes["height"]), href: href, attributes: parsePaintAttributes(attributes), language: currentLanguage, unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "x", "y", "width", "height"]))))
+	}
+
+	private func parseForeignObjectStart(_ attributes: [String: String]) {
+		let attrs = parsePaintAttributes(attributes)
+		let id = resolveID(attributes["id"], elementName: "ForeignObject")
+		setCurrentParsedElementID(id)
+		let geometry = parseBasicShapeGeometryProperties(attributes)
+		let builder = SVGElementBuilder(
+			kind: .foreignObject(
+				x: dimension(geometry["x"], percentageBasis: .horizontal),
+				y: dimension(geometry["y"], percentageBasis: .vertical),
+				width: nonnegativeDimension(geometry["width"], percentageBasis: .horizontal),
+				height: nonnegativeDimension(geometry["height"], percentageBasis: .vertical)
+			),
+			id: id,
+			attributes: attrs,
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height"])
+		)
+		if !patternStack.isEmpty {
+			patternElementStack.append(builder)
+		} else if !symbolElementStack.isEmpty {
+			symbolElementStack.append(builder)
+		} else if inDefs {
+			defsElementStack.append(builder)
+		} else if !inClipPath && !inMask {
+			elementStack.append(builder)
+		}
 	}
 
 	private func xlinkAttribute(_ localName: String, in attributes: [String: String]) -> String? {
@@ -3304,6 +3336,7 @@ private extension SVGElement {
 		case .unknown(let data): data.id
 		case .use(let data): data.id
 		case .image(let data): data.id
+		case .foreignObject(let data): data.id
 		case .text(let data): data.id
 		}
 	}
@@ -3317,6 +3350,7 @@ private final class SVGElementBuilder {
 		case link(href: String?, target: String, download: String?, ping: String?, rel: String?, hreflang: String?, type: String?, referrerPolicy: String?, xlinkTitle: String?)
 		case svg(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio)
 		case symbol(x: Double, y: Double, width: Double, height: Double, viewBox: Rect?, preserveAspectRatio: SVGPreserveAspectRatio, refX: String?, refY: String?)
+		case foreignObject(x: Double, y: Double, width: Double, height: Double)
 		case unknown(name: String, namespaceURI: String?)
 	}
 
@@ -3367,6 +3401,8 @@ private final class SVGElementBuilder {
 			.link(SVGLinkData(id: id, href: href, target: target, download: download, ping: ping, rel: rel, hreflang: hreflang, type: type, referrerPolicy: referrerPolicy, xlinkTitle: xlinkTitle, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .svg(let x, let y, let width, let height, let viewBox, let preserveAspectRatio):
 			.svg(SVGViewportData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
+		case .foreignObject(let x, let y, let width, let height):
+			.foreignObject(SVGForeignObjectData(id: id, x: x, y: y, width: width, height: height, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .symbol:
 			.unknown(SVGUnknownElementData(id: id, name: "symbol", namespaceURI: SVGParser.svgNamespaceURI, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes))
 		case .unknown(let name, let namespaceURI):
@@ -3378,7 +3414,7 @@ private final class SVGElementBuilder {
 		switch kind {
 		case .symbol(let x, let y, let width, let height, let viewBox, let preserveAspectRatio, let refX, let refY):
 			SVGSymbolData(id: id, x: x, y: y, width: width, height: height, viewBox: viewBox, preserveAspectRatio: preserveAspectRatio, refX: refX, refY: refY, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes)
-		case .group, .switch, .link, .svg, .unknown:
+		case .group, .switch, .link, .svg, .foreignObject, .unknown:
 			SVGSymbolData(id: id, x: 0, y: 0, width: 0, height: 0, viewBox: nil, attributes: attributes, children: children, language: language, unknownAttributes: unknownAttributes)
 		}
 	}

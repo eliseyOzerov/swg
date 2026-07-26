@@ -202,7 +202,7 @@ public enum SVGClipPathUnits: Equatable, Sendable, Hashable {
 	case userSpaceOnUse
 }
 
-/// A single SVG shape, group, unknown container, text, image, or use element.
+/// A single SVG shape, group, foreign object, unknown container, text, image, or use element.
 public indirect enum SVGElement: Equatable, Sendable {
 	case path(SVGPathData)
 	case rect(SVGRectData)
@@ -218,6 +218,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 	case unknown(SVGUnknownElementData)
 	case use(SVGUseData)
 	case image(SVGImageData)
+	case foreignObject(SVGForeignObjectData)
 	case text(SVGTextData)
 
 	func collectIDs() -> [String] {
@@ -236,6 +237,7 @@ public indirect enum SVGElement: Equatable, Sendable {
 		case .unknown(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .use(let data): [data.id]
 		case .image(let data): [data.id]
+		case .foreignObject(let data): [data.id] + data.children.flatMap { $0.collectIDs() }
 		case .text(let data): [data.id]
 		}
 	}
@@ -781,6 +783,31 @@ public struct SVGImageData: Equatable, Sendable {
 		self.height = height
 		self.href = href
 		self.attributes = attributes
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<foreignObject>` element that embeds non-SVG content in a rectangular SVG region.
+public struct SVGForeignObjectData: Equatable, Sendable {
+	public let id: String
+	public let x: Double
+	public let y: Double
+	public let width: Double
+	public let height: Double
+	public let attributes: SVGPaintAttributes
+	public let children: [SVGElement]
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, x: Double, y: Double, width: Double, height: Double, attributes: SVGPaintAttributes, children: [SVGElement] = [], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.x = x
+		self.y = y
+		self.width = width
+		self.height = height
+		self.attributes = attributes
+		self.children = children
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
