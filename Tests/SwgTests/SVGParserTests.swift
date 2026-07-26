@@ -1282,6 +1282,51 @@ import Testing
 	#expect(paths["inherit"]?.attributes.colorInterpolation == .linearRGB)
 }
 
+@Test func svgParserAppliesColorRenderingInitialInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.speed { color-rendering: optimizeSpeed; }
+			.invalid { color-rendering: geometricPrecision; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" color-rendering="optimizeQuality">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="speed" class="speed" d="M0 0 L10 10"/>
+			<path id="auto" d="M0 0 L10 10" color-rendering="auto"/>
+			<path id="inline" class="speed" d="M0 0 L10 10" style="color-rendering: optimizeQuality"/>
+			<path id="invalid" class="invalid" d="M0 0 L10 10"/>
+			<path id="inherit" class="speed" d="M0 0 L10 10" style="color-rendering: inherit"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.colorRendering == .auto)
+	#expect(paths["inherited"]?.attributes.colorRendering == .optimizeQuality)
+	#expect(paths["speed"]?.attributes.colorRendering == .optimizeSpeed)
+	#expect(paths["auto"]?.attributes.colorRendering == .auto)
+	#expect(paths["inline"]?.attributes.colorRendering == .optimizeQuality)
+	#expect(paths["invalid"]?.attributes.colorRendering == .optimizeQuality)
+	#expect(paths["inherit"]?.attributes.colorRendering == .optimizeQuality)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

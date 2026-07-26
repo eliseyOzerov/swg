@@ -1,0 +1,217 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: color-rendering
+  title: Color rendering property
+  domain: SVG 2 Painting
+  profile: null
+  summary: Preserve parser-visible `color-rendering` hint state for SVG elements so later renderers can optimize color interpolation and compositing behavior.
+  non_goals:
+    - Performing color interpolation or compositing.
+    - Implementing renderer-specific speed or quality tradeoffs.
+    - Implementing `color-interpolation-filters`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-color-rendering-property
+      title: "SVG 2 Painting: The color-rendering property"
+      url: https://www.w3.org/TR/SVG/painting.html#ColorRenderingProperty
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-styling-presentation-attributes
+      title: "SVG 2 Styling: Presentation attributes"
+      url: https://www.w3.org/TR/SVG/styling.html#PresentationAttributes
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 defines `color-rendering` as an inherited visual property with values `auto`, `optimizeSpeed`, and `optimizeQuality`.
+    - The initial value is `auto`, and the computed value is as specified.
+    - The property is a hint about optimizing color interpolation and compositing operations; `color-rendering` takes precedence over `color-interpolation-filters`.
+
+scope:
+  includes:
+    - Parser output for the supported `color-rendering` property on SVG elements.
+    - Initial value `auto`.
+    - Inheritance from parent elements.
+    - Supported cascade inputs: presentation attributes, class style rules, and inline style declarations.
+    - Valid keywords `auto`, `optimizeSpeed`, and `optimizeQuality`.
+    - Malformed or unsupported values leaving the current inherited or default value unchanged.
+  excludes:
+    - Renderer behavior for speed or quality tradeoffs.
+    - Filter color-space behavior.
+    - Full CSS selector support beyond the package's current supported subset.
+  assumptions:
+    - The package can expose the parsed value as an enum-like property on existing parser-facing paint/style attributes.
+    - CSS keyword parsing may match the supported keywords case-insensitively while preserving enum meaning rather than raw spelling.
+
+terminology:
+  - id: term-color-rendering
+    term: color-rendering
+    definition: An inherited SVG rendering hint that tells the user agent how to optimize color interpolation and compositing operations.
+    source_refs:
+      - svg2-color-rendering-property
+  - id: term-optimize-speed
+    term: optimizeSpeed
+    definition: A rendering hint indicating that speed should be emphasized over quality.
+    source_refs:
+      - svg2-color-rendering-property
+  - id: term-optimize-quality
+    term: optimizeQuality
+    definition: A rendering hint indicating that quality should be emphasized over speed.
+    source_refs:
+      - svg2-color-rendering-property
+
+structures:
+  - id: S001
+    name: Color rendering parser state
+    kind: structure
+    source_refs:
+      - svg2-color-rendering-property
+    fields:
+      - name: colorRendering
+        type: keyword enum
+        cardinality: one
+        position: null
+        constraints:
+          - Valid values are `auto`, `optimizeSpeed`, and `optimizeQuality`.
+          - Initial value is `auto`.
+          - The property is inherited.
+          - Invalid values leave the current inherited or default value unchanged.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-color-rendering-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`color-rendering` values must be limited to `auto`, `optimizeSpeed`, and `optimizeQuality`."
+    applies_to:
+      - SVG elements in parser output
+    source_refs:
+      - svg2-color-rendering-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`color-rendering` must default to `auto` when no cascaded value is supplied."
+    applies_to:
+      - SVG elements in parser output
+    source_refs:
+      - svg2-color-rendering-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`color-rendering` must inherit from parent elements."
+    applies_to:
+      - SVG elements in parser output
+    source_refs:
+      - svg2-color-rendering-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: The parser-visible value must preserve whether the author selected `auto`, `optimizeSpeed`, or `optimizeQuality`.
+    applies_to:
+      - SVG elements in parser output
+    source_refs:
+      - svg2-color-rendering-property
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: A supported `color-rendering` presentation attribute must map into the same parser-visible property state as a corresponding style declaration.
+    applies_to:
+      - SVG presentation attributes
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-color-rendering-property
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `color-rendering` value is malformed or outside `auto`, `optimizeSpeed`, and `optimizeQuality`.
+    source_behavior: UNSPECIFIED
+    required_behavior: Invalid CSS property values do not produce a valid specified value; this parser work item must leave the current inherited or default value unchanged.
+    decision_required: false
+    source_refs:
+      - svg2-color-rendering-property
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-only storage
+    statement: This work item may only preserve parsed property state; actual renderer tradeoffs can be implemented by later color interpolation, compositing, filter, or rendering back-end work.
+    allowed_by:
+      - Current package scope
+      - User-directed bullet-by-bullet implementation workflow
+    source_refs:
+      - svg2-color-rendering-property
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG 2 Styling presentation attributes
+    reason: "`color-rendering` can be supplied as a presentation attribute as well as through CSS declarations."
+    source_refs:
+      - svg2-styling-presentation-attributes
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-color-rendering-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-color-rendering-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-color-rendering-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-color-rendering-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-styling-presentation-attributes
+      - svg2-color-rendering-property
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-color-rendering-property
+    map_item_refs: []

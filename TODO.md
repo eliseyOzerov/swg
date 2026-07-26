@@ -112,7 +112,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `paint-order`.
 - [x] `color`.
 - [x] `color-interpolation`.
-- [ ] `color-rendering`.
+- [x] `color-rendering`.
 - [ ] `shape-rendering`.
 - [ ] `text-rendering`.
 - [ ] `image-rendering`.

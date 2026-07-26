@@ -16,6 +16,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var strokeOpacity: Double
 	public var paintOrder: SVGPaintOrder
 	public var colorInterpolation: SVGColorInterpolation
+	public var colorRendering: SVGColorRendering
 	public var opacity: Double
 	public var transform: Transform
 	public var visibility: SVGVisibility
@@ -40,6 +41,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		strokeOpacity: Double = 1,
 		paintOrder: SVGPaintOrder = .normal,
 		colorInterpolation: SVGColorInterpolation = .sRGB,
+		colorRendering: SVGColorRendering = .auto,
 		opacity: Double = 1,
 		transform: Transform = .identity,
 		visibility: SVGVisibility = .visible,
@@ -63,6 +65,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.strokeOpacity = strokeOpacity
 		self.paintOrder = paintOrder
 		self.colorInterpolation = colorInterpolation
+		self.colorRendering = colorRendering
 		self.opacity = opacity
 		self.transform = transform
 		self.visibility = visibility
@@ -116,6 +119,13 @@ public enum SVGColorInterpolation: Equatable, Sendable, Hashable {
 	case auto
 	case sRGB
 	case linearRGB
+}
+
+/// SVG `color-rendering` hint for color interpolation and compositing quality.
+public enum SVGColorRendering: Equatable, Sendable, Hashable {
+	case auto
+	case optimizeSpeed
+	case optimizeQuality
 }
 
 /// SVG visibility property value.
