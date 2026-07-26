@@ -374,9 +374,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				primitiveUnits: parseFilterPrimitiveUnits(attributes["primitiveUnits"])
 			)
 		case "feGaussianBlur":
-			if let std = attributes["stdDeviation"].flatMap(parseNumber) {
-				currentFilter?.primitives.append(.gaussianBlur(stdDeviation: std))
-			}
+			let stdDeviation = parseNumberOptionalNumber(attributes["stdDeviation"], defaultValue: 0)
+			currentFilter?.primitives.append(.gaussianBlur(
+				stdDeviationX: stdDeviation.first,
+				stdDeviationY: stdDeviation.second,
+				edgeMode: parseFilterEdgeMode(attributes["edgeMode"])
+			))
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 0
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 0
@@ -974,6 +977,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseFilterPrimitiveUnits(_ value: String?) -> SVGFilterPrimitiveUnits {
 		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
+	}
+
+	private func parseFilterEdgeMode(_ value: String?) -> SVGFilterEdgeMode {
+		switch value {
+		case "duplicate":
+			.duplicate
+		case "wrap":
+			.wrap
+		default:
+			.none
+		}
 	}
 
 	private func parseMaskUnits(_ value: String?) -> SVGMaskUnits {
@@ -1743,6 +1757,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func isCurrentColorKeyword(_ value: String) -> Bool {
 		value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "currentcolor"
+	}
+
+	private func parseNumberOptionalNumber(_ value: String?, defaultValue: Double) -> (first: Double, second: Double) {
+		guard
+			let value,
+			let values = SVGListParser.parse(value, itemParser: parseNumber),
+			values.count == 1 || values.count == 2
+		else {
+			return (defaultValue, defaultValue)
+		}
+		return (values[0], values.count == 2 ? values[1] : values[0])
 	}
 
 	private func parseDashArray(_ value: String) -> [Double]? {

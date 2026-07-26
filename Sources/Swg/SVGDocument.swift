@@ -1012,8 +1012,15 @@ public enum SVGFilterPrimitiveUnits: Equatable, Sendable, Hashable {
 
 /// A supported SVG filter primitive.
 public enum SVGFilterPrimitive: Equatable, Sendable {
-	case gaussianBlur(stdDeviation: Double)
+	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviation: Double, color: Color)
+}
+
+/// Edge handling behavior for an SVG `<feGaussianBlur>` primitive.
+public enum SVGFilterEdgeMode: Equatable, Sendable, Hashable {
+	case duplicate
+	case wrap
+	case none
 }
 
 /// A parsed SVG `<mask>` definition.

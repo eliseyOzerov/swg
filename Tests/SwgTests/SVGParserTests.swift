@@ -55,11 +55,13 @@ import Testing
 	#expect(filter.id == "shadow")
 	#expect(document.elementIDs == ["painted"])
 	#expect(filter.primitives.count == 2)
-	guard case .gaussianBlur(let stdDeviation) = filter.primitives[0] else {
+	guard case .gaussianBlur(let stdDeviationX, let stdDeviationY, let edgeMode) = filter.primitives[0] else {
 		Issue.record("Expected first filter primitive to be feGaussianBlur")
 		return
 	}
-	#expect(stdDeviation == 2)
+	#expect(stdDeviationX == 2)
+	#expect(stdDeviationY == 2)
+	#expect(edgeMode == .none)
 	guard case .dropShadow(let dx, let dy, let shadowDeviation, let color) = filter.primitives[1] else {
 		Issue.record("Expected second filter primitive to be feDropShadow")
 		return
@@ -104,6 +106,34 @@ import Testing
 	#expect(document.defs.filters["userSpace"]?.primitiveUnits == .userSpaceOnUse)
 	#expect(document.defs.filters["objectBox"]?.primitiveUnits == .objectBoundingBox)
 	#expect(document.defs.filters["invalidUnits"]?.primitiveUnits == .userSpaceOnUse)
+}
+
+@Test func svgParserPreservesGaussianBlurPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="blur">
+			<feGaussianBlur stdDeviation="2" edgeMode="none"/>
+			<feGaussianBlur stdDeviation="3 4" edgeMode="duplicate"/>
+			<feGaussianBlur stdDeviation="5,6" edgeMode="wrap"/>
+			<feGaussianBlur/>
+			<feGaussianBlur stdDeviation="bad" edgeMode="unknown"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["blur"])
+	#expect(filter.primitives.count == 5)
+	guard
+		case .gaussianBlur(2, 2, .none) = filter.primitives[0],
+		case .gaussianBlur(3, 4, .duplicate) = filter.primitives[1],
+		case .gaussianBlur(5, 6, .wrap) = filter.primitives[2],
+		case .gaussianBlur(0, 0, .none) = filter.primitives[3],
+		case .gaussianBlur(0, 0, .none) = filter.primitives[4]
+	else {
+		Issue.record("Expected parsed feGaussianBlur stdDeviation and edgeMode attributes")
+		return
+	}
 }
 
 @Test func svgParserPreservesRadialGradientGeometryAndStops() throws {

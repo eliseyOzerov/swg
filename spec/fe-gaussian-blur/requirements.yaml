@@ -1,0 +1,209 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-gaussian-blur
+  title: SVG feGaussianBlur filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feGaussianBlur>` filter primitives, including `stdDeviation` X/Y values and `edgeMode`.
+  non_goals:
+    - Executing Gaussian blur raster filtering.
+    - Resolving filter primitive subregion attributes.
+    - Supporting animation elements inside the primitive.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-gaussian-blur
+      title: "Filter Effects Module Level 1: Filter primitive feGaussianBlur"
+      url: https://www.w3.org/TR/filter-effects-1/#feGaussianBlurElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feGaussianBlur>` as a filter primitive."
+    - "The `stdDeviation` attribute accepts one or two numbers; one number applies to both X and Y, and two numbers map to X then Y."
+    - "The initial value of `stdDeviation` is `0`."
+    - "A negative or zero `stdDeviation` disables the effect, while zero in only one axis applies blur only on the non-zero axis."
+    - "The `edgeMode` attribute accepts `duplicate`, `wrap`, and `none`; its initial value is `none`."
+
+scope:
+  includes:
+    - "`<feGaussianBlur>` child elements inside `<filter>`."
+    - "`stdDeviation` omitted, one-number, and two-number values."
+    - "`edgeMode` values `duplicate`, `wrap`, and `none`."
+    - "Invalid `stdDeviation` and `edgeMode` fallback to their initial values."
+  excludes:
+    - Raster convolution or edge extension rendering behavior.
+    - Filter primitive common attributes such as `x`, `y`, `width`, `height`, and `result`.
+    - Filter graph input wiring through the `in` attribute.
+  assumptions:
+    - Swg stores parsed filter primitives as `SVGFilterPrimitive` values for later renderer support.
+
+terminology:
+  - id: T001
+    term: feGaussianBlur
+    definition: An SVG filter primitive that applies a Gaussian blur to its input image.
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+  - id: T002
+    term: stdDeviation
+    definition: The blur standard deviation value in the X and Y directions.
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+  - id: T003
+    term: edgeMode
+    definition: The mode for extending input pixels at the input image boundary before blur convolution.
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.gaussianBlur
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+    fields:
+      - name: stdDeviationX
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+          - Uses the sole `stdDeviation` number when one is provided.
+          - Uses the first `stdDeviation` number when two are provided.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-fe-gaussian-blur
+      - name: stdDeviationY
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+          - Uses the sole `stdDeviation` number when one is provided.
+          - Uses the second `stdDeviation` number when two are provided.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-fe-gaussian-blur
+      - name: edgeMode
+        type: SVGFilterEdgeMode
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `none`.
+          - Stores `duplicate`, `wrap`, or `none`.
+        requirement_refs:
+          - R004
+          - R005
+        source_refs:
+          - filter-effects-fe-gaussian-blur
+
+requirements:
+  - id: R001
+    title: Parse one-number stdDeviation
+    statement: "A one-number `stdDeviation` value on `<feGaussianBlur>` must set both X and Y standard deviation values to that number."
+    keywords:
+      - feGaussianBlur
+      - stdDeviation
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+    acceptance:
+      - "`stdDeviation=\"2\"` stores `stdDeviationX == 2` and `stdDeviationY == 2`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesGaussianBlurPrimitiveAttributes
+  - id: R002
+    title: Parse two-number stdDeviation
+    statement: "A two-number `stdDeviation` value on `<feGaussianBlur>` must set X from the first number and Y from the second."
+    keywords:
+      - feGaussianBlur
+      - stdDeviation
+      - number-optional-number
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+    acceptance:
+      - "`stdDeviation=\"3 4\"` stores `stdDeviationX == 3` and `stdDeviationY == 4`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesGaussianBlurPrimitiveAttributes
+  - id: R003
+    title: Default stdDeviation to zero
+    statement: "Omitted or invalid `stdDeviation` values on `<feGaussianBlur>` must resolve to the initial value `0 0`."
+    keywords:
+      - feGaussianBlur
+      - stdDeviation
+      - initial
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+    acceptance:
+      - "An omitted `stdDeviation` stores `0` for both axes."
+      - "A malformed `stdDeviation` stores `0` for both axes."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesGaussianBlurPrimitiveAttributes
+  - id: R004
+    title: Parse edgeMode
+    statement: "`edgeMode` must preserve the supported `duplicate`, `wrap`, and `none` values on `<feGaussianBlur>`."
+    keywords:
+      - feGaussianBlur
+      - edgeMode
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+    acceptance:
+      - "`edgeMode=\"duplicate\"` stores `.duplicate`."
+      - "`edgeMode=\"wrap\"` stores `.wrap`."
+      - "`edgeMode=\"none\"` stores `.none`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesGaussianBlurPrimitiveAttributes
+  - id: R005
+    title: Default invalid edgeMode to none
+    statement: "Omitted or invalid `edgeMode` values on `<feGaussianBlur>` must resolve to the initial value `none`."
+    keywords:
+      - feGaussianBlur
+      - edgeMode
+      - initial
+    source_refs:
+      - filter-effects-fe-gaussian-blur
+    acceptance:
+      - "An omitted `edgeMode` stores `.none`."
+      - "An unsupported `edgeMode` token stores `.none`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesGaussianBlurPrimitiveAttributes
+
+traceability:
+  source_to_requirements:
+    filter-effects-fe-gaussian-blur:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesGaussianBlurPrimitiveAttributes
+    R002:
+      - svgParserPreservesGaussianBlurPrimitiveAttributes
+    R003:
+      - svgParserPreservesGaussianBlurPrimitiveAttributes
+    R004:
+      - svgParserPreservesGaussianBlurPrimitiveAttributes
+    R005:
+      - svgParserPreservesGaussianBlurPrimitiveAttributes
