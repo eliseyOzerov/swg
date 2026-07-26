@@ -1,0 +1,174 @@
+schema_version: 1
+kind: swift-verification
+status: passed
+
+work_item:
+  id: pointer-events
+  title: SVG pointer-events property
+  requirements_path: spec/pointer-events/requirements.yaml
+  architecture_path: null
+  summary: Verified parser preservation of the SVG `pointer-events` property against requirements and tests.
+
+source_context:
+  spec_map: null
+  system_architecture: null
+  requirements:
+    path: spec/pointer-events/requirements.yaml
+    requirement_ids:
+      - R001
+      - R002
+      - R003
+      - R004
+  architecture:
+    path: null
+    entity_ids: []
+    interface_ids: []
+  tests:
+    path: spec/pointer-events/tests.yaml
+    test_case_ids:
+      - TC001
+    test_ids:
+      - T001
+  repository_refs:
+    - Sources/Swg/SVGStyle.swift
+    - Sources/Swg/SVGParser.swift
+    - Tests/SwgTests/SVGParserTests.swift
+
+test_surfaces:
+  - id: TS001
+    surface: "`SVGParser().parse(_:)` returning public `SVGDocument` and element `SVGPaintAttributes`."
+    architecture_refs: []
+    notes: Public parser integration surface.
+
+tests_reviewed:
+  - id: T001
+    path: Tests/SwgTests/SVGParserTests.swift
+    name: svgParserAppliesPointerEventsProperty
+    verifies:
+      requirement_refs:
+        - R001
+        - R002
+        - R003
+        - R004
+      architecture_refs: []
+    surface_refs:
+      - TS001
+    quality: acceptable
+    notes: Exercises all keyword values and the parser-supported cascade behavior without private helper coupling.
+
+commands:
+  - id: CMD001
+    command: ruby -e 'require "yaml"; YAML.load_file("spec/pointer-events/requirements.yaml"); YAML.load_file("spec/pointer-events/tests.yaml"); puts "ok"'
+    result: passed
+    notes: YAML artifacts parse.
+  - id: CMD002
+    command: git diff --check
+    result: passed
+    notes: No whitespace errors.
+  - id: CMD003
+    command: xcodebuild test -scheme swg -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+    result: passed
+    notes: Full iOS simulator suite passed with 210 tests.
+
+requirement_completeness:
+  - requirement_id: R001
+    architecture_status: not-needed
+    implementation_status: implemented
+    test_status: passing
+    review_status: confirmed
+    satisfaction: satisfied
+    evidence:
+      architecture_refs: []
+      implementation_refs:
+        - Sources/Swg/SVGStyle.swift
+        - Sources/Swg/SVGParser.swift
+      test_refs:
+        - T001
+      command_refs:
+        - CMD003
+    notes: All SVG keyword values are represented and parsed.
+  - requirement_id: R002
+    architecture_status: not-needed
+    implementation_status: implemented
+    test_status: passing
+    review_status: confirmed
+    satisfaction: satisfied
+    evidence:
+      architecture_refs: []
+      implementation_refs:
+        - Sources/Swg/SVGStyle.swift
+      test_refs:
+        - T001
+      command_refs:
+        - CMD003
+    notes: Default value is `.visiblePainted`.
+  - requirement_id: R003
+    architecture_status: not-needed
+    implementation_status: implemented
+    test_status: passing
+    review_status: confirmed
+    satisfaction: satisfied
+    evidence:
+      architecture_refs: []
+      implementation_refs:
+        - Sources/Swg/SVGParser.swift
+      test_refs:
+        - T001
+      command_refs:
+        - CMD003
+    notes: Inherited and explicit `inherit` behavior are covered.
+  - requirement_id: R004
+    architecture_status: not-needed
+    implementation_status: implemented
+    test_status: passing
+    review_status: confirmed
+    satisfaction: satisfied
+    evidence:
+      architecture_refs: []
+      implementation_refs:
+        - Sources/Swg/SVGParser.swift
+      test_refs:
+        - T001
+      command_refs:
+        - CMD003
+    notes: "`pointer-events` is recognized as interpreted instead of unknown."
+
+coverage:
+  requirements:
+    - requirement_id: R001
+      status: covered
+      evidence:
+        - T001
+      notes: []
+    - requirement_id: R002
+      status: covered
+      evidence:
+        - T001
+      notes: []
+    - requirement_id: R003
+      status: covered
+      evidence:
+        - T001
+      notes: []
+    - requirement_id: R004
+      status: covered
+      evidence:
+        - T001
+      notes: []
+  architecture: []
+
+findings: []
+
+residual_risks:
+  - id: RR001
+    risk: Geometric hit testing for pointer-event regions remains unimplemented.
+    reason: The current package milestone preserves parser-visible data for downstream CGPath and SwiftUI rendering.
+    requirement_refs:
+      - R001
+
+verdict:
+  status: passed
+  blocking_findings: []
+  non_blocking_findings: []
+  notes:
+    - All in-scope requirements are satisfied for parser preservation.

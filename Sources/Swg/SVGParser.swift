@@ -19,7 +19,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private static let globalAttributeNames: Set<String> = [
 		"class", "clip-path", "clip-rule", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "marker-end", "marker-mid", "marker-start", "mask", "opacity", "paint-order", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
-		"stroke-width", "style", "transform", "vector-effect", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
+		"stroke-width", "style", "transform", "vector-effect", "visibility", "pointer-events", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
 		"zoomAndPan"
 	]
 	private static let basicShapeGeometryPropertyNames: Set<String> = [
@@ -2825,6 +2825,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		result.markerStart = parent.markerStart
 		result.markerMid = parent.markerMid
 		result.markerEnd = parent.markerEnd
+		result.pointerEvents = parent.pointerEvents
 		return result
 	}
 
@@ -3049,6 +3050,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				result.markerEnd = marker
 			}
 		}
+		if let value = attributes["pointer-events"] {
+			if isInheritKeyword(value) {
+				result.pointerEvents = inherited.pointerEvents
+			} else if let pointerEvents = parsePointerEvents(value) {
+				result.pointerEvents = pointerEvents
+			}
+		}
 		if let transform = attributes["transform"] {
 			result.transform = isInheritKeyword(transform) ? inherited.transform : parseTransform(transform)
 		}
@@ -3241,6 +3249,33 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 		guard !components.isEmpty else { return nil }
 		return .effects(components, coordinateSpace: coordinateSpace)
+	}
+
+	private func parsePointerEvents(_ value: String) -> SVGPointerEvents? {
+		switch value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+		case "bounding-box":
+			return .boundingBox
+		case "visiblepainted":
+			return .visiblePainted
+		case "visiblefill":
+			return .visibleFill
+		case "visiblestroke":
+			return .visibleStroke
+		case "visible":
+			return .visible
+		case "painted":
+			return .painted
+		case "fill":
+			return .fill
+		case "stroke":
+			return .stroke
+		case "all":
+			return .all
+		case "none":
+			return SVGPointerEvents.none
+		default:
+			return nil
+		}
 	}
 
 	private func parseURLID(_ value: String) -> String? {

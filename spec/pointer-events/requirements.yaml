@@ -1,0 +1,147 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: pointer-events
+  title: SVG pointer-events property
+  domain: SVG 2
+  profile: null
+  summary: The `pointer-events` property controls whether container, graphics, and `use` elements can be targets for pointer-event hit testing.
+  non_goals:
+    - Performing geometric hit testing.
+    - Dispatching DOM events.
+    - Implementing dynamic pseudo-classes or hyperlink activation.
+    - Pixel-level raster-image hit testing.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-pointer-events
+      title: SVG 2, 15.6 The pointer-events property
+      url: https://www.w3.org/TR/SVG/interact.html#PointerEventsProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - This package currently preserves parser-visible property intent for downstream CGPath and SwiftUI renderers; actual hit-region evaluation is deferred.
+
+scope:
+  includes:
+    - Parsing `pointer-events` from presentation attributes and CSS declarations already consumed by the parser.
+    - Preserving all SVG 2 keyword values.
+    - Applying the SVG initial value.
+    - Applying SVG inheritance and explicit `inherit`.
+    - Removing interpreted `pointer-events` attributes from unknown-attribute output.
+  excludes:
+    - Hit testing against fills, strokes, bounding boxes, text cells, image pixels, masks, clips, or filters.
+    - DOM event listener creation or dispatch.
+    - Animation of `pointer-events`.
+  assumptions:
+    - Parser output may represent `pointer-events` as an enum for later interaction-capable renderers.
+
+terminology:
+  - id: term-pointer-events
+    term: pointer-events
+    definition: A property that specifies the circumstances under which an SVG element can be the target element for a pointer event.
+    source_refs:
+      - svg2-pointer-events
+
+structures:
+  - id: S001
+    name: pointer-events
+    kind: property
+    source_refs:
+      - svg2-pointer-events
+    fields:
+      - name: value
+        type: keyword
+        cardinality: required
+        position: entire-value
+        constraints:
+          - Must be one of `bounding-box`, `visiblePainted`, `visibleFill`, `visibleStroke`, `visible`, `painted`, `fill`, `stroke`, `all`, or `none`.
+          - Initial value is `visiblePainted`.
+          - Computed value is as specified.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-pointer-events
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The `pointer-events` property must accept `bounding-box`, `visiblePainted`, `visibleFill`, `visibleStroke`, `visible`, `painted`, `fill`, `stroke`, `all`, and `none`.
+    applies_to:
+      - SVGParser
+      - SVGPaintAttributes
+    source_refs:
+      - svg2-pointer-events
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: cascade
+    statement: The parser must expose the initial `pointer-events` value as `visiblePainted`.
+    applies_to:
+      - SVGPaintAttributes.defaults
+      - SVGParser.parsePaintAttributes
+    source_refs:
+      - svg2-pointer-events
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: cascade
+    statement: The parser must treat `pointer-events` as inherited, including explicit `inherit` values.
+    applies_to:
+      - SVGParser.inheritedPaintAttributes
+      - SVGParser.applyPresentationAttributes
+    source_refs:
+      - svg2-pointer-events
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Parsed `pointer-events` presentation attributes must not be preserved as unknown attributes.
+    applies_to:
+      - SVGParser.parseUnknownAttributes
+    source_refs:
+      - svg2-pointer-events
+    testability: testable
+    notes: []
+
+implementation_choices:
+  - id: IC001
+    topic: Hit-testing behavior
+    statement: This work item preserves the computed-enough property value and leaves geometric hit-testing semantics to a later renderer or SwiftUI interaction layer.
+    allowed_by:
+      - Parser-focused package scope.
+    source_refs:
+      - svg2-pointer-events
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-pointer-events
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-pointer-events
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-pointer-events
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-pointer-events
+    map_item_refs: []

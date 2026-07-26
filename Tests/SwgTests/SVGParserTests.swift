@@ -2165,6 +2165,69 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(paths["stroke"]?.unknownAttributes["vector-effect"] == nil)
 }
 
+@Test func svgParserAppliesPointerEventsProperty() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.painted { pointer-events: painted; }
+			.inline { pointer-events: all; }
+		</style>
+		<path id="initial" d="M0 0 L1 1"/>
+		<path id="bounding" d="M0 0 L1 1" pointer-events="bounding-box"/>
+		<path id="visiblePainted" d="M0 0 L1 1" pointer-events="visiblePainted"/>
+		<path id="visibleFill" d="M0 0 L1 1" pointer-events="visibleFill"/>
+		<path id="visibleStroke" d="M0 0 L1 1" pointer-events="visibleStroke"/>
+		<path id="visible" d="M0 0 L1 1" pointer-events="visible"/>
+		<path id="fill" d="M0 0 L1 1" pointer-events="fill"/>
+		<path id="stroke" d="M0 0 L1 1" pointer-events="stroke"/>
+		<path id="all" d="M0 0 L1 1" pointer-events="all"/>
+		<path id="none" d="M0 0 L1 1" pointer-events="none"/>
+		<g id="parent" pointer-events="visibleFill">
+			<path id="inherited" d="M0 0 L1 1"/>
+			<path id="classed" class="painted" d="M0 0 L1 1"/>
+			<path id="inline" class="inline" d="M0 0 L1 1" style="pointer-events: none"/>
+			<path id="explicitInherit" d="M0 0 L1 1" pointer-events="inherit"/>
+			<path id="invalid" d="M0 0 L1 1" pointer-events="definitely-not-pointer-events"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.pointerEvents == .visiblePainted)
+	#expect(paths["bounding"]?.attributes.pointerEvents == .boundingBox)
+	#expect(paths["visiblePainted"]?.attributes.pointerEvents == .visiblePainted)
+	#expect(paths["visibleFill"]?.attributes.pointerEvents == .visibleFill)
+	#expect(paths["visibleStroke"]?.attributes.pointerEvents == .visibleStroke)
+	#expect(paths["visible"]?.attributes.pointerEvents == .visible)
+	#expect(paths["fill"]?.attributes.pointerEvents == .fill)
+	#expect(paths["stroke"]?.attributes.pointerEvents == .stroke)
+	#expect(paths["all"]?.attributes.pointerEvents == .all)
+	#expect(paths["none"]?.attributes.pointerEvents == SVGPointerEvents.none)
+	#expect(paths["inherited"]?.attributes.pointerEvents == .visibleFill)
+	#expect(paths["classed"]?.attributes.pointerEvents == .painted)
+	#expect(paths["inline"]?.attributes.pointerEvents == SVGPointerEvents.none)
+	#expect(paths["explicitInherit"]?.attributes.pointerEvents == .visibleFill)
+	#expect(paths["invalid"]?.attributes.pointerEvents == .visibleFill)
+	#expect(paths["bounding"]?.unknownAttributes["pointer-events"] == nil)
+	#expect(paths["invalid"]?.unknownAttributes["pointer-events"] == nil)
+}
+
 @Test func svgParserAppliesPresentationAttributesWithCascadeSpecificity() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="red" stroke-width="1">

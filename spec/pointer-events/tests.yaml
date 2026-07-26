@@ -1,0 +1,164 @@
+schema_version: 1
+kind: swift-tests
+status: ready-for-implementation
+
+work_item:
+  id: pointer-events
+  title: SVG pointer-events property
+  requirements_path: spec/pointer-events/requirements.yaml
+  architecture_path: null
+  summary: Contract tests cover parser preservation of the SVG `pointer-events` property values, initial value, inheritance, cascade integration, and unknown-attribute filtering.
+
+source_context:
+  spec_map: null
+  system_architecture: null
+  requirements:
+    path: spec/pointer-events/requirements.yaml
+    requirement_ids:
+      - R001
+      - R002
+      - R003
+      - R004
+  architecture:
+    path: null
+    entity_ids: []
+    interface_ids: []
+  repository_refs:
+    - Tests/SwgTests/SVGParserTests.swift
+    - Sources/Swg/SVGParser.swift
+    - Sources/Swg/SVGStyle.swift
+
+test_surfaces:
+  - id: TS001
+    surface: "`SVGParser().parse(_:)` returning public `SVGDocument` and element `SVGPaintAttributes`."
+    architecture_refs: []
+    notes: Existing parser-facing style properties use this integration surface.
+
+case_dimensions:
+  - id: DIM001
+    name: keyword
+    kind: normative
+    values:
+      - bounding-box
+      - visiblePainted
+      - visibleFill
+      - visibleStroke
+      - visible
+      - painted
+      - fill
+      - stroke
+      - all
+      - none
+    requirement_refs:
+      - R001
+    notes: All SVG 2 keywords are represented.
+  - id: DIM002
+    name: cascade-source
+    kind: interaction
+    values:
+      - initial
+      - presentation-attribute
+      - class-style
+      - inline-style
+      - explicit-inherit
+      - invalid
+    requirement_refs:
+      - R002
+      - R003
+      - R004
+    notes: Covers the parser's supported cascade sources.
+
+permutation_strategy:
+  method: pairwise-risk-based
+  include:
+    - all-keywords
+    - initial-value
+    - inherited-value
+    - class-and-inline-cascade
+    - representative-invalid
+  exclude:
+    - exhaustive-hit-testing
+  reductions:
+    - reason: Geometric hit regions are deferred to renderers; parser tests only assert value preservation.
+      omitted_dimensions:
+        - point location
+        - element geometry
+        - mask and clip effects
+      requirement_refs:
+        - R001
+
+test_cases:
+  - id: TC001
+    name: Parse pointer-events values and cascade behavior.
+    intent: Observe all keyword values, initial value, inheritance, explicit inherit, class/inline override, and unknown-attribute filtering through parsed elements.
+    dimensions:
+      DIM001: all-keywords
+      DIM002: supported-cascade
+    requirement_refs:
+      - R001
+      - R002
+      - R003
+      - R004
+    architecture_refs: []
+    surface_refs:
+      - TS001
+    expected_pre_implementation_result: fail
+
+tests_written:
+  - id: T001
+    path: Tests/SwgTests/SVGParserTests.swift
+    name: svgParserAppliesPointerEventsProperty
+    test_case_refs:
+      - TC001
+    verifies:
+      requirement_refs:
+        - R001
+        - R002
+        - R003
+        - R004
+      architecture_refs: []
+    surface_refs:
+      - TS001
+
+fixtures: []
+
+commands:
+  - id: CMD001
+    command: xcodebuild test -scheme swg -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+    result: failed
+    expected_red: true
+    notes: Initial implementation exposed optional `.none` ambiguity for the SVG `none` keyword; this was a valid red signal before the corrected implementation.
+
+coverage:
+  requirements:
+    - requirement_id: R001
+      status: covered
+      evidence:
+        - TC001
+      notes: []
+    - requirement_id: R002
+      status: covered
+      evidence:
+        - TC001
+      notes: []
+    - requirement_id: R003
+      status: covered
+      evidence:
+        - TC001
+      notes: []
+    - requirement_id: R004
+      status: covered
+      evidence:
+        - TC001
+      notes: []
+
+blockers: []
+
+red_phase:
+  status: ready-for-implementation
+  expected_failures:
+    - "`pointer-events=\"none\"` resolved to the optional nil case before the enum case was explicitly qualified."
+  unexpected_failures: []
+  unexpected_passes: []
+  notes:
+    - Final green command is recorded in spec/pointer-events/implementation.yaml and spec/pointer-events/verification.yaml.

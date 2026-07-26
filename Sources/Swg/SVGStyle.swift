@@ -33,6 +33,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var markerStart: SVGMarkerReference
 	public var markerMid: SVGMarkerReference
 	public var markerEnd: SVGMarkerReference
+	public var pointerEvents: SVGPointerEvents
 
 	public init(
 		color: Color = .black,
@@ -65,7 +66,8 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		vectorEffect: SVGVectorEffect = .none,
 		markerStart: SVGMarkerReference = .none,
 		markerMid: SVGMarkerReference = .none,
-		markerEnd: SVGMarkerReference = .none
+		markerEnd: SVGMarkerReference = .none,
+		pointerEvents: SVGPointerEvents = .visiblePainted
 	) {
 		self.color = color
 		self.fill = fill
@@ -98,6 +100,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.markerStart = markerStart
 		self.markerMid = markerMid
 		self.markerEnd = markerEnd
+		self.pointerEvents = pointerEvents
 	}
 
 	public static let defaults = SVGPaintAttributes()
@@ -245,6 +248,20 @@ public enum SVGVectorEffectComponent: Sendable, Equatable, Hashable {
 public enum SVGVectorEffectCoordinateSpace: Sendable, Equatable, Hashable {
 	case viewport
 	case screen
+}
+
+/// SVG `pointer-events` value used by hit-testing and interaction-capable renderers.
+public enum SVGPointerEvents: Sendable, Equatable, Hashable {
+	case boundingBox
+	case visiblePainted
+	case visibleFill
+	case visibleStroke
+	case visible
+	case painted
+	case fill
+	case stroke
+	case all
+	case none
 }
 
 /// Per-element style override that renderers can apply after parsing.

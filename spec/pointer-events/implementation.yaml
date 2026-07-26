@@ -1,0 +1,92 @@
+schema_version: 1
+kind: swift-implementation
+status: implemented
+
+work_item:
+  id: pointer-events
+  title: SVG pointer-events property
+  requirements_path: spec/pointer-events/requirements.yaml
+  architecture_path: null
+  tests_path: spec/pointer-events/tests.yaml
+  summary: Added parser-facing preservation of the SVG `pointer-events` property on `SVGPaintAttributes`.
+
+source_context:
+  spec_map: null
+  system_architecture: null
+  requirements:
+    path: spec/pointer-events/requirements.yaml
+    requirement_ids:
+      - R001
+      - R002
+      - R003
+      - R004
+  architecture:
+    path: null
+    entity_ids: []
+    integration_ids: []
+  tests:
+    path: spec/pointer-events/tests.yaml
+    test_case_ids:
+      - TC001
+    test_ids:
+      - T001
+
+changes:
+  production_files:
+    - path: Sources/Swg/SVGStyle.swift
+      action: update
+      entities:
+        - SVGPaintAttributes
+        - SVGPointerEvents
+      requirement_refs:
+        - R001
+        - R002
+        - R003
+      architecture_refs: []
+    - path: Sources/Swg/SVGParser.swift
+      action: update
+      entities:
+        - SVGParser
+      requirement_refs:
+        - R001
+        - R002
+        - R003
+        - R004
+      architecture_refs: []
+  documentation:
+    - path: Sources/Swg/SVGStyle.swift
+      api_refs:
+        - SVGPointerEvents
+      summary: Added a public doc comment for the parser-facing `pointer-events` value enum.
+  project_files: []
+
+commands:
+  - id: CMD001
+    command: ruby -e 'require "yaml"; YAML.load_file("spec/pointer-events/requirements.yaml"); YAML.load_file("spec/pointer-events/tests.yaml"); puts "ok"'
+    result: passed
+    notes: Requirements and tests artifacts parse as YAML.
+  - id: CMD002
+    command: git diff --check
+    result: passed
+    notes: No whitespace errors.
+  - id: CMD003
+    command: xcodebuild test -scheme swg -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+    result: passed
+    notes: Full iOS simulator suite passed with 210 tests.
+
+contract_status:
+  tests_path: spec/pointer-events/tests.yaml
+  red_to_green: true
+  passing_tests:
+    - svgParserAppliesPointerEventsProperty
+  failing_tests: []
+  notes:
+    - The initial failing run caught optional `.none` ambiguity for the SVG `none` keyword; final implementation qualifies `SVGPointerEvents.none`.
+
+change_requests: []
+
+version_control:
+  committed: false
+  commit: null
+  files_staged: []
+  notes: []

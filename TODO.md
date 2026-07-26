@@ -224,4 +224,4 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Scripting and Interactivity
 
 - [x] `<script>`.
-- [ ] `pointer-events`.
+- [x] `pointer-events`.
