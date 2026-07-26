@@ -17,7 +17,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		"title", "tspan", "use", "view"
 	]
 	private static let globalAttributeNames: Set<String> = [
-		"class", "clip-path", "clip-rule", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "marker-mid", "marker-start", "mask", "opacity", "paint-order", "stroke",
+		"class", "clip-path", "clip-rule", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "marker-end", "marker-mid", "marker-start", "mask", "opacity", "paint-order", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
 		"stroke-width", "style", "transform", "vector-effect", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
 		"zoomAndPan"
@@ -2433,6 +2433,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		result.visibility = parent.visibility
 		result.markerStart = parent.markerStart
 		result.markerMid = parent.markerMid
+		result.markerEnd = parent.markerEnd
 		return result
 	}
 
@@ -2644,6 +2645,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				result.markerMid = inherited.markerMid
 			} else if let marker = parseMarkerReference(value) {
 				result.markerMid = marker
+			}
+		}
+		if let value = attributes["marker-end"] {
+			if isInheritKeyword(value) {
+				result.markerEnd = inherited.markerEnd
+			} else if let marker = parseMarkerReference(value) {
+				result.markerEnd = marker
 			}
 		}
 		if let transform = attributes["transform"] {

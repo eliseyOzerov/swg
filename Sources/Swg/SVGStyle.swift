@@ -32,6 +32,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var vectorEffect: SVGVectorEffect
 	public var markerStart: SVGMarkerReference
 	public var markerMid: SVGMarkerReference
+	public var markerEnd: SVGMarkerReference
 
 	public init(
 		color: Color = .black,
@@ -63,7 +64,8 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		maskID: String? = nil,
 		vectorEffect: SVGVectorEffect = .none,
 		markerStart: SVGMarkerReference = .none,
-		markerMid: SVGMarkerReference = .none
+		markerMid: SVGMarkerReference = .none,
+		markerEnd: SVGMarkerReference = .none
 	) {
 		self.color = color
 		self.fill = fill
@@ -95,6 +97,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.vectorEffect = vectorEffect
 		self.markerStart = markerStart
 		self.markerMid = markerMid
+		self.markerEnd = markerEnd
 	}
 
 	public static let defaults = SVGPaintAttributes()
