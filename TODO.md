@@ -124,7 +124,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<stop>` `offset`.
 - [x] `<stop>` `stop-color`.
 - [x] `<stop>` `stop-opacity`.
-- [ ] `gradientUnits="objectBoundingBox"`.
+- [x] `gradientUnits="objectBoundingBox"`.
 - [ ] `gradientUnits="userSpaceOnUse"`.
 - [ ] `gradientTransform`.
 - [ ] `spreadMethod="pad"`.

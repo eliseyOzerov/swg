@@ -1,0 +1,227 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: gradientunits-objectboundingbox
+  title: Gradient units objectBoundingBox
+  domain: SVG 2 Paint Servers
+  profile: null
+  summary: Preserve the `objectBoundingBox` value and initial behavior for SVG gradient coordinate systems.
+  non_goals:
+    - The `gradientUnits="userSpaceOnUse"` behavior, covered by the next TODO bullet.
+    - Applying the referencing element's bounding box during renderer paint evaluation.
+    - Implementing `gradientTransform`, covered by a separate TODO bullet.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-linear-gradient-units
+      title: "SVG 2 Paint Servers: linearGradient gradientUnits"
+      url: https://www.w3.org/TR/SVG/pservers.html#LinearGradientElementGradientUnitsAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-radial-gradient-units
+      title: "SVG 2 Paint Servers: radialGradient gradientUnits"
+      url: https://www.w3.org/TR/SVG/pservers.html#RadialGradientElementGradientUnitsAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`gradientUnits` defines the coordinate system for linear gradient x1, y1, x2, and y2."
+    - "`gradientUnits` defines the coordinate system for radial gradient cx, cy, r, fx, fy, and fr."
+    - "The allowed values are `userSpaceOnUse` and `objectBoundingBox`."
+    - "The initial value is `objectBoundingBox`."
+    - "For `objectBoundingBox`, coordinates are established using the bounding box of the element to which the gradient is applied."
+
+scope:
+  includes:
+    - Parser output for explicit `gradientUnits="objectBoundingBox"` on linear and radial gradients.
+    - Parser output for omitted `gradientUnits`, which must use `objectBoundingBox`.
+    - Invalid or unsupported `gradientUnits` values falling back to the initial `objectBoundingBox` behavior.
+    - Parser-visible normalized coordinate values that downstream rendering can interpret in object bounding box space.
+  excludes:
+    - User-space coordinate behavior.
+    - Rendering-time bounding box resolution.
+    - Template inheritance through `href`.
+    - CSS styling or presentation-attribute cascade for `gradientUnits`.
+  assumptions:
+    - The parser can preserve the chosen coordinate mode independently from later renderer coordinate resolution.
+    - Invalid attribute values leave the gradient at the initial parser-visible coordinate mode.
+
+terminology:
+  - id: term-gradientunits
+    term: gradientUnits
+    definition: An SVG gradient attribute that selects the coordinate system used by gradient geometry attributes.
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+  - id: term-objectboundingbox
+    term: objectBoundingBox
+    definition: A gradient coordinate mode where geometry is established from the bounding box of the element that references the gradient.
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+structures:
+  - id: S001
+    name: Gradient coordinate mode
+    kind: structure
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    fields:
+      - name: gradientUnits
+        type: enum
+        cardinality: one
+        position: null
+        constraints:
+          - Allowed values include `objectBoundingBox`.
+          - Initial value is `objectBoundingBox`.
+          - Applies to linear and radial gradient elements.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - svg2-linear-gradient-units
+          - svg2-radial-gradient-units
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: Linear gradients must support `gradientUnits="objectBoundingBox"` as a parser-visible coordinate mode.
+    applies_to:
+      - "`linearGradient` elements"
+    source_refs:
+      - svg2-linear-gradient-units
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: Radial gradients must support `gradientUnits="objectBoundingBox"` as a parser-visible coordinate mode.
+    applies_to:
+      - "`radialGradient` elements"
+    source_refs:
+      - svg2-radial-gradient-units
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Gradients without a valid `gradientUnits` attribute must use `objectBoundingBox` as the initial coordinate mode.
+    applies_to:
+      - "`linearGradient` elements"
+      - "`radialGradient` elements"
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: In `objectBoundingBox` mode, parser-visible percentage and number coordinate values must remain suitable for later interpretation relative to the referencing object's bounding box.
+    applies_to:
+      - gradient geometry attributes
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    testability: testable
+    notes:
+      - Rendering-time bounding box application is outside this parser-focused work item.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `gradientUnits` value is malformed or not one of the supported keywords.
+    source_behavior: UNSPECIFIED
+    required_behavior: Leave the gradient at the initial `objectBoundingBox` coordinate mode.
+    decision_required: false
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+recommendations: []
+
+derived_requirements:
+  - id: D001
+    normative_strength: MUST
+    statement: A focused parser test for this bullet must prove explicit objectBoundingBox, omitted initial value, invalid fallback, and preserved normalized geometry for both linear and radial gradients.
+    derived_from:
+      - R001
+      - R002
+      - R003
+      - R004
+      - I001
+    reasoning: These cases prove the parser-visible coordinate mode and geometry needed by later rendering work.
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-visible representation
+    statement: The package may expose `objectBoundingBox` as an enum case on gradient definitions and defer applying target bounding boxes to renderer work.
+    allowed_by:
+      - Current parser architecture
+      - Renderer integration boundary
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: Object bounding box units
+    reason: Full rendering support requires applying object bounding box units when a gradient is painted.
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-units
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-radial-gradient-units
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    map_item_refs: []
+  - item_id: D001
+    item_type: derived_requirement
+    source_refs:
+      - svg2-linear-gradient-units
+      - svg2-radial-gradient-units
+    map_item_refs: []
