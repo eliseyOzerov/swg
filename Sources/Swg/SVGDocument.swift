@@ -147,12 +147,21 @@ public enum SVGAnimationAdditive: Equatable, Sendable {
 	case unresolved(String)
 }
 
+/// The SVG `accumulate` mode for repeated value animation elements.
+public enum SVGAnimationAccumulate: Equatable, Sendable {
+	case none
+	case sum
+	case unresolved(String)
+}
+
 /// Addition attributes common to SVG value animation elements.
 public struct SVGAnimationAdditionData: Equatable, Sendable {
 	public let additive: SVGAnimationAdditive
+	public let accumulate: SVGAnimationAccumulate
 
-	public init(additive: SVGAnimationAdditive = .replace) {
+	public init(additive: SVGAnimationAdditive = .replace, accumulate: SVGAnimationAccumulate = .none) {
 		self.additive = additive
+		self.accumulate = accumulate
 	}
 }
 

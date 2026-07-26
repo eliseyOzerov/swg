@@ -32,7 +32,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		"calcMode", "values", "keyTimes", "keySplines"
 	]
 	private static let animationAdditionAttributeNames: Set<String> = [
-		"additive"
+		"additive", "accumulate"
 	]
 	private static let namedColors: [String: Color] = [
 		"aliceblue": Color(240 / 255, 248 / 255, 1),
@@ -1949,7 +1949,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseAnimationAddition(_ attributes: [String: String]) -> SVGAnimationAdditionData {
 		SVGAnimationAdditionData(
-			additive: attributes["additive"].map(parseAnimationAdditive) ?? .replace
+			additive: attributes["additive"].map(parseAnimationAdditive) ?? .replace,
+			accumulate: attributes["accumulate"].map(parseAnimationAccumulate) ?? .none
 		)
 	}
 
@@ -1958,6 +1959,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		switch trimmed {
 		case "replace":
 			return .replace
+		case "sum":
+			return .sum
+		default:
+			return .unresolved(trimmed)
+		}
+	}
+
+	private func parseAnimationAccumulate(_ value: String) -> SVGAnimationAccumulate {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		switch trimmed {
+		case "none":
+			return .none
 		case "sum":
 			return .sum
 		default:

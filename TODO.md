@@ -219,7 +219,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `restart`, `repeatCount`, `repeatDur`.
 - [x] `calcMode`, `values`, `keyTimes`, `keySplines`.
 - [x] `additive`.
-- [ ] `accumulate`.
+- [x] `accumulate`.
 
 ## Scripting and Interactivity
 

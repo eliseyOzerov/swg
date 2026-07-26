@@ -5674,6 +5674,7 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 		return
 	}
 	#expect(move.addition.additive == .replace)
+	#expect(move.addition.accumulate == .none)
 
 	guard case .animateTransform(let spin) = document.animations[2] else {
 		Issue.record("Expected third animation to be animateTransform")
@@ -5687,6 +5688,48 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 		return
 	}
 	#expect(show.unknownAttributes["additive"] == "sum")
+}
+
+@Test func svgParserPreservesAnimationAccumulateAttribute() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<rect id="box" width="10" height="10">
+			<animate id="grow" attributeName="width" from="0" to="10" accumulate="sum"/>
+			<animateMotion id="move" path="M0 0 L10 0"/>
+			<animateTransform id="spin" attributeName="transform" type="rotate" accumulate="stack"/>
+			<set id="show" attributeName="visibility" to="visible" accumulate="sum"/>
+		</rect>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	#expect(document.animations.count == 4)
+
+	guard case .animate(let grow) = document.animations[0] else {
+		Issue.record("Expected first animation to be animate")
+		return
+	}
+	#expect(grow.addition.accumulate == .sum)
+	#expect(grow.unknownAttributes["accumulate"] == nil)
+
+	guard case .animateMotion(let move) = document.animations[1] else {
+		Issue.record("Expected second animation to be animateMotion")
+		return
+	}
+	#expect(move.addition.accumulate == .none)
+
+	guard case .animateTransform(let spin) = document.animations[2] else {
+		Issue.record("Expected third animation to be animateTransform")
+		return
+	}
+	#expect(spin.addition.accumulate == .unresolved("stack"))
+	#expect(spin.unknownAttributes["accumulate"] == nil)
+
+	guard case .set(let show) = document.animations[3] else {
+		Issue.record("Expected fourth animation to be set")
+		return
+	}
+	#expect(show.unknownAttributes["accumulate"] == "sum")
 }
 
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
