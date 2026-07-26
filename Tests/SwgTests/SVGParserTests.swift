@@ -636,6 +636,74 @@ private func expectDiffuseLighting(
 	#expect(kernelUnitLengthY == expectedKernelUnitLengthY)
 }
 
+@Test func svgParserPreservesDisplacementMapPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="displace">
+			<feDisplacementMap/>
+			<feDisplacementMap in="SourceGraphic" in2="noise" scale="12.5" xChannelSelector="R" yChannelSelector="G"/>
+			<feDisplacementMap scale="-4" xChannelSelector="B" yChannelSelector="A"/>
+			<feDisplacementMap scale="bad" xChannelSelector="r" yChannelSelector="unsupported"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["displace"])
+	#expect(filter.primitives.count == 4)
+	expectDisplacementMap(
+		filter.primitives[0],
+		input: nil,
+		input2: nil,
+		scale: 0,
+		xChannelSelector: .alpha,
+		yChannelSelector: .alpha
+	)
+	expectDisplacementMap(
+		filter.primitives[1],
+		input: "SourceGraphic",
+		input2: "noise",
+		scale: 12.5,
+		xChannelSelector: .red,
+		yChannelSelector: .green
+	)
+	expectDisplacementMap(
+		filter.primitives[2],
+		input: nil,
+		input2: nil,
+		scale: -4,
+		xChannelSelector: .blue,
+		yChannelSelector: .alpha
+	)
+	expectDisplacementMap(
+		filter.primitives[3],
+		input: nil,
+		input2: nil,
+		scale: 0,
+		xChannelSelector: .alpha,
+		yChannelSelector: .alpha
+	)
+}
+
+private func expectDisplacementMap(
+	_ primitive: SVGFilterPrimitive,
+	input expectedInput: String?,
+	input2 expectedInput2: String?,
+	scale expectedScale: Double,
+	xChannelSelector expectedXChannelSelector: SVGFilterChannelSelector,
+	yChannelSelector expectedYChannelSelector: SVGFilterChannelSelector
+) {
+	guard case .displacementMap(let input, let input2, let scale, let xChannelSelector, let yChannelSelector) = primitive else {
+		Issue.record("Expected parsed feDisplacementMap primitive")
+		return
+	}
+	#expect(input == expectedInput)
+	#expect(input2 == expectedInput2)
+	#expect(scale == expectedScale)
+	#expect(xChannelSelector == expectedXChannelSelector)
+	#expect(yChannelSelector == expectedYChannelSelector)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")

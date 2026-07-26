@@ -428,6 +428,14 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				kernelUnitLengthX: kernelUnitLength.x,
 				kernelUnitLengthY: kernelUnitLength.y
 			))
+		case "feDisplacementMap":
+			currentFilter?.primitives.append(.displacementMap(
+				input: attributes["in"],
+				input2: attributes["in2"],
+				scale: attributes["scale"].flatMap(parseNumber) ?? 0,
+				xChannelSelector: parseFilterChannelSelector(attributes["xChannelSelector"]),
+				yChannelSelector: parseFilterChannelSelector(attributes["yChannelSelector"])
+			))
 		case "feFuncR":
 			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .red)
 		case "feFuncG":
@@ -1306,6 +1314,19 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private func parseNonNegativeNumber(_ value: String) -> Double? {
 		guard let number = parseNumber(value), number >= 0 else { return nil }
 		return number
+	}
+
+	private func parseFilterChannelSelector(_ value: String?) -> SVGFilterChannelSelector {
+		switch value {
+		case "R":
+			.red
+		case "G":
+			.green
+		case "B":
+			.blue
+		default:
+			.alpha
+		}
 	}
 
 	private func parseFilterEdgeMode(_ value: String?) -> SVGFilterEdgeMode {

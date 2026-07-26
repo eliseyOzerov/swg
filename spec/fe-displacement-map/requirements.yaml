@@ -1,0 +1,305 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-displacement-map
+  title: SVG feDisplacementMap filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feDisplacementMap>` filter primitives, including both input references, scale, and X/Y channel selectors.
+  non_goals:
+    - Executing displacement-map rendering.
+    - Defining interpolation behavior for displaced source samples.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-displacement-map
+      title: "Filter Effects Module Level 1: Filter primitive feDisplacementMap"
+      url: https://www.w3.org/TR/filter-effects-1/#feDisplacementMapElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-displacement-map-interface
+      title: "Filter Effects Module Level 1: Interface SVGFEDisplacementMapElement"
+      url: https://www.w3.org/TR/filter-effects-1/#InterfaceSVGFEDisplacementMapElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`<feDisplacementMap>` uses pixel values from `in2` to spatially displace the image from `in`."
+    - "The primitive-specific attributes are `in`, `in2`, `scale`, `xChannelSelector`, and `yChannelSelector`."
+    - "`scale` is a number in the primitiveUnits coordinate system; its initial value is `0`, and `0` means no effect."
+    - "`xChannelSelector` and `yChannelSelector` accept `R`, `G`, `B`, or `A`; each defaults to `A`."
+    - "The DOM interface exposes `in1`, `in2`, `scale`, `xChannelSelector`, and `yChannelSelector`."
+
+scope:
+  includes:
+    - "`<feDisplacementMap>` child elements inside `<filter>`."
+    - "`in`, `in2`, `scale`, `xChannelSelector`, and `yChannelSelector` attributes."
+  excludes:
+    - "Rendering-time displacement formulas."
+    - "Interpolation for source samples between pixels."
+    - "Color-interpolation-filters handling for `in2`."
+    - "Filter primitive common geometry attributes."
+  assumptions:
+    - Swg stores parsed filter primitives as `SVGFilterPrimitive` values for later renderer support.
+    - Malformed numeric attributes fall back to their initial values.
+    - Negative `scale` values are preserved because the source defines `scale` as a number without a non-negative constraint.
+    - Unknown or lowercase channel selector values use the initial selector `A`.
+
+terminology:
+  - id: T001
+    term: feDisplacementMap
+    definition: An SVG filter primitive that uses one image as a displacement field for another image.
+    source_refs:
+      - filter-effects-fe-displacement-map
+  - id: T002
+    term: channel selector
+    definition: One of `R`, `G`, `B`, or `A`, selecting a component from `in2` for X or Y displacement.
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.displacementMap
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    fields:
+      - name: input
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in` attribute when present.
+        requirement_refs:
+          - R001
+      - name: input2
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in2` attribute when present.
+        requirement_refs:
+          - R002
+      - name: scale
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+        requirement_refs:
+          - R003
+      - name: xChannelSelector
+        type: SVGFilterChannelSelector
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Accepts `R`, `G`, `B`, and `A`.
+          - Defaults to `A`.
+        requirement_refs:
+          - R004
+      - name: yChannelSelector
+        type: SVGFilterChannelSelector
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Accepts `R`, `G`, `B`, and `A`.
+          - Defaults to `A`.
+        requirement_refs:
+          - R005
+  - id: S002
+    name: SVGFilterChannelSelector
+    kind: enum
+    source_refs:
+      - filter-effects-displacement-map-interface
+    fields:
+      - name: red
+        type: case
+        cardinality: exactly-one
+        position: enum-case
+        constraints:
+          - Corresponds to selector `R`.
+        requirement_refs:
+          - R004
+          - R005
+      - name: green
+        type: case
+        cardinality: exactly-one
+        position: enum-case
+        constraints:
+          - Corresponds to selector `G`.
+        requirement_refs:
+          - R004
+          - R005
+      - name: blue
+        type: case
+        cardinality: exactly-one
+        position: enum-case
+        constraints:
+          - Corresponds to selector `B`.
+        requirement_refs:
+          - R004
+          - R005
+      - name: alpha
+        type: case
+        cardinality: exactly-one
+        position: enum-case
+        constraints:
+          - Corresponds to selector `A`.
+        requirement_refs:
+          - R004
+          - R005
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feDisplacementMap>` must preserve its `in` input reference when present."
+    applies_to:
+      - SVGFilterPrimitive.displacementMap
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDisplacementMapPrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feDisplacementMap>` must preserve its `in2` displacement-map input reference when present."
+    applies_to:
+      - SVGFilterPrimitive.displacementMap
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDisplacementMapPrimitiveAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`scale` must parse as a number and default to `0` when omitted or malformed."
+    applies_to:
+      - SVGFilterPrimitive.displacementMap
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDisplacementMapPrimitiveAttributes
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`xChannelSelector` must accept `R`, `G`, `B`, and `A`, and default to `A` when omitted or unsupported."
+    applies_to:
+      - SVGFilterPrimitive.displacementMap
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDisplacementMapPrimitiveAttributes
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: "`yChannelSelector` must accept `R`, `G`, `B`, and `A`, and default to `A` when omitted or unsupported."
+    applies_to:
+      - SVGFilterPrimitive.displacementMap
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDisplacementMapPrimitiveAttributes
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`scale` is malformed."
+    source_behavior: UNSPECIFIED
+    required_behavior: "Use the initial value `0`."
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-displacement-map
+  - id: I002
+    condition: "`xChannelSelector` or `yChannelSelector` is omitted or not one of `R`, `G`, `B`, or `A`."
+    source_behavior: "The initial value is `A`; unknown values are not part of the selector grammar."
+    required_behavior: "Use selector `A`."
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+
+recommendations: []
+derived_requirements: []
+implementation_choices: []
+
+ambiguities:
+  - id: A001
+    question: "Which interpolation method should be used when the source sample location falls between source pixels?"
+    impact: "Rendering output may differ between implementations."
+    options: []
+    source_refs:
+      - filter-effects-fe-displacement-map
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: "Common filter primitive attributes"
+    reason: "`<feDisplacementMap>` also includes the common filter primitive attributes."
+    source_refs:
+      - filter-effects-fe-displacement-map
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-displacement-map
+      - filter-effects-displacement-map-interface
+    map_item_refs: []
