@@ -5040,6 +5040,29 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(path.textAnchor == .end)
 }
 
+@Test func svgParserPreservesDominantBaselineOnTextContentElements() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+		<defs>
+			<path id="curve" d="M 0 60 L 200 60" />
+		</defs>
+		<text id="label" x="10" y="30" dominant-baseline="central">A<tspan dominant-baseline="hanging">B</tspan><textPath href="#curve" dominant-baseline="text-before-edge">C</textPath></text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected parsed text element")
+		return
+	}
+	#expect(text.dominantBaseline == .central)
+	#expect(text.spans.map(\.text) == ["A", "B", "C"])
+	#expect(text.spans[0].dominantBaseline == nil)
+	#expect(text.spans[1].dominantBaseline == .hanging)
+	let path = try #require(text.spans[2].textPath)
+	#expect(path.dominantBaseline == .textBeforeEdge)
+}
+
 @Test func svgParserNormalizesDefaultTextWhitespace() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

@@ -1645,9 +1645,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fontFamily: attributes["font-family"] ?? "",
 			fontWeight: attributes["font-weight"] ?? "normal",
 			textAnchor: parseTextAnchor(attributes["text-anchor"]),
+			dominantBaseline: parseTextDominantBaseline(attributes["dominant-baseline"]) ?? .auto,
 			attributes: attrs,
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "font-size", "font-family", "font-weight", "text-anchor"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "font-size", "font-family", "font-weight", "text-anchor", "dominant-baseline"])
 		)
 	}
 
@@ -1662,8 +1663,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			spacing: parseTextPathSpacing(attributes["spacing"]),
 			side: parseTextPathSide(attributes["side"]),
 			textAnchor: parseOptionalTextAnchor(attributes["text-anchor"]),
+			dominantBaseline: parseTextDominantBaseline(attributes["dominant-baseline"]),
 			attributes: parsePaintAttributes(attributes),
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side", "text-anchor"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side", "text-anchor", "dominant-baseline"])
 		))
 	}
 
@@ -1675,7 +1677,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			dyValues: parseTextCoordinateList(attributes["dy"], percentageBasis: .vertical) ?? [],
 			rotateValues: parseTextRotateList(attributes["rotate"]) ?? [],
 			textAnchor: parseOptionalTextAnchor(attributes["text-anchor"]),
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "text-anchor"])
+			dominantBaseline: parseTextDominantBaseline(attributes["dominant-baseline"]),
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "text-anchor", "dominant-baseline"])
 		)
 	}
 
@@ -1852,6 +1855,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				fontFamily: textBuilder.fontFamily,
 				fontWeight: textBuilder.fontWeight,
 				textAnchor: textBuilder.textAnchor,
+				dominantBaseline: textBuilder.dominantBaseline,
 				attributes: textBuilder.attributes,
 				spans: textBuilder.spans,
 				language: textBuilder.language,
@@ -1883,6 +1887,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fontSize: nil,
 			fontWeight: nil,
 			textAnchor: positioning.textAnchor,
+			dominantBaseline: positioning.dominantBaseline,
 			attributes: attributes,
 			textPath: textPathStack.last,
 			language: language,
@@ -1987,6 +1992,26 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "start": .start
 		case "middle": .middle
 		case "end": .end
+		default: nil
+		}
+	}
+
+	private func parseTextDominantBaseline(_ value: String?) -> SVGTextDominantBaseline? {
+		switch value {
+		case "auto": .auto
+		case "use-script": .useScript
+		case "no-change": .noChange
+		case "reset-size": .resetSize
+		case "ideographic": .ideographic
+		case "alphabetic": .alphabetic
+		case "hanging": .hanging
+		case "mathematical": .mathematical
+		case "central": .central
+		case "middle": .middle
+		case "text-after-edge": .textAfterEdge
+		case "text-before-edge": .textBeforeEdge
+		case "text-top": .textTop
+		case "text-bottom": .textBottom
 		default: nil
 		}
 	}
@@ -3257,12 +3282,13 @@ private final class SVGTextBuilder {
 	let fontFamily: String
 	let fontWeight: String
 	let textAnchor: SVGTextAnchor
+	let dominantBaseline: SVGTextDominantBaseline
 	let attributes: SVGPaintAttributes
 	let language: String?
 	let unknownAttributes: [String: String]
 	var spans: [SVGTextSpan] = []
 
-	init(id: String, x: Double, y: Double, xValues: [Double], yValues: [Double], dxValues: [Double], dyValues: [Double], rotateValues: [Double], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
+	init(id: String, x: Double, y: Double, xValues: [Double], yValues: [Double], dxValues: [Double], dyValues: [Double], rotateValues: [Double], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, dominantBaseline: SVGTextDominantBaseline, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -3275,6 +3301,7 @@ private final class SVGTextBuilder {
 		self.fontFamily = fontFamily
 		self.fontWeight = fontWeight
 		self.textAnchor = textAnchor
+		self.dominantBaseline = dominantBaseline
 		self.attributes = attributes
 		self.language = language
 		self.unknownAttributes = unknownAttributes
@@ -3283,7 +3310,7 @@ private final class SVGTextBuilder {
 
 /// Mutable tspan positioning collected before the text run is finalized.
 private struct SVGTextSpanPositioning {
-	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], textAnchor: nil, unknownAttributes: [:])
+	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], textAnchor: nil, dominantBaseline: nil, unknownAttributes: [:])
 
 	let xValues: [Double]
 	let yValues: [Double]
@@ -3291,6 +3318,7 @@ private struct SVGTextSpanPositioning {
 	let dyValues: [Double]
 	let rotateValues: [Double]
 	let textAnchor: SVGTextAnchor?
+	let dominantBaseline: SVGTextDominantBaseline?
 	let unknownAttributes: [String: String]
 }
 

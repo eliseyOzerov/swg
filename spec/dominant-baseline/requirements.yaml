@@ -1,0 +1,164 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: dominant-baseline
+  title: SVG dominant-baseline property
+  domain: SVG Text
+  profile: null
+  summary: Requirements for preserving dominant-baseline values on SVG text content elements.
+  non_goals:
+    - Computing scaled baseline tables.
+    - Font baseline-table lookup and fallback heuristics.
+    - baseline-shift behavior.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-dominant-baseline
+      title: SVG 2, dominant-baseline property
+      url: https://www.w3.org/TR/SVG/text.html#DominantBaselineProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C text chapter.
+
+scope:
+  includes:
+    - Recognition of dominant-baseline on text, tspan, and textPath.
+    - Preservation of specified baseline keywords.
+    - Root text fallback to auto when absent or invalid.
+  excludes:
+    - Resolving auto against writing-mode.
+    - Re-determining scaled baseline tables.
+    - Font metric fallback behavior.
+  assumptions:
+    - Parser-level conformance can preserve dominant-baseline values for a later rendering phase.
+    - Child text content elements store nil when no local dominant-baseline value is present.
+
+terminology:
+  - id: term-scaled-baseline-table
+    term: scaled baseline table
+    definition: A compound baseline value containing a dominant baseline identifier, baseline table, and baseline-table font size.
+    source_refs:
+      - svg2-dominant-baseline
+  - id: term-baseline-identifier
+    term: baseline identifier
+    definition: The named baseline selected by dominant-baseline, such as alphabetic, hanging, mathematical, central, or middle.
+    source_refs:
+      - svg2-dominant-baseline
+
+structures:
+  - id: S001
+    name: dominant-baseline
+    kind: property
+    source_refs:
+      - svg2-dominant-baseline
+    fields:
+      - name: value
+        type: enum
+        cardinality: optional
+        position: property
+        constraints:
+          - Initial value is auto.
+          - Applies to text content elements.
+          - Not inherited in the SVG 2 text chapter.
+          - Animatable.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-dominant-baseline
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: dominant-baseline applies to text content elements and accepts the SVG baseline keywords defined for the property.
+    applies_to:
+      - text
+      - tspan
+      - textPath
+    source_refs:
+      - svg2-dominant-baseline
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial dominant-baseline value is auto.
+    applies_to:
+      - dominant-baseline
+    source_refs:
+      - svg2-dominant-baseline
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: dominant-baseline determines or re-determines the scaled baseline table used for text layout.
+    applies_to:
+      - dominant-baseline
+    source_refs:
+      - svg2-dominant-baseline
+    testability: reviewable
+    notes:
+      - Parser preservation enables a later rendering phase to compute the scaled baseline table.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Unsupported dominant-baseline value.
+    source_behavior: UNSPECIFIED
+    required_behavior: Store no local child override and use auto for root text fallback.
+    decision_required: false
+    source_refs:
+      - svg2-dominant-baseline
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: A parser may store dominant-baseline as an enum and defer baseline-table computation to rendering.
+    allowed_by:
+      - R001
+      - R003
+    source_refs:
+      - svg2-dominant-baseline
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG text layout
+    reason: Applying dominant-baseline depends on font metrics and text layout.
+    source_refs:
+      - svg2-dominant-baseline
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-dominant-baseline
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-dominant-baseline
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-dominant-baseline
+    map_item_refs: []

@@ -800,12 +800,13 @@ public struct SVGTextData: Equatable, Sendable {
 	public let fontFamily: String
 	public let fontWeight: String
 	public let textAnchor: SVGTextAnchor
+	public let dominantBaseline: SVGTextDominantBaseline
 	public let attributes: SVGPaintAttributes
 	public let spans: [SVGTextSpan]
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, x: Double, y: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, attributes: SVGPaintAttributes, spans: [SVGTextSpan], language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, x: Double, y: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, dominantBaseline: SVGTextDominantBaseline = .auto, attributes: SVGPaintAttributes, spans: [SVGTextSpan], language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -818,6 +819,7 @@ public struct SVGTextData: Equatable, Sendable {
 		self.fontFamily = fontFamily
 		self.fontWeight = fontWeight
 		self.textAnchor = textAnchor
+		self.dominantBaseline = dominantBaseline
 		self.attributes = attributes
 		self.spans = spans
 		self.language = language
@@ -840,12 +842,13 @@ public struct SVGTextSpan: Equatable, Sendable {
 	public let fontSize: Double?
 	public let fontWeight: String?
 	public let textAnchor: SVGTextAnchor?
+	public let dominantBaseline: SVGTextDominantBaseline?
 	public let attributes: SVGPaintAttributes?
 	public let textPath: SVGTextPathData?
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double?, fontWeight: String?, textAnchor: SVGTextAnchor? = nil, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double?, fontWeight: String?, textAnchor: SVGTextAnchor? = nil, dominantBaseline: SVGTextDominantBaseline? = nil, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.text = text
 		self.x = x
 		self.y = y
@@ -859,6 +862,7 @@ public struct SVGTextSpan: Equatable, Sendable {
 		self.fontSize = fontSize
 		self.fontWeight = fontWeight
 		self.textAnchor = textAnchor
+		self.dominantBaseline = dominantBaseline
 		self.attributes = attributes
 		self.textPath = textPath
 		self.language = language
@@ -875,10 +879,11 @@ public struct SVGTextPathData: Equatable, Sendable {
 	public let spacing: SVGTextPathSpacing
 	public let side: SVGTextPathSide
 	public let textAnchor: SVGTextAnchor?
+	public let dominantBaseline: SVGTextDominantBaseline?
 	public let attributes: SVGPaintAttributes
 	public let unknownAttributes: [String: String]
 
-	public init(path: String? = nil, href: String? = nil, startOffset: String = "0", method: SVGTextPathMethod = .align, spacing: SVGTextPathSpacing = .exact, side: SVGTextPathSide = .left, textAnchor: SVGTextAnchor? = nil, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(path: String? = nil, href: String? = nil, startOffset: String = "0", method: SVGTextPathMethod = .align, spacing: SVGTextPathSpacing = .exact, side: SVGTextPathSide = .left, textAnchor: SVGTextAnchor? = nil, dominantBaseline: SVGTextDominantBaseline? = nil, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
 		self.path = path
 		self.href = href
 		self.startOffset = startOffset
@@ -886,6 +891,7 @@ public struct SVGTextPathData: Equatable, Sendable {
 		self.spacing = spacing
 		self.side = side
 		self.textAnchor = textAnchor
+		self.dominantBaseline = dominantBaseline
 		self.attributes = attributes
 		self.unknownAttributes = unknownAttributes
 	}
@@ -914,6 +920,24 @@ public enum SVGTextAnchor: Sendable, Equatable, Hashable {
 	case start
 	case middle
 	case end
+}
+
+/// Dominant baseline requested by an SVG text content element.
+public enum SVGTextDominantBaseline: Sendable, Equatable, Hashable {
+	case auto
+	case useScript
+	case noChange
+	case resetSize
+	case ideographic
+	case alphabetic
+	case hanging
+	case mathematical
+	case central
+	case middle
+	case textAfterEdge
+	case textBeforeEdge
+	case textTop
+	case textBottom
 }
 
 /// A parsed gradient stop.
