@@ -555,6 +555,52 @@ import Testing
 	#expect(document.defs.clipPaths["objectBox"]?.flatMap { $0.collectIDs() } == ["objectChild"])
 }
 
+@Test func svgParserStoresMaskDefinitionsOutsideRenderableElements() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<mask id="mask" display="none">
+			<rect id="maskRect" x="1" y="2" width="3" height="4" fill="white"/>
+			<circle id="maskCircle" cx="10" cy="10" r="5" fill="black"/>
+			<path id="maskPath" d="M0 0 L20 0 L20 20 Z" opacity="0.5"/>
+		</mask>
+		<rect id="painted" width="20" height="20"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let mask = try #require(document.defs.masks["mask"])
+
+	#expect(mask.id == "mask")
+	#expect(document.elementIDs == ["painted"])
+	#expect(mask.children.flatMap { $0.collectIDs() } == ["maskRect", "maskCircle", "maskPath"])
+
+	guard case .rect(let rect) = mask.children[0] else {
+		Issue.record("Expected mask rect")
+		return
+	}
+	#expect(rect.x == 1)
+	#expect(rect.y == 2)
+	#expect(rect.width == 3)
+	#expect(rect.height == 4)
+	#expect(rect.attributes.fill == .color(.white))
+
+	guard case .circle(let circle) = mask.children[1] else {
+		Issue.record("Expected mask circle")
+		return
+	}
+	#expect(circle.cx == 10)
+	#expect(circle.cy == 10)
+	#expect(circle.r == 5)
+	#expect(circle.attributes.fill == .color(.black))
+
+	guard case .path(let path) = mask.children[2] else {
+		Issue.record("Expected mask path geometry")
+		return
+	}
+	#expect(path.d == "M0 0 L20 0 L20 20 Z")
+	#expect(path.attributes.opacity == 0.5)
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

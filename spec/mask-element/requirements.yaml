@@ -1,0 +1,150 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: mask-element
+  title: SVG mask element
+  domain: CSS Masking Level 1 / SVG
+  profile: null
+  summary: Preserve SVG `<mask>` elements as reusable mask sources with their supported child geometry, without rendering them as normal document content.
+  non_goals:
+    - Parsing the `mask` property; it is tracked as a separate TODO bullet.
+    - Parsing `maskUnits`; it is tracked as a separate TODO bullet.
+    - Parsing `maskContentUnits`; it is tracked as a separate TODO bullet.
+    - Evaluating masking pixels or applying masking during rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-masking-mask-element
+      title: "CSS Masking Module Level 1: The mask element"
+      url: https://www.w3.org/TR/css-masking-1/#elementdef-mask
+      version: Candidate Recommendation Draft, 5 August 2021
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-masking-removed
+      title: "SVG 2: Removed Clipping, Masking and Compositing chapter"
+      url: https://www.w3.org/TR/SVG/masking.html
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: descriptive
+  source_notes:
+    - SVG 2 points clipping and masking definitions to CSS Masking Module Level 1.
+    - CSS Masking defines `<mask>` as a never-rendered container whose child graphical content supplies mask values.
+
+scope:
+  includes:
+    - "`<mask>` elements."
+    - Supported child geometry inside a mask source.
+    - Never-rendered definition behavior.
+  excludes:
+    - "`mask` property references."
+    - "`maskUnits` and `maskContentUnits` coordinate-system selection."
+    - Mask region geometry resolution from `x`, `y`, `width`, and `height`.
+    - Luminance/alpha mask evaluation and compositor integration.
+  assumptions:
+    - The parser can preserve supported child elements as the representation needed by downstream path conversion/rendering.
+
+terminology:
+  - id: T001
+    term: mask
+    definition: A never-rendered SVG container whose child graphical content defines an alpha or luminance mask source.
+    source_refs:
+      - css-masking-mask-element
+  - id: T002
+    term: mask source
+    definition: The graphical content of a mask element used to compute the mask applied to a referencing element.
+    source_refs:
+      - css-masking-mask-element
+
+structures:
+  - id: S001
+    name: SVG mask source
+    kind: structure
+    source_refs:
+      - css-masking-mask-element
+    fields:
+      - name: id
+        type: string
+        cardinality: optional-in-source
+        position: attribute
+        constraints:
+          - Used by `mask` URL references.
+        requirement_refs:
+          - R001
+        source_refs:
+          - css-masking-mask-element
+      - name: children
+        type: array<SVGElement>
+        cardinality: zero-or-more
+        position: content
+        constraints:
+          - Contains supported graphical content that contributes to the mask source.
+        requirement_refs:
+          - R002
+        source_refs:
+          - css-masking-mask-element
+
+requirements:
+  - id: R001
+    title: Preserve mask definitions
+    statement: A `<mask>` element must be preserved as a mask source that can be referenced by the `mask` property.
+    keywords:
+      - mask
+      - definition
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - Given an SVG containing `<mask id="mask">`, the parsed document exposes a reusable mask definition keyed by `mask`.
+      - The definition preserves the mask ID.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserStoresMaskDefinitionsOutsideRenderableElements
+  - id: R002
+    title: Preserve mask child geometry
+    statement: Supported child graphics inside `<mask>` must be preserved because their rendered output defines the mask source.
+    keywords:
+      - mask
+      - children
+      - geometry
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - Supported child geometry inside a mask remains available in document order.
+      - Child IDs and geometry attributes are preserved.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserStoresMaskDefinitionsOutsideRenderableElements
+  - id: R003
+    title: Do not render mask containers directly
+    statement: A `<mask>` element must not be rendered directly as ordinary document content.
+    keywords:
+      - mask
+      - rendering
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - The root renderable element list excludes the `<mask>` container and its definition-only children.
+      - A `<mask>` element remains available as a definition even when it has display styling that would otherwise suppress ordinary rendering.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserStoresMaskDefinitionsOutsideRenderableElements
+
+coverage:
+  status: test-required
+  test_files:
+    - Tests/SwgTests/SVGParserTests.swift
+  requirement_to_tests:
+    R001:
+      - svgParserStoresMaskDefinitionsOutsideRenderableElements
+    R002:
+      - svgParserStoresMaskDefinitionsOutsideRenderableElements
+    R003:
+      - svgParserStoresMaskDefinitionsOutsideRenderableElements
