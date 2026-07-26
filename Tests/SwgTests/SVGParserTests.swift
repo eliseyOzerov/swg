@@ -4912,6 +4912,25 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(text.spans.map(\.text) == ["Hello, SVG"])
 }
 
+@Test func svgParserPreservesTSpanChildTextAndPaintingAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+		<text id="label" x="12" y="34" fill="blue">You are <tspan fill="red" stroke="black">not</tspan> late</text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected parsed text element")
+		return
+	}
+	#expect(text.spans.map(\.text) == ["You are", "not", "late"])
+	#expect(text.spans[0].attributes == nil)
+	#expect(text.spans[1].attributes?.fill == .color(.red))
+	#expect(text.spans[1].attributes?.stroke == .color(.black))
+	#expect(text.spans[2].attributes == nil)
+}
+
 @Test func svgParserNormalizesDefaultTextWhitespace() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

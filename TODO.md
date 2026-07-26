@@ -179,7 +179,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 ## Text
 
 - [x] `<text>`.
-- [ ] `<tspan>`.
+- [x] `<tspan>`.
 - [ ] `<textPath>`.
 - [ ] `x`, `y`, `dx`, `dy` on text content elements.
 - [ ] `rotate` on text content elements.
