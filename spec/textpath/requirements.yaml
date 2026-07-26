@@ -1,0 +1,293 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: textpath
+  title: SVG textPath element
+  domain: SVG Text
+  profile: null
+  summary: Requirements for preserving textPath text content and path-selection attributes needed to place text along path geometry.
+  non_goals:
+    - Full glyph shaping and text-on-path layout.
+    - Resolving path references to concrete geometry.
+    - Per-character positioning and hidden-glyph decisions.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-textpath
+      title: SVG 2, Text chapter, textPath element
+      url: https://www.w3.org/TR/SVG/text.html#TextPathElement
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C text chapter.
+
+scope:
+  includes:
+    - Recognition of textPath as a text content child element.
+    - Preservation of character data inside textPath.
+    - Preservation of path, href, xlink:href, startOffset, method, spacing, and side information for later layout.
+    - Preservation of textPath presentation attributes relevant to painting.
+  excludes:
+    - Path-distance algorithms and glyph placement.
+    - pathLength adjustment on the referenced path.
+    - Rendering differences between align and stretch.
+  assumptions:
+    - Parser-level conformance can preserve textPath content and attributes for a later rendering phase.
+    - Raw startOffset is preserved because percentages are relative to path length, not viewport dimensions.
+
+terminology:
+  - id: term-text-content-child-element
+    term: text content child element
+    definition: A text content element allowed as a descendant of another text content element; SVG includes tspan and textPath.
+    source_refs:
+      - svg2-textpath
+  - id: term-text-on-path
+    term: text on a path
+    definition: Text transformed to follow a path supplied by a reference or inline path data.
+    source_refs:
+      - svg2-textpath
+
+structures:
+  - id: S001
+    name: textPath
+    kind: element
+    source_refs:
+      - svg2-textpath
+    fields:
+      - name: characterData
+        type: string
+        cardinality: optional
+        position: content
+        constraints:
+          - Character data inside textPath contributes typographic characters to place along the selected path.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg2-textpath
+      - name: path
+        type: path-data-string
+        cardinality: optional
+        position: attribute
+        constraints:
+          - When supplied and valid, path takes precedence over href and xlink:href for selecting the path.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - svg2-textpath
+      - name: href
+        type: url-reference
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Used to reference a path or basic shape when path is absent or erroneous.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - svg2-textpath
+      - name: startOffset
+        type: length-percentage-or-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - Percentages represent distance along the entire path.
+          - Negative values and values larger than the path length are allowed.
+        requirement_refs:
+          - R004
+        source_refs:
+          - svg2-textpath
+      - name: method
+        type: enum
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Allowed values are align and stretch.
+          - Initial value is align.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg2-textpath
+      - name: spacing
+        type: enum
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Allowed values are auto and exact.
+          - Initial value is exact.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg2-textpath
+      - name: side
+        type: enum
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Allowed values are left and right.
+          - Initial value is left.
+        requirement_refs:
+          - R007
+        source_refs:
+          - svg2-textpath
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The textPath element is a renderable text content child element whose character data is rendered as text on a path.
+    applies_to:
+      - textPath
+    source_refs:
+      - svg2-textpath
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A textPath can specify the path to use with either inline path data or a URL reference to a path element or basic shape.
+    applies_to:
+      - textPath
+    source_refs:
+      - svg2-textpath
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: ordering
+    statement: When path, href, and xlink:href are present, path has first precedence, href second, and xlink:href third; if path contains an error, href is used.
+    applies_to:
+      - textPath
+    source_refs:
+      - svg2-textpath
+    testability: reviewable
+    notes:
+      - This artifact requires preservation of all source-selection attributes so a later layout phase can apply the full precedence rule.
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: startOffset defines the initial current text position as a distance along the selected path and defaults to 0.
+    applies_to:
+      - textPath.startOffset
+    source_refs:
+      - svg2-textpath
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: method indicates whether text is aligned along the path or stretched along the path, with align as the initial value.
+    applies_to:
+      - textPath.method
+    source_refs:
+      - svg2-textpath
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: spacing indicates whether path text spacing is exact or automatically adjusted, with exact as the initial value.
+    applies_to:
+      - textPath.spacing
+    source_refs:
+      - svg2-textpath
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: side determines whether text is placed on the left or right side of the path, with left as the initial value.
+    applies_to:
+      - textPath.side
+    source_refs:
+      - svg2-textpath
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: path attribute contains an error.
+    source_behavior: href must be used.
+    required_behavior: Preserve href alongside path so a later path-validation/layout phase can apply this fallback.
+    decision_required: false
+    source_refs:
+      - svg2-textpath
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: A parser may preserve textPath as ordered text runs that carry textPath path-selection data and painting attributes for later rendering.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+    source_refs:
+      - svg2-textpath
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG path data
+    reason: Inline textPath path data uses SVG path syntax.
+    source_refs:
+      - svg2-textpath
+  - id: DEP002
+    kind: source-section
+    title: SVG URL references
+    reason: href and xlink:href identify referenced path geometry.
+    source_refs:
+      - svg2-textpath
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-textpath
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-textpath
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-textpath
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-textpath
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-textpath
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg2-textpath
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg2-textpath
+    map_item_refs: []

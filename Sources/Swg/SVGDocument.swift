@@ -825,10 +825,11 @@ public struct SVGTextSpan: Equatable, Sendable {
 	public let fontSize: Double?
 	public let fontWeight: String?
 	public let attributes: SVGPaintAttributes?
+	public let textPath: SVGTextPathData?
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, fontSize: Double?, fontWeight: String?, attributes: SVGPaintAttributes?, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, fontSize: Double?, fontWeight: String?, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.text = text
 		self.x = x
 		self.y = y
@@ -837,9 +838,51 @@ public struct SVGTextSpan: Equatable, Sendable {
 		self.fontSize = fontSize
 		self.fontWeight = fontWeight
 		self.attributes = attributes
+		self.textPath = textPath
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}
+}
+
+/// Data from an SVG `<textPath>` element that positions text along path geometry.
+public struct SVGTextPathData: Equatable, Sendable {
+	public let path: String?
+	public let href: String?
+	public let startOffset: String
+	public let method: SVGTextPathMethod
+	public let spacing: SVGTextPathSpacing
+	public let side: SVGTextPathSide
+	public let attributes: SVGPaintAttributes
+	public let unknownAttributes: [String: String]
+
+	public init(path: String? = nil, href: String? = nil, startOffset: String = "0", method: SVGTextPathMethod = .align, spacing: SVGTextPathSpacing = .exact, side: SVGTextPathSide = .left, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+		self.path = path
+		self.href = href
+		self.startOffset = startOffset
+		self.method = method
+		self.spacing = spacing
+		self.side = side
+		self.attributes = attributes
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Rendering method requested by an SVG `<textPath>` element.
+public enum SVGTextPathMethod: Sendable, Equatable, Hashable {
+	case align
+	case stretch
+}
+
+/// Glyph spacing mode requested by an SVG `<textPath>` element.
+public enum SVGTextPathSpacing: Sendable, Equatable, Hashable {
+	case auto
+	case exact
+}
+
+/// Side of the referenced path used by an SVG `<textPath>` element.
+public enum SVGTextPathSide: Sendable, Equatable, Hashable {
+	case left
+	case right
 }
 
 /// Text alignment anchor for SVG text layout.

@@ -214,6 +214,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var inText = false
 	private var textBuilder: SVGTextBuilder?
 	private var currentSpanAttrs: SVGPaintAttributes?
+	private var textPathStack: [SVGTextPathData] = []
 	private var xmlSpaceStack: [SVGXMLSpaceMode] = [.default]
 	private var inStyleElement = false
 	private var styleText = ""
@@ -556,6 +557,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			parseTextStart(attributes)
 		case "tspan":
 			parseTSpanStart(attributes)
+		case "textPath":
+			parseTextPathStart(attributes)
 		case "g":
 			let attrs = parsePaintAttributes(attributes)
 			let id = resolveID(attributes["id"], elementName: "Group")
@@ -691,6 +694,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			finalizeText()
 		case "tspan":
 			finalizeTSpan()
+		case "textPath":
+			finalizeTextPath()
 		case "g":
 			finalizeContainerElement()
 		default:
@@ -743,6 +748,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		inText = false
 		textBuilder = nil
 		currentSpanAttrs = nil
+		textPathStack = []
 		xmlSpaceStack = [.default]
 		inStyleElement = false
 		styleText = ""
@@ -1633,6 +1639,21 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		)
 	}
 
+	private func parseTextPathStart(_ attributes: [String: String]) {
+		appendBufferedTextSpan(attributes: nil, language: parentLanguageForCurrentElement)
+		xmlSpaceStack.append(parseXMLSpace(attributes["xml:space"], inherited: currentXMLSpaceMode))
+		textPathStack.append(SVGTextPathData(
+			path: attributes["path"],
+			href: parseRawHref(attributes),
+			startOffset: attributes["startOffset"] ?? "0",
+			method: parseTextPathMethod(attributes["method"]),
+			spacing: parseTextPathSpacing(attributes["spacing"]),
+			side: parseTextPathSide(attributes["side"]),
+			attributes: parsePaintAttributes(attributes),
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side"])
+		))
+	}
+
 	private func parseTitleStart(_ attributes: [String: String]) {
 		let id = resolveID(attributes["id"], elementName: "Title")
 		setCurrentParsedElementID(id)
@@ -1749,33 +1770,32 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseTSpanStart(_ attributes: [String: String]) {
-		let buffered = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
-		if !buffered.isEmpty, let textBuilder {
-			textBuilder.spans.append(SVGTextSpan(text: buffered, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil, language: parentLanguageForCurrentElement))
-		}
-		characterBuffer = ""
+		appendBufferedTextSpan(attributes: nil, language: parentLanguageForCurrentElement)
 		xmlSpaceStack.append(parseXMLSpace(attributes["xml:space"], inherited: currentXMLSpaceMode))
 		currentSpanAttrs = parsePaintAttributes(attributes)
 	}
 
 	private func finalizeTSpan() {
-		let text = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
 		let attributes = currentSpanAttrs
-		characterBuffer = ""
 		currentSpanAttrs = nil
+		appendBufferedTextSpan(attributes: attributes, language: currentLanguage)
 		if xmlSpaceStack.count > 1 {
 			xmlSpaceStack.removeLast()
 		}
-		guard !text.isEmpty, let textBuilder else { return }
-		textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: attributes, language: currentLanguage))
+	}
+
+	private func finalizeTextPath() {
+		appendBufferedTextSpan(attributes: textPathStack.last?.attributes, language: currentLanguage)
+		if !textPathStack.isEmpty {
+			textPathStack.removeLast()
+		}
+		if xmlSpaceStack.count > 1 {
+			xmlSpaceStack.removeLast()
+		}
 	}
 
 	private func finalizeText() {
-		let text = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
-		if !text.isEmpty, let textBuilder {
-			textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: nil, language: currentLanguage))
-		}
-		characterBuffer = ""
+		appendBufferedTextSpan(attributes: nil, language: currentLanguage)
 
 		if let textBuilder {
 			let fontSize = textBuilder.fontSize > 0 ? textBuilder.fontSize : 16
@@ -1795,7 +1815,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 		textBuilder = nil
 		inText = false
+		textPathStack = []
 		xmlSpaceStack = [.default]
+	}
+
+	private func appendBufferedTextSpan(attributes: SVGPaintAttributes?, language: String?) {
+		let text = normalizeTextWhitespace(characterBuffer, mode: currentXMLSpaceMode)
+		characterBuffer = ""
+		guard !text.isEmpty, let textBuilder else { return }
+		textBuilder.spans.append(SVGTextSpan(text: text, x: nil, y: nil, dx: 0, dy: 0, fontSize: nil, fontWeight: nil, attributes: attributes, textPath: textPathStack.last, language: language))
 	}
 
 	private var currentXMLSpaceMode: SVGXMLSpaceMode {
@@ -1891,6 +1919,27 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "middle": .middle
 		case "end": .end
 		default: .start
+		}
+	}
+
+	private func parseTextPathMethod(_ value: String?) -> SVGTextPathMethod {
+		switch value {
+		case "stretch": .stretch
+		default: .align
+		}
+	}
+
+	private func parseTextPathSpacing(_ value: String?) -> SVGTextPathSpacing {
+		switch value {
+		case "auto": .auto
+		default: .exact
+		}
+	}
+
+	private func parseTextPathSide(_ value: String?) -> SVGTextPathSide {
+		switch value {
+		case "right": .right
+		default: .left
 		}
 	}
 

@@ -4931,6 +4931,44 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(text.spans[2].attributes == nil)
 }
 
+@Test func svgParserPreservesTextPathRunsAndAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 200 80">
+		<defs>
+			<path id="curve" d="M 0 40 C 50 0 150 0 200 40" />
+			<path id="legacy" d="M 0 60 L 200 60" />
+		</defs>
+		<text id="label" x="12" y="34">
+			<textPath path="M 0 0 L 50 0" href="#curve" startOffset="-10" method="stretch" spacing="auto" side="right" fill="lime">Inline path</textPath>
+			<textPath xlink:href="#legacy">Legacy href</textPath>
+		</text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected parsed text element")
+		return
+	}
+	#expect(text.spans.map(\.text) == ["Inline path", "Legacy href"])
+	let inlinePath = try #require(text.spans[0].textPath)
+	#expect(inlinePath.path == "M 0 0 L 50 0")
+	#expect(inlinePath.href == "#curve")
+	#expect(inlinePath.startOffset == "-10")
+	#expect(inlinePath.method == .stretch)
+	#expect(inlinePath.spacing == .auto)
+	#expect(inlinePath.side == .right)
+	#expect(inlinePath.attributes.fill == .color(.green))
+	#expect(text.spans[0].attributes?.fill == .color(.green))
+	let legacyPath = try #require(text.spans[1].textPath)
+	#expect(legacyPath.path == nil)
+	#expect(legacyPath.href == "#legacy")
+	#expect(legacyPath.startOffset == "0")
+	#expect(legacyPath.method == .align)
+	#expect(legacyPath.spacing == .exact)
+	#expect(legacyPath.side == .left)
+}
+
 @Test func svgParserNormalizesDefaultTextWhitespace() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
