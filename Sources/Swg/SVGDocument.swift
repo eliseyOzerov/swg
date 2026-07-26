@@ -1037,6 +1037,7 @@ public enum SVGCrossOriginMode: Equatable, Sendable, Hashable {
 /// Light source used by an SVG lighting filter primitive.
 public enum SVGFilterLightSource: Equatable, Sendable, Hashable {
 	case distantLight(azimuth: Double = 0, elevation: Double = 0)
+	case pointLight(x: Double = 0, y: Double = 0, z: Double = 0)
 }
 
 /// Color channel selected by an SVG filter primitive.

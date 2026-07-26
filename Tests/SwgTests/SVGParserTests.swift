@@ -962,6 +962,56 @@ private func expectOffset(_ primitive: SVGFilterPrimitive, input expectedInput: 
 	)
 }
 
+@Test func svgParserPreservesPointLightAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="point">
+			<feDiffuseLighting>
+				<fePointLight/>
+			</feDiffuseLighting>
+			<feDiffuseLighting>
+				<fePointLight x="10.5" y="-2" z="4"/>
+			</feDiffuseLighting>
+			<feDiffuseLighting>
+				<fePointLight x="bad" y="bad" z="bad"/>
+			</feDiffuseLighting>
+			<fePointLight x="1" y="2" z="3"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["point"])
+	#expect(filter.primitives.count == 3)
+	expectDiffuseLighting(
+		filter.primitives[0],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .pointLight(x: 0, y: 0, z: 0)
+	)
+	expectDiffuseLighting(
+		filter.primitives[1],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .pointLight(x: 10.5, y: -2, z: 4)
+	)
+	expectDiffuseLighting(
+		filter.primitives[2],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		lightSource: .pointLight(x: 0, y: 0, z: 0)
+	)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")

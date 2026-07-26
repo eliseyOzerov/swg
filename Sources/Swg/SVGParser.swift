@@ -489,6 +489,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				dx: attributes["dx"].flatMap(parseNumber) ?? 0,
 				dy: attributes["dy"].flatMap(parseNumber) ?? 0
 			))
+		case "fePointLight":
+			setFilterLightSource(.pointLight(
+				x: attributes["x"].flatMap(parseNumber) ?? 0,
+				y: attributes["y"].flatMap(parseNumber) ?? 0,
+				z: attributes["z"].flatMap(parseNumber) ?? 0
+			))
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2

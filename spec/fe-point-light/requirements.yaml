@@ -1,0 +1,188 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-point-light
+  title: SVG fePointLight light source
+  domain: SVG Filter Effects
+  profile: null
+  summary: Requirements for preserving fePointLight child light-source attributes used by SVG lighting filter primitives.
+  non_goals:
+    - Lighting rasterization or normal-vector calculations.
+    - Full DOM IDL reflection or animation support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-point-light
+      title: Filter Effects Module Level 1, fePointLight element
+      url: https://www.w3.org/TR/filter-effects-1/#fePointLightElement
+      version: Editor-independent W3C Working Draft snapshot
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C section.
+
+scope:
+  includes:
+    - fePointLight recognition as a light source element.
+    - The x, y, and z numeric attributes.
+    - Initial values for omitted numeric attributes.
+    - Association of the light source with a lighting filter primitive parent.
+  excludes:
+    - Standalone rendering behavior outside lighting filter primitives.
+    - Animation and DOM mutation behavior.
+  assumptions:
+    - A light source element outside a supported lighting primitive does not create a standalone filter primitive.
+
+terminology:
+  - id: term-point-light
+    term: Point light
+    definition: A light source located at an X, Y, and Z position in the primitiveUnits coordinate system.
+    source_refs:
+      - filter-effects-fe-point-light
+
+structures:
+  - id: S001
+    name: fePointLight
+    kind: element
+    source_refs:
+      - filter-effects-fe-point-light
+    fields:
+      - name: x
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - The value is in the coordinate system established by the filter element's primitiveUnits attribute.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-point-light
+      - name: y
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - The value is in the coordinate system established by the filter element's primitiveUnits attribute.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-fe-point-light
+      - name: z
+        type: number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Initial value is 0.
+          - The value is in the coordinate system established by the filter element's primitiveUnits attribute.
+          - One unit along Z equals one unit in X and Y.
+        requirement_refs:
+          - R003
+        source_refs:
+          - filter-effects-fe-point-light
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The x attribute is a number value for the light source X location and has an initial value of 0.
+    applies_to:
+      - fePointLight.x
+    source_refs:
+      - filter-effects-fe-point-light
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The y attribute is a number value for the light source Y location and has an initial value of 0.
+    applies_to:
+      - fePointLight.y
+    source_refs:
+      - filter-effects-fe-point-light
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: The z attribute is a number value for the light source Z location and has an initial value of 0.
+    applies_to:
+      - fePointLight.z
+    source_refs:
+      - filter-effects-fe-point-light
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: fePointLight is a light source element for lighting filter primitives.
+    applies_to:
+      - fePointLight
+    source_refs:
+      - filter-effects-fe-point-light
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: x, y, or z is syntactically malformed.
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - filter-effects-fe-point-light
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Malformed numeric values
+    statement: A parser may fall back to the initial value for malformed numeric attributes when preserving a usable light-source representation.
+    allowed_by:
+      - I001
+    source_refs:
+      - filter-effects-fe-point-light
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG lighting filter primitives
+    reason: fePointLight is only useful as a child light source of a lighting primitive.
+    source_refs:
+      - filter-effects-fe-point-light
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-point-light
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-point-light
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-point-light
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-point-light
+    map_item_refs: []
