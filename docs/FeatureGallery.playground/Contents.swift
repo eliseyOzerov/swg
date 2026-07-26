@@ -19,7 +19,7 @@ struct FeatureExample {
 let duotoneLight = "#e5e7eb"
 let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "paint-server-full-bleed"
+let galleryAssetVersion = "clipping-native"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -344,16 +344,16 @@ let gradientAndPatternExamples = [
 ]
 
 let clipMaskExamples = [
-	example("clip-path-element", "<clipPath>", "Clipping, Masking, and Compositing", .modelOnly, "Clip path definitions are parsed but not applied.") {
+	example("clip-path-element", "<clipPath>", "Clipping, Masking, and Compositing", .rendered, "Clip path definitions apply their child geometry while rendering.") {
 		##"<defs><clipPath id="clip"><circle cx="60" cy="40" r="24"/></clipPath></defs><rect x="28" y="12" width="64" height="56" fill="#38bdf8" clip-path="url(#clip)"/>"##
 	},
-	example("clip-path-property", "clip-path", "Clipping, Masking, and Compositing", .modelOnly, "The clip-path property is parsed but ignored by the renderer.") {
+	example("clip-path-property", "clip-path", "Clipping, Masking, and Compositing", .rendered, "Local clip-path URL references constrain native drawing.") {
 		##"<defs><clipPath id="clip"><path d="M20 40 L60 14 L100 40 L60 66 Z"/></clipPath></defs><rect x="20" y="14" width="80" height="52" fill="#22c55e" clip-path="url(#clip)"/>"##
 	},
-	example("clip-rule", "clip-rule", "Clipping, Masking, and Compositing", .modelOnly, "Clip-rule is preserved, but clipping itself is not applied.") {
+	example("clip-rule", "clip-rule", "Clipping, Masking, and Compositing", .rendered, "Even-odd clip rules cut holes in clip path geometry.") {
 		##"<defs><clipPath id="clip"><path d="M18 12 H102 V68 H18 Z M40 30 H80 V50 H40 Z" clip-rule="evenodd"/></clipPath></defs><rect x="18" y="12" width="84" height="56" fill="#a855f7" clip-path="url(#clip)"/>"##
 	},
-	example("clip-path-units", "clipPathUnits", "Clipping, Masking, and Compositing", .modelOnly, "Clip path units are model-only today.") {
+	example("clip-path-units", "clipPathUnits", "Clipping, Masking, and Compositing", .rendered, "Object-bounding-box clip path units scale against the clipped element.") {
 		##"<defs><clipPath id="clip" clipPathUnits="objectBoundingBox"><circle cx=".5" cy=".5" r=".35"/></clipPath></defs><rect x="20" y="14" width="80" height="52" fill="#f97316" clip-path="url(#clip)"/>"##
 	},
 	example("mask-element", "<mask>", "Clipping, Masking, and Compositing", .modelOnly, "Mask definitions are parsed but not applied.") {

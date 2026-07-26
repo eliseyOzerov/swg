@@ -313,6 +313,7 @@ private struct SVGCanvasRenderer {
 		guard attributes.canRender else { return }
 		context.drawLayer { layer in
 			layer.concatenate(attributes.transform.cgAffineTransform)
+			applyClip(attributes: attributes, bounds: bounds(for: children), in: &layer)
 			let opacity = inheritedOpacity * attributes.opacity
 			for child in children {
 				render(child, opacity: opacity, in: &layer)
@@ -324,6 +325,7 @@ private struct SVGCanvasRenderer {
 		guard data.attributes.canRender else { return }
 		context.drawLayer { layer in
 			layer.concatenate(data.attributes.transform.cgAffineTransform)
+			applyClip(attributes: data.attributes, bounds: Rect(x: data.x, y: data.y, width: data.width, height: data.height), in: &layer)
 			if let viewBox = data.viewBox, let transform = data.preserveAspectRatio.viewBoxTransform(
 				from: viewBox,
 				to: Rect(x: data.x, y: data.y, width: data.width, height: data.height)
@@ -344,6 +346,7 @@ private struct SVGCanvasRenderer {
 		let referenceID = data.href.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
 		context.drawLayer { layer in
 			layer.concatenate(data.attributes.transform.translatedBy(x: data.x, y: data.y).cgAffineTransform)
+			applyClip(attributes: data.attributes, bounds: bounds(for: data), in: &layer)
 			let opacity = inheritedOpacity * data.attributes.opacity
 			if let elements = document.defs.reusableElements[referenceID] {
 				for element in elements {
@@ -375,6 +378,7 @@ private struct SVGCanvasRenderer {
 			layer.concatenate(attributes.transform.cgAffineTransform)
 			let path = SwiftUI.Path(cgPath)
 			let pathBounds = cgPath.svgBounds
+			applyClip(attributes: attributes, bounds: pathBounds, in: &layer)
 			let opacity = inheritedOpacity * attributes.opacity
 			for operation in attributes.paintOrder.resolvedOperations {
 				switch operation {
@@ -398,6 +402,147 @@ private struct SVGCanvasRenderer {
 				}
 			}
 		}
+	}
+
+	private func applyClip(attributes: SVGPaintAttributes, bounds: Rect?, in context: inout GraphicsContext) {
+		guard let clip = clipPath(from: attributes.clipPath, bounds: bounds) else { return }
+		context.clip(to: SwiftUI.Path(clip.path), style: FillStyle(eoFill: clip.fillRule == .evenOdd))
+	}
+
+	private func clipPath(from value: SVGClipPathValue, bounds: Rect?) -> SVGRenderClipPath? {
+		switch value {
+		case .none, .basicShape:
+			return nil
+		case .url(let id):
+			let referenceID = id.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+			guard let definition = document.defs.clipPathDefinitions[referenceID] else { return nil }
+			return clipPath(from: definition, bounds: bounds)
+		case .geometryBox(let box):
+			return clipPath(from: box, bounds: bounds)
+		}
+	}
+
+	private func clipPath(from definition: SVGClipPathDef, bounds: Rect?) -> SVGRenderClipPath? {
+		let rootTransform: Transform
+		switch definition.units {
+		case .userSpaceOnUse:
+			rootTransform = .identity
+		case .objectBoundingBox:
+			guard let bounds, bounds.width > 0, bounds.height > 0 else { return nil }
+			rootTransform = Transform.identity.translatedBy(x: bounds.x, y: bounds.y).scaledBy(x: bounds.width, y: bounds.height)
+		}
+
+		let path = CGMutablePath()
+		let fillRule = appendClipPathElements(definition.children, transform: rootTransform, to: path)
+		guard !path.isEmpty else { return nil }
+		return SVGRenderClipPath(path: path, fillRule: fillRule)
+	}
+
+	private func clipPath(from box: SVGGeometryBox, bounds: Rect?) -> SVGRenderClipPath? {
+		let rect: Rect?
+		switch box {
+		case .viewBox:
+			rect = document.viewBox
+		case .contentBox, .paddingBox, .borderBox, .marginBox, .fillBox, .strokeBox:
+			rect = bounds
+		}
+		guard let rect, rect.width > 0, rect.height > 0 else { return nil }
+		return SVGRenderClipPath(path: Path(commands: [.rect(rect)]).cgPath, fillRule: .winding)
+	}
+
+	@discardableResult
+	private func appendClipPathElements(_ elements: [SVGElement], transform: Transform, to path: CGMutablePath) -> FillRule {
+		var fillRule = FillRule.winding
+		for element in elements {
+			let elementFillRule = appendClipPathElement(element, transform: transform, to: path)
+			if elementFillRule == .evenOdd {
+				fillRule = .evenOdd
+			}
+		}
+		return fillRule
+	}
+
+	@discardableResult
+	private func appendClipPathElement(_ element: SVGElement, transform: Transform, to path: CGMutablePath) -> FillRule {
+		switch element {
+		case .path(let data):
+			appendClipPath(data.path.cgPath, attributes: data.attributes, transform: transform, to: path)
+			return data.attributes.clipRule
+		case .rect(let data):
+			appendClipPath(data.path.cgPath, attributes: data.attributes, transform: transform, to: path)
+			return data.attributes.clipRule
+		case .circle(let data):
+			appendClipPath(data.path.cgPath, attributes: data.attributes, transform: transform, to: path)
+			return data.attributes.clipRule
+		case .ellipse(let data):
+			appendClipPath(data.path.cgPath, attributes: data.attributes, transform: transform, to: path)
+			return data.attributes.clipRule
+		case .line(let data):
+			appendClipPath(data.path.cgPath, attributes: data.attributes, transform: transform, to: path)
+			return data.attributes.clipRule
+		case .polygon(let data):
+			appendClipPath(data.path.cgPath, attributes: data.attributes, transform: transform, to: path)
+			return data.attributes.clipRule
+		case .polyline(let data):
+			appendClipPath(data.path.cgPath, attributes: data.attributes, transform: transform, to: path)
+			return data.attributes.clipRule
+		case .group(let data):
+			guard data.attributes.canContributeToClip else { return .winding }
+			return appendClipPathElements(data.children, transform: transform.concatenating(data.attributes.transform), to: path)
+		case .switch(let data):
+			guard data.attributes.canContributeToClip else { return .winding }
+			return appendClipPathElements(data.children, transform: transform.concatenating(data.attributes.transform), to: path)
+		case .link(let data):
+			guard data.attributes.canContributeToClip else { return .winding }
+			return appendClipPathElements(data.children, transform: transform.concatenating(data.attributes.transform), to: path)
+		case .svg(let data):
+			guard data.attributes.canContributeToClip else { return .winding }
+			var viewportTransform = data.attributes.transform
+			if let viewBox = data.viewBox, let transform = data.preserveAspectRatio.viewBoxTransform(
+				from: viewBox,
+				to: Rect(x: data.x, y: data.y, width: data.width, height: data.height)
+			) {
+				viewportTransform = viewportTransform.concatenating(transform)
+			} else {
+				viewportTransform = viewportTransform.translatedBy(x: data.x, y: data.y)
+			}
+			return appendClipPathElements(data.children, transform: transform.concatenating(viewportTransform), to: path)
+		case .unknown(let data):
+			guard data.attributes.canContributeToClip else { return .winding }
+			return appendClipPathElements(data.children, transform: transform.concatenating(data.attributes.transform), to: path)
+		case .foreignObject(let data):
+			guard data.attributes.canContributeToClip else { return .winding }
+			return appendClipPathElements(data.children, transform: transform.concatenating(data.attributes.transform), to: path)
+		case .use(let data):
+			return appendUseClipPath(data, transform: transform, to: path)
+		case .image, .text:
+			return .winding
+		}
+	}
+
+	private func appendClipPath(_ cgPath: CGPath, attributes: SVGPaintAttributes, transform: Transform, to path: CGMutablePath) {
+		guard attributes.canContributeToClip else { return }
+		path.addPath(cgPath, transform: transform.concatenating(attributes.transform).cgAffineTransform)
+	}
+
+	private func appendUseClipPath(_ data: SVGUseData, transform: Transform, to path: CGMutablePath) -> FillRule {
+		guard data.attributes.canContributeToClip else { return .winding }
+		let referenceID = data.href.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+		let useTransform = transform.concatenating(data.attributes.transform.translatedBy(x: data.x, y: data.y))
+		if let elements = document.defs.reusableElements[referenceID] {
+			return appendClipPathElements(elements, transform: useTransform, to: path)
+		}
+		if let symbol = document.defs.symbols[referenceID] {
+			var symbolTransform = Transform.identity
+			if let viewBox = symbol.viewBox, let transform = symbol.preserveAspectRatio.viewBoxTransform(
+				from: viewBox,
+				to: Rect(x: symbol.x, y: symbol.y, width: data.width ?? symbol.width, height: data.height ?? symbol.height)
+			) {
+				symbolTransform = symbolTransform.concatenating(transform)
+			}
+			return appendClipPathElements(symbol.children, transform: useTransform.concatenating(symbolTransform), to: path)
+		}
+		return .winding
 	}
 
 	private func fill(path: SwiftUI.Path, bounds: Rect, paint: SVGPaint, currentColor: Color, opacity: Double, fillRule: FillRule, in context: inout GraphicsContext) {
@@ -626,6 +771,81 @@ private struct SVGCanvasRenderer {
 	private func swiftUIColor(from color: Color, opacity: Double) -> SwiftUI.Color {
 		SwiftUI.Color(red: color.red, green: color.green, blue: color.blue, opacity: color.alpha * opacity)
 	}
+
+	private func bounds(for elements: [SVGElement]) -> Rect? {
+		bounds(for: elements, transform: .identity)
+	}
+
+	private func bounds(for elements: [SVGElement], transform: Transform) -> Rect? {
+		elements.reduce(nil) { partial, element in
+			partial.union(bounds(for: element, transform: transform))
+		}
+	}
+
+	private func bounds(for element: SVGElement, transform: Transform) -> Rect? {
+		switch element {
+		case .path(let data):
+			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
+		case .rect(let data):
+			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
+		case .circle(let data):
+			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
+		case .ellipse(let data):
+			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
+		case .line(let data):
+			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
+		case .polygon(let data):
+			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
+		case .polyline(let data):
+			return bounds(for: data.path.cgPath, transform: transform.concatenating(data.attributes.transform))
+		case .group(let data):
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+		case .switch(let data):
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+		case .link(let data):
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+		case .svg(let data):
+			let viewport = Rect(x: data.x, y: data.y, width: data.width, height: data.height)
+			return bounds(for: Path(commands: [.rect(viewport)]).cgPath, transform: transform.concatenating(data.attributes.transform))
+		case .unknown(let data):
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+		case .foreignObject(let data):
+			return bounds(for: data.children, transform: transform.concatenating(data.attributes.transform))
+		case .use(let data):
+			return bounds(for: data, transform: transform)
+		case .image(let data):
+			let imageBounds = Path(commands: [.rect(Rect(x: data.x, y: data.y, width: data.width, height: data.height))]).cgPath
+			return bounds(for: imageBounds, transform: transform.concatenating(data.attributes.transform))
+		case .text:
+			return nil
+		}
+	}
+
+	private func bounds(for data: SVGUseData, transform: Transform = .identity) -> Rect? {
+		let referenceID = data.href.trimmingCharacters(in: CharacterSet(charactersIn: "#"))
+		let useTransform = transform.concatenating(data.attributes.transform.translatedBy(x: data.x, y: data.y))
+		if let elements = document.defs.reusableElements[referenceID] {
+			return bounds(for: elements, transform: useTransform)
+		}
+		if let symbol = document.defs.symbols[referenceID] {
+			let width = data.width ?? symbol.width
+			let height = data.height ?? symbol.height
+			if let viewBox = symbol.viewBox, let symbolTransform = symbol.preserveAspectRatio.viewBoxTransform(
+				from: viewBox,
+				to: Rect(x: symbol.x, y: symbol.y, width: width, height: height)
+			) {
+				return bounds(for: symbol.children, transform: useTransform.concatenating(symbolTransform))
+			}
+			return bounds(for: symbol.children, transform: useTransform)
+		}
+		return nil
+	}
+
+	private func bounds(for cgPath: CGPath, transform: Transform) -> Rect? {
+		let bounds = cgPath.boundingBoxOfPath.applying(transform.cgAffineTransform)
+		guard bounds.width > 0, bounds.height > 0 else { return nil }
+		return Rect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: bounds.height)
+	}
 }
 
 /// A native SwiftUI gradient stop prepared from an SVG `<stop>` element.
@@ -645,16 +865,50 @@ private struct SpreadGradientStops {
 	var stops: [Gradient.Stop]
 }
 
+/// A prepared native clipping path and the winding rule SwiftUI should use for it.
+private struct SVGRenderClipPath {
+	var path: CGPath
+	var fillRule: FillRule
+}
+
 private extension Rect {
 	var aspectRatio: CGFloat? {
 		guard width > 0, height > 0 else { return nil }
 		return CGFloat(width / height)
+	}
+
+	func union(_ other: Rect?) -> Rect {
+		guard let other else { return self }
+		let minX = min(left, other.left)
+		let minY = min(top, other.top)
+		let maxX = max(right, other.right)
+		let maxY = max(bottom, other.bottom)
+		return Rect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
+	}
+}
+
+private extension Optional where Wrapped == Rect {
+	func union(_ other: Rect?) -> Rect? {
+		switch (self, other) {
+		case (.some(let lhs), .some(let rhs)):
+			return lhs.union(rhs)
+		case (.some(let lhs), .none):
+			return lhs
+		case (.none, .some(let rhs)):
+			return rhs
+		case (.none, .none):
+			return nil
+		}
 	}
 }
 
 private extension SVGPaintAttributes {
 	var canRender: Bool {
 		display != .none && visibility == .visible && opacity > 0
+	}
+
+	var canContributeToClip: Bool {
+		display != .none
 	}
 }
 

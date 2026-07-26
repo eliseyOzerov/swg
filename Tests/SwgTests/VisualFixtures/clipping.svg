@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 12">
+	<defs>
+		<clipPath id="left-half">
+			<rect x="0" y="0" width="4" height="4"/>
+		</clipPath>
+		<clipPath id="even-odd-hole">
+			<path d="M0 4 H8 V8 H0 Z M2 5 H6 V7 H2 Z" clip-rule="evenodd"/>
+		</clipPath>
+		<clipPath id="object-left-half" clipPathUnits="objectBoundingBox">
+			<rect x="0" y="0" width=".5" height="1"/>
+		</clipPath>
+	</defs>
+	<rect x="0" y="0" width="8" height="12" fill="white"/>
+	<rect x="0" y="0" width="8" height="4" fill="red" clip-path="url(#left-half)"/>
+	<rect x="0" y="4" width="8" height="4" fill="blue" clip-path="url(#even-odd-hole)"/>
+	<rect x="2" y="8" width="4" height="4" fill="lime" clip-path="url(#object-left-half)"/>
+</svg>
