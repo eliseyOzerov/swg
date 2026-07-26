@@ -211,7 +211,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 
 - [x] `<animate>`.
 - [x] `<animateMotion>`.
-- [ ] `<animateTransform>`.
+- [x] `<animateTransform>`.
 - [ ] `<set>`.
 - [ ] `<discard>`.
 - [ ] `<mpath>`.

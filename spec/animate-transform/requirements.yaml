@@ -1,0 +1,307 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: animate-transform
+  title: SVG animateTransform element
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for recognizing SVG `<animateTransform>` elements and preserving their target relationship, target transform attribute, transform type, and raw transform endpoint values.
+  non_goals:
+    - Transform animation playback, interpolation, post-multiplication, accumulation, or rendering.
+    - Full timing, keyframe interpolation, additive, or cumulative behavior.
+    - Validation that the selected transform attribute or target element is animatable.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-target-element
+      title: SVG Animations Level 2, Attributes to identify the target element for an animation
+      url: https://svgwg.org/specs/animations/#TargetElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-target-attribute
+      title: SVG Animations Level 2, Attributes to identify the target attribute or property for an animation
+      url: https://svgwg.org/specs/animations/#TargetAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-value-attributes
+      title: SVG Animations Level 2, Attributes that define animation values over time
+      url: https://svgwg.org/specs/animations/#ValueAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-animate-transform-element
+      title: SVG Animations Level 2, The animateTransform element
+      url: https://svgwg.org/specs/animations/#AnimateTransformElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C SVG Animations draft.
+
+scope:
+  includes:
+    - Recognition of `<animateTransform>` as an SVG animation element.
+    - Preservation of each parsed `<animateTransform>` outside the normal renderable element tree.
+    - Preservation of the target relationship from `href` or, when omitted, the immediate parent element.
+    - Preservation of the target `attributeName`.
+    - Preservation of the transform `type`, including its `translate` initial value when omitted.
+    - Preservation of `from`, `to`, and `by` endpoint values as raw strings.
+    - Preservation of language and uninterpreted non-namespace attributes for later animation bullets.
+  excludes:
+    - Parsing transform endpoint strings into matrices.
+    - Applying additive post-multiplication rules.
+    - Parsing `values`, `keyTimes`, `keySplines`, `calcMode`, `additive`, or `accumulate`.
+  assumptions:
+    - Parser output may store transform animation elements in the document-level animation collection used for other SVG animation elements.
+    - Raw endpoint preservation is sufficient for this bullet because typed transform evaluation belongs to later animation-value processing.
+
+terminology:
+  - id: term-transform-animation
+    term: transform animation
+    definition: An animation that changes a transformation attribute on a target element over time.
+    source_refs:
+      - svg-animations-animate-transform-element
+  - id: term-transform-type
+    term: transform type
+    definition: "The kind of transformation animated by an `<animateTransform>` element: translate, scale, rotate, skewX, or skewY."
+    source_refs:
+      - svg-animations-animate-transform-element
+
+structures:
+  - id: S001
+    name: animateTransform
+    kind: element
+    source_refs:
+      - svg-animations-animate-transform-element
+    fields:
+      - name: id
+        type: string
+        cardinality: optional
+        position: core-attribute
+        constraints:
+          - Identifies the transform animation element.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg-animations-animate-transform-element
+      - name: href
+        type: URL
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Explicitly identifies the target element when provided.
+          - If omitted, the immediate parent element is the target.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - svg-animations-target-element
+      - name: attributeName
+        type: Name
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the target transform attribute or property.
+        requirement_refs:
+          - R005
+        source_refs:
+          - svg-animations-target-attribute
+      - name: type
+        type: keyword
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Allowed values are translate, scale, rotate, skewX, and skewY.
+          - Initial value is translate.
+        requirement_refs:
+          - R006
+        source_refs:
+          - svg-animations-animate-transform-element
+      - name: from
+        type: transform-value
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Uses syntax matching the chosen transform type.
+        requirement_refs:
+          - R007
+        source_refs:
+          - svg-animations-animate-transform-element
+      - name: to
+        type: transform-value
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Uses syntax matching the chosen transform type.
+        requirement_refs:
+          - R007
+        source_refs:
+          - svg-animations-animate-transform-element
+      - name: by
+        type: transform-value
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Uses syntax matching the chosen transform type.
+        requirement_refs:
+          - R007
+        source_refs:
+          - svg-animations-animate-transform-element
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must recognize `<animateTransform>` as an SVG animation element.
+    applies_to:
+      - animateTransform
+    source_refs:
+      - svg-animations-animate-transform-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A parsed `<animateTransform>` element must be preserved as animation data and must not be emitted as a directly rendered SVG element.
+    applies_to:
+      - animateTransform
+    source_refs:
+      - svg-animations-animate-transform-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` is present on `<animateTransform>`, its URL reference must be preserved as the explicit animation target reference.
+    applies_to:
+      - animateTransform href
+    source_refs:
+      - svg-animations-target-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: If `href` and `xlink:href` are both omitted, the animation target must be represented as the immediate parent element.
+    applies_to:
+      - animateTransform implicit target
+    source_refs:
+      - svg-animations-target-element
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: structure
+    statement: The `attributeName` value must be preserved so later processing can identify the transform attribute or property.
+    applies_to:
+      - animateTransform attributeName
+    source_refs:
+      - svg-animations-target-attribute
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: structure
+    statement: The transform `type` must be preserved and must default to `translate` when omitted.
+    applies_to:
+      - animateTransform type
+    source_refs:
+      - svg-animations-animate-transform-element
+    testability: testable
+    notes: []
+  - id: R007
+    normative_strength: MUST
+    kind: structure
+    statement: The `<animateTransform>` value endpoint attributes `from`, `to`, and `by` must be preserved when specified.
+    applies_to:
+      - animateTransform values
+    source_refs:
+      - svg-animations-value-attributes
+      - svg-animations-animate-transform-element
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: The `type` value or endpoint syntax is invalid.
+    source_behavior: INVALID_ANIMATION_VALUE
+    required_behavior: Preserve raw values and leave validation or no-effect handling to later animation processing.
+    decision_required: false
+    source_refs:
+      - svg-animations-animate-transform-element
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The parser may store `<animateTransform>` elements in `SVGDocument` animation data rather than as drawable `SVGElement` cases.
+    allowed_by:
+      - R001
+      - R002
+    source_refs:
+      - svg-animations-animate-transform-element
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: work-item
+    title: Animation interpolation and addition attributes
+    reason: The `values`, `keyTimes`, `keySplines`, `calcMode`, `additive`, and `accumulate` attributes determine transform animation evaluation after this element is recognized.
+    source_refs:
+      - svg-animations-animate-transform-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-transform-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-transform-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-element
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg-animations-target-attribute
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-transform-element
+    map_item_refs: []
+  - item_id: R007
+    item_type: requirement
+    source_refs:
+      - svg-animations-value-attributes
+      - svg-animations-animate-transform-element
+    map_item_refs: []

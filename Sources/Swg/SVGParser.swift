@@ -364,6 +364,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "animateMotion":
 			parseAnimateMotion(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .animation
+		case "animateTransform":
+			parseAnimateTransform(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .animation
 		case "style":
 			inStyleElement = true
 			styleMediaApplies = styleMediaMatches(attributes["media"])
@@ -1817,6 +1820,28 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			byValue: attributes["by"],
 			language: currentLanguage,
 			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "path", "keyPoints", "rotate", "origin", "from", "to", "by"])
+		)))
+	}
+
+	private func parseAnimateTransform(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "AnimateTransform")
+		setCurrentParsedElementID(id)
+		let target: SVGAnimationTarget?
+		if let href = parseRawHref(attributes) {
+			target = .href(href)
+		} else {
+			target = currentAnimationParent()
+		}
+		animations.append(.animateTransform(SVGAnimateTransformData(
+			id: id,
+			target: target,
+			attributeName: attributes["attributeName"],
+			type: attributes["type"] ?? "translate",
+			fromValue: attributes["from"],
+			toValue: attributes["to"],
+			byValue: attributes["by"],
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "attributeName", "type", "from", "to", "by"])
 		)))
 	}
 

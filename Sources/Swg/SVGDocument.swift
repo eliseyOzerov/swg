@@ -70,6 +70,7 @@ public struct SVGDocument: Equatable, Sendable {
 public enum SVGAnimationElement: Equatable, Sendable {
 	case animate(SVGAnimateData)
 	case animateMotion(SVGAnimateMotionData)
+	case animateTransform(SVGAnimateTransformData)
 }
 
 /// The target relationship for an SVG animation element.
@@ -122,6 +123,31 @@ public struct SVGAnimateMotionData: Equatable, Sendable {
 		self.keyPoints = keyPoints
 		self.rotate = rotate
 		self.origin = origin
+		self.fromValue = fromValue
+		self.toValue = toValue
+		self.byValue = byValue
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<animateTransform>` element that changes a transform value over time.
+public struct SVGAnimateTransformData: Equatable, Sendable {
+	public let id: String
+	public let target: SVGAnimationTarget?
+	public let attributeName: String?
+	public let type: String
+	public let fromValue: String?
+	public let toValue: String?
+	public let byValue: String?
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, target: SVGAnimationTarget? = nil, attributeName: String? = nil, type: String = "translate", fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.target = target
+		self.attributeName = attributeName
+		self.type = type
 		self.fromValue = fromValue
 		self.toValue = toValue
 		self.byValue = byValue

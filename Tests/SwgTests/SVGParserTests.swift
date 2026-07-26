@@ -5335,6 +5335,47 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(nudge.byValue == "3,4")
 }
 
+@Test func svgParserPreservesAnimateTransformElementsAsAnimationData() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+		<rect id="tile" width="10" height="10">
+			<animateTransform id="spin" attributeName="transform" type="rotate" from="0 5 5" to="90 5 5" dur="2s"/>
+		</rect>
+		<animateTransform id="slide" href="#tile" attributeName="transform" by="10,20"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["tile"])
+	#expect(document.animations.count == 2)
+
+	guard case .animateTransform(let spin) = document.animations[0] else {
+		Issue.record("Expected first animation to be animateTransform")
+		return
+	}
+	#expect(spin.id == "spin")
+	#expect(spin.target == .parent(id: "tile"))
+	#expect(spin.attributeName == "transform")
+	#expect(spin.type == "rotate")
+	#expect(spin.fromValue == "0 5 5")
+	#expect(spin.toValue == "90 5 5")
+	#expect(spin.byValue == nil)
+	#expect(spin.unknownAttributes["dur"] == "2s")
+
+	guard case .animateTransform(let slide) = document.animations[1] else {
+		Issue.record("Expected second animation to be animateTransform")
+		return
+	}
+	#expect(slide.id == "slide")
+	#expect(slide.target == .href("#tile"))
+	#expect(slide.attributeName == "transform")
+	#expect(slide.type == "translate")
+	#expect(slide.fromValue == nil)
+	#expect(slide.toValue == nil)
+	#expect(slide.byValue == "10,20")
+}
+
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
