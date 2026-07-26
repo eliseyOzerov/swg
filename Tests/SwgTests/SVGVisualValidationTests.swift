@@ -26,6 +26,14 @@ import UIKit
 	try assertVisualFixture("masking")
 }
 
+@MainActor @Test func svgVisualValidationRendersTextFixture() throws {
+	let svgURL = try #require(visualFixtureURL(for: "text-rendering", extension: "svg"))
+	let svg = try String(contentsOf: svgURL, encoding: .utf8)
+	let document = try #require(SVGParser().parse(svg))
+	let raster = try SVGVisualRasterizer.render(document, width: 80, height: 24)
+	#expect(raster.nonWhiteOpaquePixelCount > 80)
+}
+
 @MainActor private func assertVisualFixture(_ name: String) throws {
 	let svgURL = try #require(visualFixtureURL(for: name, extension: "svg"))
 	let goldenURL = try #require(visualFixtureURL(for: name, extension: "golden.txt"))
@@ -88,6 +96,16 @@ private struct SVGVisualRaster {
 		(0..<height).map { y in
 			String((0..<width).map { symbol(atX: $0, y: y) })
 		}
+	}
+
+	var nonWhiteOpaquePixelCount: Int {
+		(0..<(width * height)).filter { index in
+			let red = pixels[index * 4]
+			let green = pixels[index * 4 + 1]
+			let blue = pixels[index * 4 + 2]
+			let alpha = pixels[index * 4 + 3]
+			return alpha > 16 && !(red > 240 && green > 240 && blue > 240)
+		}.count
 	}
 
 	private func symbol(atX x: Int, y: Int) -> Character {

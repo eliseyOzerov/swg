@@ -19,7 +19,7 @@ struct FeatureExample {
 let duotoneLight = "#e5e7eb"
 let transformOriginalLight = "#d1d5db"
 let duotoneDark = "#111827"
-let galleryAssetVersion = "masking-native"
+let galleryAssetVersion = "text-native"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -44,6 +44,7 @@ let colorSpecificSlugs: Set<String> = [
 	"mask-property",
 	"mask-units",
 	"mask-content-units",
+	"text-tspan",
 	"fe-drop-shadow",
 	"fe-flood",
 ]
@@ -409,15 +410,15 @@ let filterExamples = [
 ]
 
 let textExamples = [
-	textExample("text-element", "<text>", "Text elements are parsed but native text painting is not implemented.", ##"<text x="60" y="42" text-anchor="middle" font-size="24" fill="#0f172a">SVG</text>"##),
-	textExample("text-tspan", "<tspan>", "Text spans are parsed but not painted.", ##"<text x="28" y="42" font-size="20" fill="#0f172a">A<tspan fill="#f97316">B</tspan></text>"##),
+	textExample("text-element", "<text>", status: .rendered, "Plain text elements render as native SwiftUI text runs.", ##"<text x="60" y="42" text-anchor="middle" font-size="24" fill="#0f172a">SVG</text>"##),
+	textExample("text-tspan", "<tspan>", status: .rendered, "Text spans render with inherited and overridden paint.", ##"<text x="28" y="42" font-size="20" fill="#0f172a">A<tspan fill="#f97316">B</tspan></text>"##),
 	textExample("text-path", "<textPath>", "TextPath references are parsed but text layout along paths is not painted.", ##"<defs><path id="wave" d="M16 50 C40 18 80 62 104 30"/></defs><path d="M16 50 C40 18 80 62 104 30" fill="none" stroke="#cbd5e1" stroke-width="4"/><text font-size="15"><textPath href="#wave">textPath</textPath></text>"##),
-	textExample("text-positioning", "text x/y/dx/dy", "Text positioning lists are model-only until text rendering exists.", ##"<text x="20 48" y="36" dx="0 8" dy="0 10" font-size="20">AB</text>"##),
+	textExample("text-positioning", "text x/y/dx/dy", "Per-glyph text positioning lists are parsed but not painted.", ##"<text x="20 48" y="36" dx="0 8" dy="0 10" font-size="20">AB</text>"##),
 	textExample("text-rotate", "text rotate", "Per-glyph text rotation is parsed but not painted.", ##"<text x="32" y="44" rotate="-12 12" font-size="20">rot</text>"##),
-	textExample("text-anchor", "text-anchor", "Text anchoring is parsed but not painted.", ##"<text x="60" y="42" text-anchor="middle" font-size="20">anchor</text>"##),
+	textExample("text-anchor", "text-anchor", status: .rendered, "Start, middle, and end anchoring affect native text runs.", ##"<text x="60" y="42" text-anchor="middle" font-size="20">anchor</text>"##),
 	textExample("dominant-baseline", "dominant-baseline", "Dominant baseline is parsed but not painted.", ##"<text x="60" y="40" dominant-baseline="middle" text-anchor="middle" font-size="20">base</text>"##),
 	textExample("alignment-baseline", "alignment-baseline", "Alignment baseline is parsed but not painted.", ##"<text x="60" y="40" alignment-baseline="middle" text-anchor="middle" font-size="20">base</text>"##),
-	textExample("white-space", "white-space", "Text whitespace handling is parsed but not painted.", ##"<text x="24" y="42" white-space="pre" font-size="20">A  B</text>"##),
+	textExample("white-space", "white-space", status: .rendered, "Preserved whitespace is passed through to native text drawing.", ##"<text x="24" y="42" white-space="pre" font-size="20">A  B</text>"##),
 ]
 
 let reuseAndMarkerExamples = [
@@ -497,8 +498,8 @@ func filterExample(_ slug: String, _ title: String, _ note: String, _ primitive:
 	}
 }
 
-func textExample(_ slug: String, _ title: String, _ note: String, _ textBody: String) -> FeatureExample {
-	example(slug, title, "Text", .modelOnly, note) {
+func textExample(_ slug: String, _ title: String, status rendererStatus: RendererStatus = .modelOnly, _ note: String, _ textBody: String) -> FeatureExample {
+	example(slug, title, "Text", rendererStatus, note) {
 		"""
 		<path d="M18 54 H102" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round"/>
 		\(textBody)

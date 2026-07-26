@@ -88,4 +88,4 @@ if case .circle(let circle)? = document.element(id: "dot") {
 
 ## Current Renderer Scope
 
-The parser/model coverage is broader than the native SwiftUI renderer. The renderer currently draws paths, basic shapes, containers, nested SVG viewports, simple reuse, and basic fill/stroke paint. More advanced SVG paint and effects are preserved in the model while renderer support grows.
+The parser/model coverage is broader than the native SwiftUI renderer. The renderer currently draws paths, basic shapes, containers, nested SVG viewports, simple reuse, basic text runs, and basic fill/stroke paint. More advanced SVG paint, text layout, and effects are preserved in the model while renderer support grows.

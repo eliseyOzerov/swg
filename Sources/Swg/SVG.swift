@@ -304,7 +304,9 @@ private struct SVGCanvasRenderer {
 			render(children: data.children, attributes: data.attributes, inheritedOpacity: opacity, in: &context)
 		case .use(let data):
 			render(use: data, inheritedOpacity: opacity, in: &context)
-		case .image, .text:
+		case .text(let data):
+			render(text: data, inheritedOpacity: opacity, in: &context)
+		case .image:
 			break
 		}
 	}
@@ -412,6 +414,109 @@ private struct SVGCanvasRenderer {
 					}
 				}
 			}
+		}
+	}
+
+	private func render(text data: SVGTextData, inheritedOpacity: Double, in context: inout GraphicsContext) {
+		guard data.attributes.canRender else { return }
+		context.drawLayer { layer in
+			layer.concatenate(data.attributes.transform.cgAffineTransform)
+			let textBounds = bounds(for: data)
+			applyClip(attributes: data.attributes, bounds: textBounds, in: &layer)
+			drawMasked(attributes: data.attributes, bounds: textBounds, in: &layer) { maskedLayer in
+				let runs = textRuns(for: data, inheritedOpacity: inheritedOpacity, in: &maskedLayer)
+				for run in runs {
+					var resolved = maskedLayer.resolve(SwiftUI.Text(run.text).font(run.font))
+					let runBounds = Rect(x: run.x, y: run.y - Double(run.baseline), width: Double(run.size.width), height: Double(run.size.height))
+					guard let shading = shading(from: run.attributes.fill, currentColor: run.attributes.color, opacity: run.opacity * run.attributes.fillOpacity, bounds: runBounds) else { continue }
+					resolved.shading = shading
+					maskedLayer.draw(resolved, in: CGRect(x: run.x, y: run.y - Double(run.baseline), width: Double(run.size.width), height: Double(run.size.height)))
+				}
+			}
+		}
+	}
+
+	private func textRuns(for data: SVGTextData, inheritedOpacity: Double, in context: inout GraphicsContext) -> [SVGRenderTextRun] {
+		var runs: [SVGRenderTextRun] = []
+		var currentX = data.x + (data.dxValues.first ?? 0)
+		var currentY = data.y + (data.dyValues.first ?? 0)
+		let rootOpacity = inheritedOpacity * data.attributes.opacity
+
+		for span in data.spans {
+			guard span.textPath == nil else { continue }
+			let attributes = span.attributes ?? data.attributes
+			let spanOpacity = span.attributes?.opacity ?? 1
+			guard attributes.canRender else { continue }
+			let fontSize = span.fontSize ?? data.fontSize
+			let font = textFont(family: data.fontFamily, size: fontSize, weight: span.fontWeight ?? data.fontWeight)
+			let text = SwiftUI.Text(span.text).font(font)
+			let resolved = context.resolve(text)
+			let size = resolved.measure(in: CGSize(width: 10_000, height: 10_000))
+			guard size.width > 0, size.height > 0 else { continue }
+			let baseline = resolved.firstBaseline(in: size)
+			let x = (span.x ?? currentX) + span.dx
+			let y = (span.y ?? currentY) + span.dy
+			runs.append(SVGRenderTextRun(
+				text: span.text,
+				x: x,
+				y: y,
+				size: size,
+				baseline: baseline,
+				font: font,
+				attributes: attributes,
+				opacity: rootOpacity * spanOpacity
+			))
+			currentX = x + Double(size.width)
+			currentY = y
+		}
+
+		guard !runs.isEmpty else { return [] }
+		let lineWidth = runs.reduce(0) { max($0, ($1.x + Double($1.size.width)) - runs[0].x) }
+		let offset: Double
+		switch data.textAnchor {
+		case .start:
+			offset = 0
+		case .middle:
+			offset = -lineWidth / 2
+		case .end:
+			offset = -lineWidth
+		}
+		guard offset != 0 else { return runs }
+		return runs.map { run in
+			var adjusted = run
+			adjusted.x += offset
+			return adjusted
+		}
+	}
+
+	private func textFont(family: String, size: Double, weight: String) -> SwiftUI.Font {
+		let fontWeight = textFontWeight(from: weight)
+		if family.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+			return .system(size: CGFloat(size), weight: fontWeight)
+		}
+		return .custom(family, fixedSize: CGFloat(size)).weight(fontWeight)
+	}
+
+	private func textFontWeight(from value: String) -> SwiftUI.Font.Weight {
+		switch value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+		case "100", "ultralight":
+			return .ultraLight
+		case "200", "thin":
+			return .thin
+		case "300", "light":
+			return .light
+		case "500", "medium":
+			return .medium
+		case "600", "semibold", "demibold":
+			return .semibold
+		case "700", "bold", "bolder":
+			return .bold
+		case "800", "heavy", "extra-bold", "extrabold":
+			return .heavy
+		case "900", "black":
+			return .black
+		default:
+			return .regular
 		}
 	}
 
@@ -874,9 +979,29 @@ private struct SVGCanvasRenderer {
 		case .image(let data):
 			let imageBounds = Path(commands: [.rect(Rect(x: data.x, y: data.y, width: data.width, height: data.height))]).cgPath
 			return bounds(for: imageBounds, transform: transform.concatenating(data.attributes.transform))
-		case .text:
-			return nil
+		case .text(let data):
+			return bounds(for: data, transform: transform.concatenating(data.attributes.transform))
 		}
+	}
+
+	private func bounds(for data: SVGTextData, transform: Transform = .identity) -> Rect? {
+		let text = data.spans.filter { $0.textPath == nil }.map(\.text).joined()
+		guard !text.isEmpty else { return nil }
+		let width = max(1, Double(text.count) * data.fontSize * 0.62)
+		let height = max(1, data.fontSize * 1.25)
+		let xOffset: Double
+		switch data.textAnchor {
+		case .start:
+			xOffset = 0
+		case .middle:
+			xOffset = -width / 2
+		case .end:
+			xOffset = -width
+		}
+		let bounds = CGRect(x: data.x + xOffset, y: data.y - data.fontSize, width: width, height: height)
+			.applying(transform.cgAffineTransform)
+		guard bounds.width > 0, bounds.height > 0 else { return nil }
+		return Rect(x: bounds.minX, y: bounds.minY, width: bounds.width, height: bounds.height)
 	}
 
 	private func bounds(for data: SVGUseData, transform: Transform = .identity) -> Rect? {
@@ -927,6 +1052,18 @@ private struct SpreadGradientStops {
 private struct SVGRenderClipPath {
 	var path: CGPath
 	var fillRule: FillRule
+}
+
+/// A measured native text run prepared for drawing through `GraphicsContext`.
+private struct SVGRenderTextRun {
+	var text: String
+	var x: Double
+	var y: Double
+	var size: CGSize
+	var baseline: CGFloat
+	var font: SwiftUI.Font
+	var attributes: SVGPaintAttributes
+	var opacity: Double
 }
 
 private extension Rect {
