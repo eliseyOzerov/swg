@@ -1,0 +1,178 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: opacity
+  title: SVG opacity property
+  domain: SVG 2 / CSS Color 3
+  profile: null
+  summary: Preserve the SVG `opacity` property as object or group opacity on renderable SVG elements, including cascade, initial value, explicit inheritance, and alpha clamping.
+  non_goals:
+    - Applying group isolation or compositing during rendering.
+    - Implementing `fill-opacity`, `stroke-opacity`, or `stop-opacity`; those are separate properties.
+    - Animating opacity.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-object-group-opacity
+      title: "SVG 2 Rendering Model: Object and group opacity"
+      url: https://www.w3.org/TR/SVG/render.html#ObjectAndGroupOpacityProperties
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: css-color-3-opacity
+      title: "CSS Color Module Level 3: Transparency: the opacity property"
+      url: https://www.w3.org/TR/css-color-3/#transparency
+      version: W3C Recommendation, 18 January 2022
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - SVG 2 defines object and group opacity in terms of the CSS Color opacity property.
+    - CSS Color 3 defines `opacity` as non-inherited, initial `1`, and clamped to the range `[0.0, 1.0]`.
+
+scope:
+  includes:
+    - "`opacity` presentation attributes."
+    - "`opacity` declarations from style elements and inline styles."
+    - Initial value, non-inheritance, explicit `inherit`, invalid fallback, and numeric clamping.
+  excludes:
+    - Rendering-time offscreen buffer isolation.
+    - Interaction with filters, clipping, masking, and compositing order.
+  assumptions:
+    - Parser-visible opacity values are stored on `SVGPaintAttributes` for downstream renderers.
+
+terminology:
+  - id: T001
+    term: opacity
+    definition: The uniform alpha value used when compositing an object's or group's rendered offscreen image into its parent canvas.
+    source_refs:
+      - svg2-object-group-opacity
+      - css-color-3-opacity
+  - id: T002
+    term: group opacity
+    definition: Opacity applied to a container element and its rendered descendants as a single composited group.
+    source_refs:
+      - svg2-object-group-opacity
+
+structures:
+  - id: S001
+    name: SVG opacity attribute
+    kind: field
+    source_refs:
+      - svg2-object-group-opacity
+      - css-color-3-opacity
+    fields:
+      - name: opacity
+        type: double
+        cardinality: exactly-one
+        position: presentation-attributes
+        constraints:
+          - Defaults to `1`.
+          - Does not inherit unless the CSS-wide `inherit` keyword is used.
+          - Valid numbers clamp to `[0, 1]`.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+          - R005
+        source_refs:
+          - css-color-3-opacity
+
+requirements:
+  - id: R001
+    title: Parse opacity values
+    statement: Numeric `opacity` values from presentation attributes, style rules, and inline styles must be preserved on the target SVG element.
+    keywords:
+      - opacity
+      - cascade
+    source_refs:
+      - svg2-object-group-opacity
+      - css-color-3-opacity
+    acceptance:
+      - "`opacity` from an attribute is stored."
+      - "`opacity` from a style rule is stored."
+      - Inline `opacity` overrides class and presentation-attribute values.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+  - id: R002
+    title: Default opacity to one
+    statement: The initial `opacity` value must be `1`.
+    keywords:
+      - opacity
+      - initial
+    source_refs:
+      - css-color-3-opacity
+    acceptance:
+      - An element without `opacity` stores `1`.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+  - id: R003
+    title: Do not inherit opacity by default
+    statement: The `opacity` property must not inherit by default.
+    keywords:
+      - opacity
+      - inheritance
+    source_refs:
+      - css-color-3-opacity
+    acceptance:
+      - A child without `opacity` stores `1` even when its parent has opacity.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+  - id: R004
+    title: Honor explicit inherit
+    statement: The CSS-wide `inherit` keyword must copy the parent opacity value.
+    keywords:
+      - opacity
+      - inherit
+    source_refs:
+      - css-color-3-opacity
+    acceptance:
+      - "`opacity: inherit` stores the parent opacity value."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+  - id: R005
+    title: Clamp valid numeric opacity values
+    statement: Valid numeric `opacity` values outside `[0, 1]` must clamp to the nearest endpoint.
+    keywords:
+      - opacity
+      - clamping
+    source_refs:
+      - css-color-3-opacity
+    acceptance:
+      - Values above `1` store `1`.
+      - Values below `0` store `0`.
+      - Invalid syntax leaves the current cascaded/default value unchanged.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+
+coverage:
+  status: test-required
+  test_files:
+    - Tests/SwgTests/SVGParserTests.swift
+  requirement_to_tests:
+    R001:
+      - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+    R002:
+      - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+    R003:
+      - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+    R004:
+      - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping
+    R005:
+      - svgParserAppliesOpacityInitialCascadeInheritanceAndClamping

@@ -1668,7 +1668,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if isInheritKeyword(value) {
 				result.opacity = inherited.opacity
 			} else if let number = parseNumber(value) {
-				result.opacity = number
+				result.opacity = min(max(number, 0), 1)
 			}
 		}
 		if let value = attributes["fill-opacity"] {

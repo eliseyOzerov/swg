@@ -1008,6 +1008,59 @@ import Testing
 	#expect(styled.unknownAttributes["stroke-width"] == nil)
 }
 
+@Test func svgParserAppliesOpacityInitialCascadeInheritanceAndClamping() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.classed { opacity: 0.25; }
+			.high { opacity: 2; }
+			.low { opacity: -1; }
+			.invalid { opacity: definitely-not-opacity; }
+		</style>
+		<g id="parent" opacity="0.5">
+			<path id="notInherited" d="M0 0 L1 1"/>
+			<path id="explicitInherit" d="M0 0 L1 1" style="opacity: inherit"/>
+		</g>
+		<path id="initial" d="M0 0 L1 1"/>
+		<path id="attribute" d="M0 0 L1 1" opacity="0.6"/>
+		<path id="classed" class="classed" d="M0 0 L1 1"/>
+		<path id="inline" class="classed" d="M0 0 L1 1" style="opacity: 0.75"/>
+		<path id="high" class="high" d="M0 0 L1 1"/>
+		<path id="low" class="low" d="M0 0 L1 1"/>
+		<path id="invalid" class="invalid" d="M0 0 L1 1"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .group(let parent) = document.elements[0] else {
+		Issue.record("Expected parent group")
+		return
+	}
+
+	var paths: [String: SVGPathData] = [:]
+	for child in parent.children {
+		if case .path(let path) = child {
+			paths[path.id] = path
+		}
+	}
+	for element in document.elements.dropFirst() {
+		if case .path(let path) = element {
+			paths[path.id] = path
+		}
+	}
+
+	#expect(parent.attributes.opacity == 0.5)
+	#expect(paths["notInherited"]?.attributes.opacity == 1)
+	#expect(paths["explicitInherit"]?.attributes.opacity == 0.5)
+	#expect(paths["initial"]?.attributes.opacity == 1)
+	#expect(paths["attribute"]?.attributes.opacity == 0.6)
+	#expect(paths["classed"]?.attributes.opacity == 0.25)
+	#expect(paths["inline"]?.attributes.opacity == 0.75)
+	#expect(paths["high"]?.attributes.opacity == 1)
+	#expect(paths["low"]?.attributes.opacity == 0)
+	#expect(paths["invalid"]?.attributes.opacity == 1)
+}
+
 @Test func svgParserAppliesInlineStyleAttributeAsDeclarationList() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="black" stroke-width="1">
