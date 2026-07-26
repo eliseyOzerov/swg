@@ -1,0 +1,137 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-tile
+  title: SVG feTile filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Requirements for preserving the feTile primitive and its input attribute from an SVG filter.
+  non_goals:
+    - Raster execution of tiling.
+    - Full DOM IDL reflection or animation support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-tile
+      title: Filter Effects Module Level 1, feTile element
+      url: https://www.w3.org/TR/filter-effects-1/#feTileElement
+      version: Editor-independent W3C Working Draft snapshot
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C section.
+
+scope:
+  includes:
+    - feTile element recognition inside SVG filters.
+    - The in input attribute.
+    - The descriptive tiling behavior over the target filter primitive subregion.
+  excludes:
+    - Pixel-level tiling and anti-artifact measures.
+    - Animation and DOM mutation behavior.
+    - Interactions with undeclared filter primitive standard attributes.
+  assumptions: []
+
+terminology:
+  - id: term-tile
+    term: Tile
+    definition: A filter primitive that fills a target rectangle with repeated copies of an input image.
+    source_refs:
+      - filter-effects-fe-tile
+
+structures:
+  - id: S001
+    name: feTile
+    kind: element
+    source_refs:
+      - filter-effects-fe-tile
+    fields:
+      - name: in
+        type: string
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the input image for the primitive.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-tile
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The feTile element has an input attribute corresponding to the filter primitive's input image.
+    applies_to:
+      - feTile
+    source_refs:
+      - filter-effects-fe-tile
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The feTile primitive fills the target rectangle with repeated tiles of the input image.
+    applies_to:
+      - feTile
+    source_refs:
+      - filter-effects-fe-tile
+    testability: reviewable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Tile placement
+    kind: algorithm
+    summary: Tiles repeat in X and Y to fill the target rectangle; tile origins are derived from the input image filter primitive subregion.
+    steps: []
+    preconditions:
+      - An input image and target filter primitive subregion are available.
+    postconditions:
+      - The target rectangle is filled by repeated copies of the input tile.
+    requirement_refs:
+      - R002
+    source_refs:
+      - filter-effects-fe-tile
+
+invalid_or_unsupported_inputs: []
+
+recommendations:
+  - id: N001
+    normative_strength: MUST
+    statement: Implementers must take measures to avoid artifacts between tiles, especially under sheared or rotated transforms.
+    source_refs:
+      - filter-effects-fe-tile
+
+derived_requirements: []
+
+implementation_choices: []
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG filter primitive subregion
+    reason: feTile uses the target and input filter primitive subregions to define tiling.
+    source_refs:
+      - filter-effects-fe-tile
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-tile
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-tile
+    map_item_refs: []

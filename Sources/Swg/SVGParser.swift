@@ -517,6 +517,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				specularExponent: attributes["specularExponent"].flatMap(parseNumber) ?? 1,
 				limitingConeAngle: attributes["limitingConeAngle"].flatMap(parseNumber)
 			))
+		case "feTile":
+			currentFilter?.primitives.append(.tile(input: attributes["in"]))
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2

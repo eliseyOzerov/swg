@@ -1146,6 +1146,31 @@ private func expectSpecularLighting(
 	)
 }
 
+@Test func svgParserPreservesTilePrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="tile">
+			<feTile/>
+			<feTile in="SourceGraphic"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["tile"])
+	#expect(filter.primitives.count == 2)
+	expectTile(filter.primitives[0], input: nil)
+	expectTile(filter.primitives[1], input: "SourceGraphic")
+}
+
+private func expectTile(_ primitive: SVGFilterPrimitive, input expectedInput: String?) {
+	guard case .tile(let input) = primitive else {
+		Issue.record("Expected parsed feTile primitive")
+		return
+	}
+	#expect(input == expectedInput)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")
