@@ -2,6 +2,7 @@ import CoreGraphics
 import Foundation
 import ImageIO
 import Swg
+import SwiftUI
 import UniformTypeIdentifiers
 
 struct FeatureExample {
@@ -27,102 +28,63 @@ let featureExamples = [
 	FeatureExample(slug: "embedded-animation", width: 720, height: 480),
 ]
 
-let explicitPackageRoot = CommandLine.arguments.dropFirst().first.map { URL(fileURLWithPath: $0) }
+let arguments = CommandLine.arguments.dropFirst()
+let explicitPackageRoot = arguments.first.map { URL(fileURLWithPath: $0) }
+let explicitPNGDirectory = arguments.dropFirst().first.map { URL(fileURLWithPath: $0, isDirectory: true) }
 let inferredPackageRoot = URL(fileURLWithPath: #filePath)
 	.deletingLastPathComponent()
 	.deletingLastPathComponent()
 	.deletingLastPathComponent()
 let packageRoot = explicitPackageRoot ?? inferredPackageRoot
 
-try FeatureGalleryRenderer.renderAll(examples: featureExamples, packageRoot: packageRoot)
+try await FeatureGalleryRenderer.renderAll(examples: featureExamples, packageRoot: packageRoot, pngDirectory: explicitPNGDirectory)
 
 enum FeatureGalleryRenderer {
-	static func renderAll(examples: [FeatureExample], packageRoot: URL) throws {
+	@MainActor
+	static func renderAll(examples: [FeatureExample], packageRoot: URL, pngDirectory explicitPNGDirectory: URL? = nil) throws {
 		let svgDirectory = packageRoot.appendingPathComponent("docs/feature-gallery/svg", isDirectory: true)
-		let pngDirectory = packageRoot.appendingPathComponent("docs/feature-gallery/png", isDirectory: true)
-		let scratchDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
-			.appendingPathComponent("swg-feature-gallery-\(UUID().uuidString)", isDirectory: true)
+		let pngDirectory = explicitPNGDirectory ?? packageRoot.appendingPathComponent("docs/feature-gallery/png", isDirectory: true)
 		try FileManager.default.createDirectory(at: pngDirectory, withIntermediateDirectories: true)
-		try FileManager.default.createDirectory(at: scratchDirectory, withIntermediateDirectories: true)
-		defer { try? FileManager.default.removeItem(at: scratchDirectory) }
 
 		for example in examples {
 			let svgURL = svgDirectory.appendingPathComponent("\(example.slug).svg")
 			let pngURL = pngDirectory.appendingPathComponent("\(example.slug).png")
-			try assertSwgParses(svgURL)
-			try renderSVGWithQuickLook(svgURL, pngURL: pngURL, scratchDirectory: scratchDirectory, width: example.width, height: example.height)
+			let document = try parseDocument(svgURL)
+			try render(document, pngURL: pngURL, width: example.width, height: example.height)
 			print("Rendered \(pngURL.path)")
 		}
 	}
 
-	private static func assertSwgParses(_ svgURL: URL) throws {
+	private static func parseDocument(_ svgURL: URL) throws -> SVGDocument {
 		let svg = try String(contentsOf: svgURL, encoding: .utf8)
-		guard SVGParser().parse(svg) != nil else {
+		guard let document = SVGParser().parse(svg) else {
 			throw FeatureGalleryError.invalidSVG(svgURL.lastPathComponent)
 		}
+		return document
 	}
 
-	private static func renderSVGWithQuickLook(_ svgURL: URL, pngURL: URL, scratchDirectory: URL, width: Int, height: Int) throws {
-		let process = Process()
-		process.executableURL = URL(fileURLWithPath: "/usr/bin/qlmanage")
-		process.arguments = ["-t", "-s", "\(width)", "-o", scratchDirectory.path, svgURL.path]
-
-		let output = Pipe()
-		process.standardOutput = output
-		process.standardError = output
-		try process.run()
-		process.waitUntilExit()
-
-		guard process.terminationStatus == 0 else {
-			let data = output.fileHandleForReading.readDataToEndOfFile()
-			let message = String(decoding: data, as: UTF8.self)
-			throw FeatureGalleryError.quickLookFailed(svgURL.lastPathComponent, message)
+	@MainActor
+	private static func render(_ document: SVGDocument, pngURL: URL, width: Int, height: Int) throws {
+		let renderer = ImageRenderer(content: SVG(document).frame(width: CGFloat(width), height: CGFloat(height)))
+		renderer.scale = 1
+		guard let image = renderer.cgImage else {
+			throw FeatureGalleryError.renderingFailed(pngURL.lastPathComponent)
 		}
-
-		let renderedURL = scratchDirectory.appendingPathComponent("\(svgURL.lastPathComponent).png")
-		guard FileManager.default.fileExists(atPath: renderedURL.path) else {
-			throw FeatureGalleryError.missingRenderedPNG(renderedURL)
-		}
-
 		if FileManager.default.fileExists(atPath: pngURL.path) {
 			try FileManager.default.removeItem(at: pngURL)
 		}
-		try FileManager.default.moveItem(at: renderedURL, to: pngURL)
-		try cropPNG(at: pngURL, width: width, height: height)
-	}
-
-	private static func cropPNG(at url: URL, width targetWidth: Int, height targetHeight: Int) throws {
-		guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-			let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
-		else {
-			throw FeatureGalleryError.invalidRenderedPNG(url)
+		guard let destination = CGImageDestinationCreateWithURL(pngURL as CFURL, UTType.png.identifier as CFString, 1, nil) else {
+			throw FeatureGalleryError.invalidRenderedPNG(pngURL)
 		}
-
-		let cropWidth = min(image.width, targetWidth)
-		let cropHeight = min(image.height, targetHeight)
-		let cropRect = CGRect(
-			x: (image.width - cropWidth) / 2,
-			y: (image.height - cropHeight) / 2,
-			width: cropWidth,
-			height: cropHeight
-		)
-		guard let cropped = image.cropping(to: cropRect) else {
-			throw FeatureGalleryError.invalidRenderedPNG(url)
-		}
-
-		guard let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil) else {
-			throw FeatureGalleryError.invalidRenderedPNG(url)
-		}
-		CGImageDestinationAddImage(destination, cropped, nil)
+		CGImageDestinationAddImage(destination, image, nil)
 		guard CGImageDestinationFinalize(destination) else {
-			throw FeatureGalleryError.invalidRenderedPNG(url)
+			throw FeatureGalleryError.invalidRenderedPNG(pngURL)
 		}
 	}
 }
 
 enum FeatureGalleryError: Error {
 	case invalidSVG(String)
-	case quickLookFailed(String, String)
-	case missingRenderedPNG(URL)
+	case renderingFailed(String)
 	case invalidRenderedPNG(URL)
 }

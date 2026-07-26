@@ -13,7 +13,7 @@ The SVG coverage checklist is test-gated. A feature can be checked when it has f
 
 ## Feature Gallery
 
-The README feature gallery uses larger documentation SVGs from `docs/feature-gallery/svg`. They are rendered by `docs/FeatureGallery.playground/Contents.swift`, which parses each SVG with ``SVGParser`` before using macOS Quick Look to write PNG previews to `docs/feature-gallery/png`.
+The README feature gallery uses larger documentation SVGs from `docs/feature-gallery/svg`. They are rendered by `docs/FeatureGallery.playground/Contents.swift`, which parses each SVG with ``SVGParser`` before painting it through ``SVG`` and writing PNG previews to `docs/feature-gallery/png`.
 
 Those gallery examples are intended for human-facing documentation. The smaller fixtures below are intended for stable regression checks.
 
@@ -47,10 +47,10 @@ B blue
 ? opaque color outside the named buckets
 ```
 
-The current rasterizer disables antialiasing and compares symbolic color buckets instead of storing binary snapshots. That keeps fixtures small, readable, and easy to review.
+The test renders ``SVG`` with SwiftUI `ImageRenderer`, samples the resulting image, and compares symbolic color buckets instead of storing binary snapshots. That keeps fixtures small, readable, and tied to the public SwiftUI rendering surface.
 
 ## Current Scope
 
-The first visual fixtures cover basic paint and transforms. The test rasterizer currently supports the shape and container subset needed for those fixtures: paths, rectangles, circles, ellipses, lines, polygons, polylines, groups, links, switches, nested SVG content, foreign objects, and unknown containers.
+The first visual fixtures cover basic paint and transforms through the ``SVG`` view.
 
 Future visual fixtures should be added as rendering support expands through paint order, fill rules, strokes, clipping, masking, gradients, filters, text, image handling, reuse, and viewport behavior.

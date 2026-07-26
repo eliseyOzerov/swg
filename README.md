@@ -10,17 +10,17 @@ The parser is built around the SVG 2 specification and is tracked by a test-gate
 
 Current coverage is strongest in parser/model behavior. The native SwiftUI renderer displays the shape/path/container subset that can already map through `CGPath`; browser-equivalent rendering for text, gradients, filters, masks, clipping, markers, images, and animation is still renderer work in progress even though much of that structure is parsed and modeled.
 
-The gallery below shows visual TODO groups with SVG examples that are parsed by `swg` and rasterized to PNG by a Swift playground.
+The gallery below shows visual TODO groups with SVG examples that are parsed by `swg` and rendered to PNG through the package's `SVG` SwiftUI view.
 
 ## Supported Feature Gallery
 
-These images are generated from SVG files in `docs/feature-gallery/svg` by `docs/FeatureGallery.playground/Contents.swift`. The playground parses each SVG with `swg`, then uses macOS Quick Look to rasterize the SVG and writes PNGs to `docs/feature-gallery/png`.
+These images are generated from SVG files in `docs/feature-gallery/svg` by `docs/FeatureGallery.playground/Contents.swift`. The playground parses each SVG with `swg`, renders it through `SVG`, and writes PNGs to `docs/feature-gallery/png`.
 
-Parser support is broader than this gallery; see [TODO.md](TODO.md) for the full test-gated checklist. Non-visual items such as metadata selection, script preservation, pointer-event values, and raw animation timing records stay in focused tests rather than being treated as visual output.
+Parser support is broader than this gallery; see [TODO.md](TODO.md) for the full test-gated checklist. The bullets below describe parser/model coverage for each SVG group, while the images show what the current `SVG` SwiftUI renderer actually paints. Non-visual items such as metadata selection, script preservation, pointer-event values, and raw animation timing records stay in focused tests rather than being treated as visual output.
 
 ### Document, Viewport, and Container Features
 
-Supported here: nested `<svg>` viewports, `viewBox`, `preserveAspectRatio`, `<g>`, `<defs>`, `<symbol>`, `<use>`, `<switch>`, and `<a>`.
+Parser/model coverage here: nested `<svg>` viewports, `viewBox`, `preserveAspectRatio`, `<g>`, `<defs>`, `<symbol>`, `<use>`, `<switch>`, and `<a>`.
 
 <p>
 	<img src="docs/feature-gallery/png/viewports-containers.png" alt="Rendered SVG viewport, container, defs, symbol, use, switch, and link example" width="320">
@@ -28,7 +28,7 @@ Supported here: nested `<svg>` viewports, `viewBox`, `preserveAspectRatio`, `<g>
 
 ### Basic Shapes
 
-Supported here: `<rect>`, rounded rectangles, `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>`, fills, strokes, line caps, and line joins.
+Parser/model coverage here: `<rect>`, rounded rectangles, `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>`, fills, strokes, line caps, and line joins.
 
 <p>
 	<img src="docs/feature-gallery/png/shapes-basic.png" alt="Rendered SVG basic shapes example" width="320">
@@ -37,7 +37,7 @@ Supported here: `<rect>`, rounded rectangles, `<circle>`, `<ellipse>`, `<line>`,
 
 ### Path Data
 
-Supported here: `M`, `L`, `H`, `V`, `C`, `S`, `Q`, `T`, `A`, `Z`, implicit close/fill behavior, and `fill-rule="evenodd"`.
+Parser/model coverage here: `M`, `L`, `H`, `V`, `C`, `S`, `Q`, `T`, `A`, `Z`, implicit close/fill behavior, and `fill-rule="evenodd"`.
 
 <p>
 	<img src="docs/feature-gallery/png/path-lines-curves.png" alt="Rendered SVG path lines and curves example" width="320">
@@ -46,7 +46,7 @@ Supported here: `M`, `L`, `H`, `V`, `C`, `S`, `Q`, `T`, `A`, `Z`, implicit close
 
 ### Coordinate Systems, Transforms, and Style
 
-Supported here: transform list ordering, `matrix`, `translate`, `scale`, `rotate`, centered rotation, `skewX`, `skewY`, inherited presentation attributes, inline `style`, `<style>`, and media-filtered style rules.
+Parser/model coverage here: transform list ordering, `matrix`, `translate`, `scale`, `rotate`, centered rotation, `skewX`, `skewY`, inherited presentation attributes, inline `style`, `<style>`, and media-filtered style rules.
 
 <p>
 	<img src="docs/feature-gallery/png/transforms-style.png" alt="Rendered SVG transforms, style, and inheritance example" width="320">
@@ -54,7 +54,7 @@ Supported here: transform list ordering, `matrix`, `translate`, `scale`, `rotate
 
 ### Paint and Strokes
 
-Supported here: solid color fill, `fill-opacity`, `fill-rule`, stroke paint, `stroke-width`, `stroke-opacity`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`, `stroke-dasharray`, `stroke-dashoffset`, `paint-order`, `color`, and rendering hint values.
+Parser/model coverage here: solid color fill, `fill-opacity`, `fill-rule`, stroke paint, `stroke-width`, `stroke-opacity`, `stroke-linecap`, `stroke-linejoin`, `stroke-miterlimit`, `stroke-dasharray`, `stroke-dashoffset`, `paint-order`, `color`, and rendering hint values.
 
 <p>
 	<img src="docs/feature-gallery/png/paint-fill-opacity.png" alt="Rendered SVG fill and opacity example" width="320">
@@ -63,7 +63,7 @@ Supported here: solid color fill, `fill-opacity`, `fill-rule`, stroke paint, `st
 
 ### Gradients and Patterns
 
-Supported here: `<linearGradient>`, `<radialGradient>`, `<stop>`, `stop-color`, `stop-opacity`, `gradientUnits`, `gradientTransform`, `spreadMethod`, `<pattern>`, and `patternContentUnits`.
+Parser/model coverage here: `<linearGradient>`, `<radialGradient>`, `<stop>`, `stop-color`, `stop-opacity`, `gradientUnits`, `gradientTransform`, `spreadMethod`, `<pattern>`, and `patternContentUnits`.
 
 <p>
 	<img src="docs/feature-gallery/png/gradients-patterns.png" alt="Rendered SVG gradients and pattern example" width="320">
@@ -71,7 +71,7 @@ Supported here: `<linearGradient>`, `<radialGradient>`, `<stop>`, `stop-color`, 
 
 ### Clipping, Masking, and Compositing
 
-Supported here: `<clipPath>`, `clip-path`, `clip-rule`, `clipPathUnits`, `<mask>`, `mask`, `maskUnits`, `maskContentUnits`, and `opacity`.
+Parser/model coverage here: `<clipPath>`, `clip-path`, `clip-rule`, `clipPathUnits`, `<mask>`, `mask`, `maskUnits`, `maskContentUnits`, and `opacity`.
 
 <p>
 	<img src="docs/feature-gallery/png/clip-mask-composite.png" alt="Rendered SVG clipping, masking, and opacity compositing example" width="320">
@@ -79,7 +79,7 @@ Supported here: `<clipPath>`, `clip-path`, `clip-rule`, `clipPathUnits`, `<mask>
 
 ### Filters
 
-Supported here: `<filter>`, `filterUnits`, `primitiveUnits`, `<feGaussianBlur>`, `<feDropShadow>`, `<feBlend>`, `<feColorMatrix>`, `<feComponentTransfer>`, `<feFuncR>`, `<feFuncG>`, `<feFuncB>`, `<feFuncA>`, `<feComposite>`, `<feConvolveMatrix>`, `<feDiffuseLighting>`, `<feDisplacementMap>`, `<feDistantLight>`, `<feFlood>`, `<feImage>`, `<feMerge>`, `<feMergeNode>`, `<feMorphology>`, `<feOffset>`, `<fePointLight>`, `<feSpecularLighting>`, `<feSpotLight>`, `<feTile>`, and `<feTurbulence>`.
+Parser/model coverage here: `<filter>`, `filterUnits`, `primitiveUnits`, `<feGaussianBlur>`, `<feDropShadow>`, `<feBlend>`, `<feColorMatrix>`, `<feComponentTransfer>`, `<feFuncR>`, `<feFuncG>`, `<feFuncB>`, `<feFuncA>`, `<feComposite>`, `<feConvolveMatrix>`, `<feDiffuseLighting>`, `<feDisplacementMap>`, `<feDistantLight>`, `<feFlood>`, `<feImage>`, `<feMerge>`, `<feMergeNode>`, `<feMorphology>`, `<feOffset>`, `<fePointLight>`, `<feSpecularLighting>`, `<feSpotLight>`, `<feTile>`, and `<feTurbulence>`.
 
 <p>
 	<img src="docs/feature-gallery/png/filters.png" alt="Rendered SVG filter effects example" width="320">
@@ -87,7 +87,7 @@ Supported here: `<filter>`, `filterUnits`, `primitiveUnits`, `<feGaussianBlur>`,
 
 ### Text
 
-Supported here: `<text>`, `<tspan>`, `<textPath>`, text `x`, `y`, `dx`, `dy`, `rotate`, `text-anchor`, `dominant-baseline`, `alignment-baseline`, and `white-space`.
+Parser/model coverage here: `<text>`, `<tspan>`, `<textPath>`, text `x`, `y`, `dx`, `dy`, `rotate`, `text-anchor`, `dominant-baseline`, `alignment-baseline`, and `white-space`.
 
 <p>
 	<img src="docs/feature-gallery/png/text.png" alt="Rendered SVG text, tspan, rotated text, anchored text, and textPath example" width="320">
@@ -95,7 +95,7 @@ Supported here: `<text>`, `<tspan>`, `<textPath>`, text `x`, `y`, `dx`, `dy`, `r
 
 ### Reuse, Linking, and Markers
 
-Supported here: `href`, `xlink:href`, `<marker>`, `marker-start`, `marker-mid`, `marker-end`, `orient`, `markerUnits`, and marker `viewBox`.
+Parser/model coverage here: `href`, `xlink:href`, `<marker>`, `marker-start`, `marker-mid`, `marker-end`, `orient`, `markerUnits`, and marker `viewBox`.
 
 <p>
 	<img src="docs/feature-gallery/png/reuse-markers.png" alt="Rendered SVG symbol reuse and markers example" width="320">
@@ -103,7 +103,7 @@ Supported here: `href`, `xlink:href`, `<marker>`, `marker-start`, `marker-mid`, 
 
 ### Embedded and Dynamic SVG
 
-Visual/model coverage here: `<foreignObject>`, `<animate>`, `<animateMotion>`, `<animateTransform>`, `<set>`, `<discard>`, and `<mpath>`. Related non-visual checked items such as timing attributes, value control attributes, additive/accumulate records, `<script>`, and `pointer-events` remain covered by focused parser tests.
+Parser/model coverage here: `<foreignObject>`, `<animate>`, `<animateMotion>`, `<animateTransform>`, `<set>`, `<discard>`, and `<mpath>`. Related non-visual checked items such as timing attributes, value control attributes, additive/accumulate records, `<script>`, and `pointer-events` remain covered by focused parser tests.
 
 <p>
 	<img src="docs/feature-gallery/png/embedded-animation.png" alt="Rendered SVG foreignObject and dynamic SVG example" width="320">
