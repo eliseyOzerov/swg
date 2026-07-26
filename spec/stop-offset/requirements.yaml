@@ -1,0 +1,196 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: stop-offset
+  title: Gradient stop offset
+  domain: SVG 2 Paint Servers
+  profile: null
+  summary: Normalize SVG `stop` element `offset` values so gradient stop records expose spec-compatible positions.
+  non_goals:
+    - Rendering gradients.
+    - Implementing stop color or opacity behavior beyond preserving existing stop records.
+    - Implementing animation of stop offsets.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-gradient-stop-offset
+      title: "SVG 2 Paint Servers: stop offset attribute"
+      url: https://www.w3.org/TR/SVG/pservers.html#StopElementOffsetAttribute
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-gradient-stop-notes
+      title: "SVG 2 Paint Servers: Notes on gradient stops"
+      url: https://www.w3.org/TR/SVG/pservers.html#GradientStops
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The `offset` attribute indicates where a gradient stop is placed."
+    - "SVG 2 allows `offset` values as numbers or percentages, with an initial value of `0`."
+    - Gradient stop offsets below 0 are rounded up to 0, values above 1 are rounded down to 1, and each stop offset must be at least the previous largest offset.
+
+scope:
+  includes:
+    - Parser output for `offset` on `stop` elements inside linear and radial gradients.
+    - Numeric offset values.
+    - Percentage offset values.
+    - Missing offset defaulting to 0.
+    - Clamping offsets to the inclusive 0...1 range.
+    - Adjusting decreasing offsets to the largest previous offset in the same gradient.
+  excludes:
+    - Rendering behavior for gradients with zero, one, or multiple stops.
+    - Duplicate-offset color transition semantics.
+    - Animation.
+  assumptions:
+    - Parser-visible offsets may be stored as normalized doubles where 1 represents 100%.
+    - Malformed offset syntax falls back to the initial value before ordered adjustment.
+
+terminology:
+  - id: term-offset
+    term: offset
+    definition: A stop attribute indicating the stop's position along the gradient vector.
+    source_refs:
+      - svg2-gradient-stop-offset
+  - id: term-gradient-stop
+    term: gradient stop
+    definition: A child record in a gradient color vector.
+    source_refs:
+      - svg2-gradient-stop-notes
+
+structures:
+  - id: S001
+    name: Gradient stop offset
+    kind: structure
+    source_refs:
+      - svg2-gradient-stop-offset
+    fields:
+      - name: offset
+        type: number
+        cardinality: one
+        position: null
+        constraints:
+          - Initial value is 0.
+          - Values are normalized into the inclusive range 0 to 1.
+          - Values must not be less than the largest previous stop offset.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+          - R004
+        source_refs:
+          - svg2-gradient-stop-offset
+          - svg2-gradient-stop-notes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: A missing `offset` attribute on a gradient stop must produce offset `0`.
+    applies_to:
+      - "`stop` elements"
+    source_refs:
+      - svg2-gradient-stop-offset
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Numeric `offset` values must be parsed as normalized positions where `1` represents the far end of the gradient vector.
+    applies_to:
+      - "`stop` elements"
+    source_refs:
+      - svg2-gradient-stop-offset
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: Percentage `offset` values must be divided by 100 to produce normalized stop positions.
+    applies_to:
+      - "`stop` elements"
+    source_refs:
+      - svg2-gradient-stop-offset
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: range
+    statement: Stop offsets below 0 must be clamped to 0, and offsets above 1 must be clamped to 1.
+    applies_to:
+      - "`stop` elements"
+    source_refs:
+      - svg2-gradient-stop-notes
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: ordering
+    statement: A stop offset that is less than an earlier stop offset in the same gradient must be adjusted to the largest previous stop offset.
+    applies_to:
+      - Gradient stop lists
+    source_refs:
+      - svg2-gradient-stop-notes
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A stop `offset` value is malformed or unsupported by the parser.
+    source_behavior: UNSPECIFIED
+    required_behavior: Use the initial offset value of 0 before applying same-gradient monotonic adjustment.
+    decision_required: false
+    source_refs:
+      - svg2-gradient-stop-offset
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices: []
+
+ambiguities: []
+
+dependencies: []
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-gradient-stop-offset
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-gradient-stop-offset
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-gradient-stop-offset
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-gradient-stop-notes
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg2-gradient-stop-notes
+    map_item_refs: []
+  - item_id: I001
+    item_type: invalid_input
+    source_refs:
+      - svg2-gradient-stop-offset
+    map_item_refs: []

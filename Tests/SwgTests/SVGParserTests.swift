@@ -88,6 +88,33 @@ import Testing
 	#expect(invalid.stops.count == 2)
 }
 
+@Test func svgParserNormalizesGradientStopOffsets() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<defs>
+			<linearGradient id="linear">
+				<stop stop-color="red"/>
+				<stop offset="-25%" stop-color="red"/>
+				<stop offset="0.5" stop-color="green"/>
+				<stop offset="25%" stop-color="blue"/>
+				<stop offset="150%" stop-color="black"/>
+			</linearGradient>
+			<radialGradient id="radial">
+				<stop offset=".25" stop-color="red"/>
+				<stop offset="75%" stop-color="blue"/>
+			</radialGradient>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let linear = try #require(document.defs.linearGradients["linear"])
+	let radial = try #require(document.defs.radialGradients["radial"])
+
+	#expect(linear.stops.map(\.offset) == [0, 0, 0.5, 0.5, 1])
+	#expect(radial.stops.map(\.offset) == [0.25, 0.75])
+}
+
 @Test func svgParserMultipliesTransformListsFromLeftToRight() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

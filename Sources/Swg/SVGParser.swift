@@ -778,18 +778,22 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseGradientStop(_ attributes: [String: String]) {
-		var offset: Double = 0
-		if let value = attributes["offset"] {
-			let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-			if trimmed.hasSuffix("%") {
-				offset = (parseNumber(String(trimmed.dropLast())) ?? 0) / 100
-			} else {
-				offset = parseNumber(trimmed) ?? 0
-			}
-		}
+		let parsedOffset = attributes["offset"].flatMap(parseGradientStopOffset) ?? 0
+		let offset = max(parsedOffset, currentGradientStops.last?.offset ?? 0)
 		let color = attributes["stop-color"].flatMap { parseColor($0) } ?? .black
 		let opacity = attributes["stop-opacity"].flatMap(parseNumber) ?? 1
 		currentGradientStops.append(SVGGradientStop(offset: offset, color: color, opacity: opacity))
+	}
+
+	private func parseGradientStopOffset(_ value: String) -> Double? {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		let parsed: Double?
+		if trimmed.hasSuffix("%") {
+			parsed = parseNumber(String(trimmed.dropLast())).map { $0 / 100 }
+		} else {
+			parsed = parseNumber(trimmed)
+		}
+		return parsed.map { min(max($0, 0), 1) }
 	}
 
 	private func parseGradientCoord(_ value: String) -> Double {
