@@ -11,6 +11,12 @@ Use fixture-backed raster comparisons for SVG features that affect rendered outp
 
 The SVG coverage checklist is test-gated. A feature can be checked when it has focused tests. Visual fixtures are an additional requirement for features whose behavior should be visible in the eventual `CGPath` and SwiftUI rendering pipeline.
 
+## Feature Gallery
+
+The README feature gallery uses larger documentation SVGs from `docs/feature-gallery/svg`. They are rendered by `docs/FeatureGallery.playground/Contents.swift`, which parses each SVG with ``SVGParser`` and writes PNG previews to `docs/feature-gallery/png`.
+
+Those gallery examples are intended for human-facing documentation. The smaller fixtures below are intended for stable regression checks.
+
 ## Fixture Layout
 
 Visual fixtures live in `Tests/SwgTests/VisualFixtures`. Each case has one `.svg` input and one `.golden.txt` output file with the same base name:

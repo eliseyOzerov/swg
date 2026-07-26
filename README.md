@@ -8,7 +8,49 @@ The package has no third-party dependencies. XML parsing uses Foundation's `XMLP
 
 The parser is built around the SVG 2 specification and is tracked by a test-gated checklist in [TODO.md](TODO.md). A checklist item is checked only when there is a focused test for that feature.
 
-Current coverage is parser/model coverage, not full browser-equivalent rendering. Render-affecting behavior is now being promoted into a second visual validation layer so the package can move from "we parsed the spec field" toward "we can render the expected vector output."
+Current coverage is parser/model coverage, not full browser-equivalent rendering. The gallery below shows the render-facing subset currently demonstrated by SVG examples rendered through `SVGParser` and a CoreGraphics-backed Swift playground.
+
+## Supported Feature Gallery
+
+These images are generated from SVG files in `docs/feature-gallery/svg` by `docs/FeatureGallery.playground/Contents.swift`. The playground parses each SVG with `swg`, converts the supported shape/path model to CoreGraphics, and writes PNGs to `docs/feature-gallery/png`.
+
+Parser support is broader than this gallery; see [TODO.md](TODO.md) for the full test-gated checklist. The gallery focuses on visual features we can show today.
+
+### Basic Shapes
+
+Supported here: `<rect>`, rounded rectangles, `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>`, fills, strokes, line caps, and line joins.
+
+<p>
+	<img src="docs/feature-gallery/png/shapes-basic.png" alt="Rendered SVG basic shapes example" width="320">
+	<img src="docs/feature-gallery/png/shapes-rounded-polygons.png" alt="Rendered SVG rounded rectangles and polygons example" width="320">
+</p>
+
+### Path Data
+
+Supported here: `M`, `L`, `H`, `V`, `C`, `S`, `Q`, `T`, `A`, `Z`, implicit close/fill behavior, and `fill-rule="evenodd"`.
+
+<p>
+	<img src="docs/feature-gallery/png/path-lines-curves.png" alt="Rendered SVG path lines and curves example" width="320">
+	<img src="docs/feature-gallery/png/path-arcs-fillrule.png" alt="Rendered SVG arcs and even-odd fill rule example" width="320">
+</p>
+
+### Paint and Strokes
+
+Supported here: solid color fill, fill opacity, element opacity, stroke opacity, stroke width, `stroke-linecap`, `stroke-linejoin`, and `stroke-dasharray`.
+
+<p>
+	<img src="docs/feature-gallery/png/paint-fill-opacity.png" alt="Rendered SVG fill and opacity example" width="320">
+	<img src="docs/feature-gallery/png/paint-strokes.png" alt="Rendered SVG stroke styling example" width="320">
+</p>
+
+### Groups, Transforms, and Style
+
+Supported here: `<g>` containers, inherited presentation attributes, inline `style`, opacity on groups, and transform lists including translate, rotate, scale, and skew.
+
+<p>
+	<img src="docs/feature-gallery/png/transforms-groups.png" alt="Rendered SVG group transform example" width="320">
+	<img src="docs/feature-gallery/png/transforms-style.png" alt="Rendered SVG style and inheritance example" width="320">
+</p>
 
 ## Installation
 
@@ -115,7 +157,7 @@ B blue
 ? opaque color outside the named buckets
 ```
 
-Current starter fixtures cover basic paint and transform behavior. As rendering support grows, render-affecting spec items should receive visual fixtures in addition to their focused parser tests. Purely structural or metadata features can stay parser-only unless they affect rendered output.
+Current starter fixtures cover basic paint and transform behavior. The supported feature gallery above is generated from larger documentation examples; these visual tests stay intentionally tiny so they are easy to diff as regression fixtures. As rendering support grows, render-affecting spec items should receive visual fixtures in addition to their focused parser tests. Purely structural or metadata features can stay parser-only unless they affect rendered output.
 
 ## Documentation
 
