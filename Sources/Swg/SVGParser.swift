@@ -1664,8 +1664,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			side: parseTextPathSide(attributes["side"]),
 			textAnchor: parseOptionalTextAnchor(attributes["text-anchor"]),
 			dominantBaseline: parseTextDominantBaseline(attributes["dominant-baseline"]),
+			alignmentBaseline: parseTextAlignmentBaseline(attributes["alignment-baseline"]),
 			attributes: parsePaintAttributes(attributes),
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side", "text-anchor", "dominant-baseline"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side", "text-anchor", "dominant-baseline", "alignment-baseline"])
 		))
 	}
 
@@ -1678,7 +1679,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			rotateValues: parseTextRotateList(attributes["rotate"]) ?? [],
 			textAnchor: parseOptionalTextAnchor(attributes["text-anchor"]),
 			dominantBaseline: parseTextDominantBaseline(attributes["dominant-baseline"]),
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "text-anchor", "dominant-baseline"])
+			alignmentBaseline: parseTextAlignmentBaseline(attributes["alignment-baseline"]),
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "text-anchor", "dominant-baseline", "alignment-baseline"])
 		)
 	}
 
@@ -1888,6 +1890,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fontWeight: nil,
 			textAnchor: positioning.textAnchor,
 			dominantBaseline: positioning.dominantBaseline,
+			alignmentBaseline: positioning.alignmentBaseline,
 			attributes: attributes,
 			textPath: textPathStack.last,
 			language: language,
@@ -2012,6 +2015,24 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "text-before-edge": .textBeforeEdge
 		case "text-top": .textTop
 		case "text-bottom": .textBottom
+		default: nil
+		}
+	}
+
+	private func parseTextAlignmentBaseline(_ value: String?) -> SVGTextAlignmentBaseline? {
+		switch value {
+		case "auto": .auto
+		case "baseline": .baseline
+		case "before-edge": .beforeEdge
+		case "text-before-edge": .textBeforeEdge
+		case "middle": .middle
+		case "central": .central
+		case "after-edge": .afterEdge
+		case "text-after-edge": .textAfterEdge
+		case "ideographic": .ideographic
+		case "alphabetic": .alphabetic
+		case "hanging": .hanging
+		case "mathematical": .mathematical
 		default: nil
 		}
 	}
@@ -3310,7 +3331,7 @@ private final class SVGTextBuilder {
 
 /// Mutable tspan positioning collected before the text run is finalized.
 private struct SVGTextSpanPositioning {
-	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], textAnchor: nil, dominantBaseline: nil, unknownAttributes: [:])
+	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], textAnchor: nil, dominantBaseline: nil, alignmentBaseline: nil, unknownAttributes: [:])
 
 	let xValues: [Double]
 	let yValues: [Double]
@@ -3319,6 +3340,7 @@ private struct SVGTextSpanPositioning {
 	let rotateValues: [Double]
 	let textAnchor: SVGTextAnchor?
 	let dominantBaseline: SVGTextDominantBaseline?
+	let alignmentBaseline: SVGTextAlignmentBaseline?
 	let unknownAttributes: [String: String]
 }
 

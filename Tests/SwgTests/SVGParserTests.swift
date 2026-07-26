@@ -5063,6 +5063,28 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(path.dominantBaseline == .textBeforeEdge)
 }
 
+@Test func svgParserPreservesAlignmentBaselineOnTextContentChildren() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+		<defs>
+			<path id="curve" d="M 0 60 L 200 60" />
+		</defs>
+		<text id="label" x="10" y="30">A<tspan alignment-baseline="after-edge">B</tspan><textPath href="#curve" alignment-baseline="mathematical">C</textPath></text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected parsed text element")
+		return
+	}
+	#expect(text.spans.map(\.text) == ["A", "B", "C"])
+	#expect(text.spans[0].alignmentBaseline == nil)
+	#expect(text.spans[1].alignmentBaseline == .afterEdge)
+	let path = try #require(text.spans[2].textPath)
+	#expect(path.alignmentBaseline == .mathematical)
+}
+
 @Test func svgParserNormalizesDefaultTextWhitespace() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

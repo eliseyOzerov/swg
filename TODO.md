@@ -185,7 +185,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `rotate` on text content elements.
 - [x] `text-anchor`.
 - [x] `dominant-baseline`.
-- [ ] `alignment-baseline`.
+- [x] `alignment-baseline`.
 - [ ] `white-space`.
 
 ## Embedded Content

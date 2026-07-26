@@ -843,12 +843,13 @@ public struct SVGTextSpan: Equatable, Sendable {
 	public let fontWeight: String?
 	public let textAnchor: SVGTextAnchor?
 	public let dominantBaseline: SVGTextDominantBaseline?
+	public let alignmentBaseline: SVGTextAlignmentBaseline?
 	public let attributes: SVGPaintAttributes?
 	public let textPath: SVGTextPathData?
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double?, fontWeight: String?, textAnchor: SVGTextAnchor? = nil, dominantBaseline: SVGTextDominantBaseline? = nil, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(text: String, x: Double?, y: Double?, dx: Double, dy: Double, xValues: [Double] = [], yValues: [Double] = [], dxValues: [Double] = [], dyValues: [Double] = [], rotateValues: [Double] = [], fontSize: Double?, fontWeight: String?, textAnchor: SVGTextAnchor? = nil, dominantBaseline: SVGTextDominantBaseline? = nil, alignmentBaseline: SVGTextAlignmentBaseline? = nil, attributes: SVGPaintAttributes?, textPath: SVGTextPathData? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.text = text
 		self.x = x
 		self.y = y
@@ -863,6 +864,7 @@ public struct SVGTextSpan: Equatable, Sendable {
 		self.fontWeight = fontWeight
 		self.textAnchor = textAnchor
 		self.dominantBaseline = dominantBaseline
+		self.alignmentBaseline = alignmentBaseline
 		self.attributes = attributes
 		self.textPath = textPath
 		self.language = language
@@ -880,10 +882,11 @@ public struct SVGTextPathData: Equatable, Sendable {
 	public let side: SVGTextPathSide
 	public let textAnchor: SVGTextAnchor?
 	public let dominantBaseline: SVGTextDominantBaseline?
+	public let alignmentBaseline: SVGTextAlignmentBaseline?
 	public let attributes: SVGPaintAttributes
 	public let unknownAttributes: [String: String]
 
-	public init(path: String? = nil, href: String? = nil, startOffset: String = "0", method: SVGTextPathMethod = .align, spacing: SVGTextPathSpacing = .exact, side: SVGTextPathSide = .left, textAnchor: SVGTextAnchor? = nil, dominantBaseline: SVGTextDominantBaseline? = nil, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
+	public init(path: String? = nil, href: String? = nil, startOffset: String = "0", method: SVGTextPathMethod = .align, spacing: SVGTextPathSpacing = .exact, side: SVGTextPathSide = .left, textAnchor: SVGTextAnchor? = nil, dominantBaseline: SVGTextDominantBaseline? = nil, alignmentBaseline: SVGTextAlignmentBaseline? = nil, attributes: SVGPaintAttributes, unknownAttributes: [String: String] = [:]) {
 		self.path = path
 		self.href = href
 		self.startOffset = startOffset
@@ -892,6 +895,7 @@ public struct SVGTextPathData: Equatable, Sendable {
 		self.side = side
 		self.textAnchor = textAnchor
 		self.dominantBaseline = dominantBaseline
+		self.alignmentBaseline = alignmentBaseline
 		self.attributes = attributes
 		self.unknownAttributes = unknownAttributes
 	}
@@ -938,6 +942,22 @@ public enum SVGTextDominantBaseline: Sendable, Equatable, Hashable {
 	case textBeforeEdge
 	case textTop
 	case textBottom
+}
+
+/// Alignment baseline requested by an SVG text content child element.
+public enum SVGTextAlignmentBaseline: Sendable, Equatable, Hashable {
+	case auto
+	case baseline
+	case beforeEdge
+	case textBeforeEdge
+	case middle
+	case central
+	case afterEdge
+	case textAfterEdge
+	case ideographic
+	case alphabetic
+	case hanging
+	case mathematical
 }
 
 /// A parsed gradient stop.

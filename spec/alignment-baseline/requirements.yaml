@@ -1,0 +1,156 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: alignment-baseline
+  title: SVG alignment-baseline property
+  domain: SVG Text
+  profile: null
+  summary: Requirements for preserving alignment-baseline values on SVG text content child elements.
+  non_goals:
+    - Computing baseline offsets.
+    - Font baseline-table lookup.
+    - Applying alignment during glyph layout.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-alignment-baseline
+      title: SVG 2, alignment-baseline property
+      url: https://www.w3.org/TR/SVG/text.html#AlignmentBaselineProperty
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C text chapter.
+
+scope:
+  includes:
+    - Recognition of alignment-baseline on tspan and textPath.
+    - Preservation of supported baseline keywords as local child-element values.
+    - Preservation of absent alignment-baseline as no local override.
+  excludes:
+    - Applying baseline alignment to glyph positions.
+    - alignment-baseline on root text, which is outside the SVG text chapter applicability table.
+  assumptions:
+    - Parser-level conformance can preserve alignment-baseline for a later rendering phase.
+
+terminology:
+  - id: term-alignment-point
+    term: alignment point
+    definition: The point of an object that is aligned to a selected baseline of the parent text content element.
+    source_refs:
+      - svg2-alignment-baseline
+
+structures:
+  - id: S001
+    name: alignment-baseline
+    kind: property
+    source_refs:
+      - svg2-alignment-baseline
+    fields:
+      - name: value
+        type: enum
+        cardinality: optional
+        position: property
+        constraints:
+          - Initial value is auto.
+          - Applies to tspan and textPath elements.
+          - Not inherited.
+          - Animatable.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-alignment-baseline
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: alignment-baseline applies to tspan and textPath and accepts the SVG baseline keywords defined for the property.
+    applies_to:
+      - tspan
+      - textPath
+    source_refs:
+      - svg2-alignment-baseline
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: The initial alignment-baseline value is auto and the property is not inherited.
+    applies_to:
+      - alignment-baseline
+    source_refs:
+      - svg2-alignment-baseline
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: alignment-baseline specifies which baseline of a child text object is aligned with the corresponding baseline of its parent.
+    applies_to:
+      - alignment-baseline
+    source_refs:
+      - svg2-alignment-baseline
+    testability: reviewable
+    notes:
+      - Parser preservation enables a later rendering phase to apply the baseline offset.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Unsupported alignment-baseline value.
+    source_behavior: UNSPECIFIED
+    required_behavior: Store no local alignment-baseline value.
+    decision_required: false
+    source_refs:
+      - svg2-alignment-baseline
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: A parser may store alignment-baseline as an optional enum on text child runs and textPath data.
+    allowed_by:
+      - R001
+      - R003
+    source_refs:
+      - svg2-alignment-baseline
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG text layout
+    reason: Applying alignment-baseline depends on parent baseline and font metrics.
+    source_refs:
+      - svg2-alignment-baseline
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-alignment-baseline
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-alignment-baseline
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-alignment-baseline
+    map_item_refs: []
