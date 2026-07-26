@@ -1,0 +1,99 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-func-b
+  title: SVG feFuncB transfer function element
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feFuncB>` transfer function elements as the blue-channel function of an enclosing `<feComponentTransfer>` primitive.
+  non_goals:
+    - Parsing red, green, or alpha channel transfer function elements.
+    - Executing transfer-function remapping.
+    - Supporting animation children.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-func-b
+      title: "Filter Effects Module Level 1: Transfer function feFuncB"
+      url: https://www.w3.org/TR/filter-effects-1/#elementdef-fefuncb
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-fe-component-transfer
+      title: "Filter Effects Module Level 1: Filter primitive feComponentTransfer"
+      url: https://www.w3.org/TR/filter-effects-1/#feComponentTransferElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feFuncB>` as the transfer function element for the blue component."
+    - "The `<feFuncB>` section uses the same transfer function attributes defined for `<feFuncR>`."
+    - "When more than one transfer function element of the same kind is specified, the last occurrence is used."
+
+scope:
+  includes:
+    - "`<feFuncB>` child elements inside `<feComponentTransfer>`."
+    - "The blue channel mapping."
+    - "The shared transfer function attributes already modeled for `<feFuncR>`."
+    - "Last occurrence wins for repeated `<feFuncB>` children."
+  excludes:
+    - "`<feFuncR>`, `<feFuncG>`, and `<feFuncA>`."
+    - "Applying transfer functions to pixel values."
+    - "Animation elements inside `<feFuncB>`."
+  assumptions:
+    - Swg stores parsed transfer functions inside the enclosing `SVGFilterPrimitive.componentTransfer` value.
+    - Shared transfer function attribute parsing is covered by the `<feFuncR>` requirements and tests.
+
+terminology:
+  - id: T001
+    term: feFuncB
+    definition: The transfer function element for the blue component of an input graphic.
+    source_refs:
+      - filter-effects-fe-func-b
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feFuncB>` must store a parsed transfer function on the blue component channel of its enclosing `<feComponentTransfer>` primitive."
+    applies_to:
+      - SVGComponentTransferChannel.blue
+      - SVGFilterPrimitive.componentTransfer
+    source_refs:
+      - filter-effects-fe-func-b
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesBlueComponentTransferFunctionAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "When multiple `<feFuncB>` elements occur in the same `<feComponentTransfer>`, the last blue-channel function must be used."
+    applies_to:
+      - SVGFilterPrimitive.componentTransfer
+    source_refs:
+      - filter-effects-fe-component-transfer
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesBlueComponentTransferFunctionAttributes
+
+traceability:
+  source_to_requirements:
+    filter-effects-fe-func-b:
+      - R001
+    filter-effects-fe-component-transfer:
+      - R002
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesBlueComponentTransferFunctionAttributes
+    R002:
+      - svgParserPreservesBlueComponentTransferFunctionAttributes
