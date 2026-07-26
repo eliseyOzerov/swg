@@ -4103,6 +4103,61 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(paths["invalid-class"]?.attributes.markerStart == .url("parent-start"))
 }
 
+@Test func svgParserAppliesMarkerMidInitialInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+		<style>
+			.css-marker { marker-mid: url(#css-mid); }
+			.invalid-marker { marker-mid: bogus; }
+		</style>
+		<defs>
+			<marker id="parent-mid"/>
+			<marker id="attribute-mid"/>
+			<marker id="css-mid"/>
+			<marker id="inline-mid"/>
+		</defs>
+		<path id="initial" d="M0 0 L10 10 L20 0"/>
+		<g id="parent" marker-mid="url(#parent-mid)">
+			<path id="inherited" d="M0 0 L10 10 L20 0"/>
+			<path id="attribute" d="M0 0 L10 10 L20 0" marker-mid="url(#attribute-mid)"/>
+			<path id="class-rule" class="css-marker" d="M0 0 L10 10 L20 0"/>
+			<path id="inline" class="css-marker" d="M0 0 L10 10 L20 0" style="marker-mid: url(#inline-mid)"/>
+			<path id="inherit" d="M0 0 L10 10 L20 0" marker-mid="inherit"/>
+			<path id="none" d="M0 0 L10 10 L20 0" marker-mid="none"/>
+			<path id="invalid-attribute" d="M0 0 L10 10 L20 0" marker-mid="bogus"/>
+			<path id="invalid-class" class="invalid-marker" d="M0 0 L10 10 L20 0"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.markerMid == SVGMarkerReference.none)
+	#expect(paths["inherited"]?.attributes.markerMid == .url("parent-mid"))
+	#expect(paths["attribute"]?.attributes.markerMid == .url("attribute-mid"))
+	#expect(paths["class-rule"]?.attributes.markerMid == .url("css-mid"))
+	#expect(paths["inline"]?.attributes.markerMid == .url("inline-mid"))
+	#expect(paths["inherit"]?.attributes.markerMid == .url("parent-mid"))
+	#expect(paths["none"]?.attributes.markerMid == SVGMarkerReference.none)
+	#expect(paths["invalid-attribute"]?.attributes.markerMid == .url("parent-mid"))
+	#expect(paths["invalid-class"]?.attributes.markerMid == .url("parent-mid"))
+}
+
 @Test func svgParserPreservesUseGeometryAndReferenceOverrides() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="200" height="100">
