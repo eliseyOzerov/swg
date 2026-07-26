@@ -112,22 +112,39 @@ public struct SVGAnimateMotionData: Equatable, Sendable {
 	public let keyPoints: String?
 	public let rotate: String?
 	public let origin: String?
+	public let mpath: SVGMPathData?
 	public let fromValue: String?
 	public let toValue: String?
 	public let byValue: String?
 	public let language: String?
 	public let unknownAttributes: [String: String]
 
-	public init(id: String, target: SVGAnimationTarget? = nil, path: String? = nil, keyPoints: String? = nil, rotate: String? = nil, origin: String? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+	public init(id: String, target: SVGAnimationTarget? = nil, path: String? = nil, keyPoints: String? = nil, rotate: String? = nil, origin: String? = nil, mpath: SVGMPathData? = nil, fromValue: String? = nil, toValue: String? = nil, byValue: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
 		self.id = id
 		self.target = target
 		self.path = path
 		self.keyPoints = keyPoints
 		self.rotate = rotate
 		self.origin = origin
+		self.mpath = mpath
 		self.fromValue = fromValue
 		self.toValue = toValue
 		self.byValue = byValue
+		self.language = language
+		self.unknownAttributes = unknownAttributes
+	}
+}
+
+/// Data for an SVG `<mpath>` child that references motion path geometry.
+public struct SVGMPathData: Equatable, Sendable {
+	public let id: String
+	public let href: String?
+	public let language: String?
+	public let unknownAttributes: [String: String]
+
+	public init(id: String, href: String? = nil, language: String? = nil, unknownAttributes: [String: String] = [:]) {
+		self.id = id
+		self.href = href
 		self.language = language
 		self.unknownAttributes = unknownAttributes
 	}

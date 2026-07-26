@@ -5457,6 +5457,37 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(clear.begin == "0s")
 }
 
+@Test func svgParserPreservesMPathAsAnimateMotionChildData() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+		<path id="track" d="M0 0 C10 10 20 10 30 0"/>
+		<circle id="dot" r="2">
+			<animateMotion id="follow" path="M0 0 L1 1" dur="4s">
+				<mpath id="motionPath" href="#track" data-note="kept"/>
+			</animateMotion>
+		</circle>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.elementIDs == ["track", "dot"])
+	#expect(document.animations.count == 1)
+
+	guard case .animateMotion(let follow) = document.animations[0] else {
+		Issue.record("Expected animation to be animateMotion")
+		return
+	}
+	#expect(follow.id == "follow")
+	#expect(follow.target == .parent(id: "dot"))
+	#expect(follow.path == "M0 0 L1 1")
+
+	let mpath = try #require(follow.mpath)
+	#expect(mpath.id == "motionPath")
+	#expect(mpath.href == "#track")
+	#expect(mpath.unknownAttributes["data-note"] == "kept")
+}
+
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">

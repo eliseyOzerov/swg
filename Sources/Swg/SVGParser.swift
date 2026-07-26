@@ -234,6 +234,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var rootMetadata: [SVGMetadataData] = []
 	private var elementMetadata: [String: [SVGMetadataData]] = [:]
 	private var animations: [SVGAnimationElement] = []
+	private var animateMotionIndexStack: [Int] = []
 	private var namespaceStack: [SVGNamespaceContext] = [.empty]
 	private var languageStack: [String?] = [nil]
 	private var viewportContextStack: [SVGLengthContext] = [.default]
@@ -372,6 +373,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			parsedElementStack[parsedElementStack.count - 1].role = .animation
 		case "discard":
 			parseDiscard(attributes)
+			parsedElementStack[parsedElementStack.count - 1].role = .animation
+		case "mpath":
+			parseMPath(attributes)
 			parsedElementStack[parsedElementStack.count - 1].role = .animation
 		case "style":
 			inStyleElement = true
@@ -729,6 +733,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			finalizeTSpan()
 		case "textPath":
 			finalizeTextPath()
+		case "animateMotion":
+			if !animateMotionIndexStack.isEmpty {
+				_ = animateMotionIndexStack.popLast()
+			}
 		case "g":
 			finalizeContainerElement()
 		default:
@@ -801,6 +809,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		rootMetadata = []
 		elementMetadata = [:]
 		animations = []
+		animateMotionIndexStack = []
 		namespaceStack = [.empty]
 		languageStack = [nil]
 		viewportContextStack = [.default]
@@ -1827,6 +1836,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			language: currentLanguage,
 			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href", "path", "keyPoints", "rotate", "origin", "from", "to", "by"])
 		)))
+		animateMotionIndexStack.append(animations.count - 1)
 	}
 
 	private func parseAnimateTransform(_ attributes: [String: String]) {
@@ -1886,6 +1896,32 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			language: currentLanguage,
 			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "begin"])
 		)))
+	}
+
+	private func parseMPath(_ attributes: [String: String]) {
+		let id = resolveID(attributes["id"], elementName: "MPath")
+		setCurrentParsedElementID(id)
+		guard let index = animateMotionIndexStack.last, case .animateMotion(let motion) = animations[index] else { return }
+		let mpath = SVGMPathData(
+			id: id,
+			href: parseRawHref(attributes),
+			language: currentLanguage,
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["href", "xlink:href"])
+		)
+		animations[index] = .animateMotion(SVGAnimateMotionData(
+			id: motion.id,
+			target: motion.target,
+			path: motion.path,
+			keyPoints: motion.keyPoints,
+			rotate: motion.rotate,
+			origin: motion.origin,
+			mpath: mpath,
+			fromValue: motion.fromValue,
+			toValue: motion.toValue,
+			byValue: motion.byValue,
+			language: motion.language,
+			unknownAttributes: motion.unknownAttributes
+		))
 	}
 
 	private func parseTextSpanPositioning(_ attributes: [String: String]) -> SVGTextSpanPositioning {

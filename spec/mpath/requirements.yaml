@@ -1,0 +1,204 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: mpath
+  title: SVG mpath element
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for recognizing SVG `<mpath>` children of `<animateMotion>` and preserving their URL reference to motion path geometry.
+  non_goals:
+    - Resolving the referenced path or shape into path geometry.
+    - Applying the `<mpath>` override rule during animation evaluation.
+    - Motion playback, distance calculation, or rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-extensions
+      title: SVG Animations Level 2, SVG extensions to SMIL Animation
+      url: https://svgwg.org/specs/animations/#RelationshipToSMILAnimation
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-animate-motion-element
+      title: SVG Animations Level 2, The animateMotion element
+      url: https://svgwg.org/specs/animations/#AnimateMotionElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-mpath-interface
+      title: SVG Animations Level 2, Interface SVGMPathElement
+      url: https://svgwg.org/specs/animations/#InterfaceSVGMPathElement
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - The SVG Animations draft defines `<mpath>` as an SVG-specific extension and exposes it through `SVGMPathElement`, which includes `SVGURIReference`.
+
+scope:
+  includes:
+    - Recognition of `<mpath>` as an SVG child element of `<animateMotion>`.
+    - Preservation of the `<mpath>` URL reference as raw `href` data.
+    - Attachment of the parsed `<mpath>` record to the surrounding `<animateMotion>` animation data.
+    - Preservation of language and uninterpreted non-namespace attributes.
+  excludes:
+    - Storing standalone `<mpath>` elements outside an active `<animateMotion>` context.
+    - Resolving the referenced path or shape element.
+    - Enforcing the rule that `<mpath>` overrides the `path` attribute at evaluation time.
+  assumptions:
+    - Parser output may attach at most the last parsed `<mpath>` child to an `<animateMotion>` record; the content model allows at most one.
+
+terminology:
+  - id: term-mpath
+    term: mpath
+    definition: A child element of `<animateMotion>` that references path or shape geometry as the motion path definition.
+    source_refs:
+      - svg-animations-extensions
+      - svg-animations-animate-motion-element
+  - id: term-uri-reference
+    term: URI reference
+    definition: A URL reference exposed by `SVGMPathElement` through `SVGURIReference`.
+    source_refs:
+      - svg-animations-mpath-interface
+
+structures:
+  - id: S001
+    name: mpath
+    kind: element
+    source_refs:
+      - svg-animations-mpath-interface
+    fields:
+      - name: id
+        type: string
+        cardinality: optional
+        position: core-attribute
+        constraints:
+          - Identifies the mpath element.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg-animations-mpath-interface
+      - name: href
+        type: URL
+        cardinality: optional
+        position: attribute
+        constraints:
+          - References an SVG path or shape element to use as the motion path definition.
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg-animations-extensions
+          - svg-animations-mpath-interface
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The parser must recognize `<mpath>` as an SVG motion path reference child.
+    applies_to:
+      - mpath
+    source_refs:
+      - svg-animations-extensions
+      - svg-animations-mpath-interface
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: A parsed `<mpath>` child must be attached to the surrounding `<animateMotion>` data rather than emitted as a directly rendered SVG element.
+    applies_to:
+      - mpath
+      - animateMotion
+    source_refs:
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: The `<mpath>` URL reference must be preserved so later processing can resolve the referenced path or shape element.
+    applies_to:
+      - mpath href
+    source_refs:
+      - svg-animations-extensions
+      - svg-animations-mpath-interface
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Parser-only processing must not resolve or apply the `<mpath>` override of the `<animateMotion>` `path` attribute.
+    applies_to:
+      - mpath evaluation
+    source_refs:
+      - svg-animations-animate-motion-element
+    testability: testable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: The `<mpath>` URL reference is missing, invalid, or points to an unsupported target.
+    source_behavior: INVALID_REFERENCE
+    required_behavior: Preserve the parsed `<mpath>` record and leave resolution or no-effect handling to later motion animation processing.
+    decision_required: false
+    source_refs:
+      - svg-animations-extensions
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The parser may represent `<mpath>` as child data on `SVGAnimateMotionData`.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+    source_refs:
+      - svg-animations-animate-motion-element
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: work-item
+    title: Motion animation evaluation
+    reason: Applying `<mpath>` precedence and resolving referenced geometry belongs to runtime motion animation evaluation.
+    source_refs:
+      - svg-animations-animate-motion-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-extensions
+      - svg-animations-mpath-interface
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-motion-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-extensions
+      - svg-animations-mpath-interface
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg-animations-animate-motion-element
+    map_item_refs: []
