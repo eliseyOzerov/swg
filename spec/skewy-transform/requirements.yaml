@@ -9,7 +9,7 @@ work_item:
   profile: null
   summary: The SVG `skewY` transform function skews local coordinates along the y-axis by an angle interpreted from a unitless SVG number as degrees.
   non_goals:
-    - `skewX`.
+    - "`skewX`."
     - CSS `skew()`.
     - Transform-list ordering.
     - 3D transform functions.
@@ -56,8 +56,8 @@ scope:
     - Interpreting unitless SVG `skewY` numbers as degree angles.
     - Applying the y-axis skew transform to points.
   excludes:
-    - `skewX`.
-    - CSS `skew()`.
+    - "`skewX`."
+    - "CSS `skew()`."
     - Malformed skew argument recovery.
   assumptions:
     - The package stores transform angles internally in radians.

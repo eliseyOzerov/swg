@@ -73,7 +73,7 @@ terminology:
       - svg11-clock-values
   - id: metric
     term: Metric
-    definition: A timecount unit suffix: h, min, s, or ms.
+    definition: "A timecount unit suffix: h, min, s, or ms."
     source_refs:
       - svg11-clock-values
 

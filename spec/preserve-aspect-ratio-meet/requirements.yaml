@@ -10,7 +10,7 @@ work_item:
   summary: The `meet` value preserves aspect ratio by uniformly scaling the entire viewBox to fit inside the viewport and then aligning it.
   non_goals:
     - Non-uniform `none` scaling.
-    - `slice` covering behavior.
+    - "`slice` covering behavior."
     - Exhaustive testing of every align keyword.
 
 source_context:

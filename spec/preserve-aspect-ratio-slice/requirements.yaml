@@ -10,7 +10,7 @@ work_item:
   summary: The `slice` value preserves aspect ratio by uniformly scaling the viewBox until it covers the entire viewport, then aligning the result.
   non_goals:
     - Non-uniform `none` scaling.
-    - `meet` contained-fit behavior.
+    - "`meet` contained-fit behavior."
     - Renderer clipping of content outside the viewport.
     - Exhaustive testing of every align keyword.
 

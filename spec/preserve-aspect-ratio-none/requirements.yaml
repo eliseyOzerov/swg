@@ -35,7 +35,7 @@ source_context:
 
 scope:
   includes:
-    - `preserveAspectRatio="none"` transform behavior.
+    - "`preserveAspectRatio=\"none\"` transform behavior."
     - Ignoring meetOrSlice for `none`.
   excludes:
     - Uniform scale alignment behavior.
