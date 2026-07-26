@@ -15,6 +15,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var strokeDashOffset: Double
 	public var strokeOpacity: Double
 	public var paintOrder: SVGPaintOrder
+	public var colorInterpolation: SVGColorInterpolation
 	public var opacity: Double
 	public var transform: Transform
 	public var visibility: SVGVisibility
@@ -38,6 +39,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		strokeDashOffset: Double = 0,
 		strokeOpacity: Double = 1,
 		paintOrder: SVGPaintOrder = .normal,
+		colorInterpolation: SVGColorInterpolation = .sRGB,
 		opacity: Double = 1,
 		transform: Transform = .identity,
 		visibility: SVGVisibility = .visible,
@@ -60,6 +62,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.strokeDashOffset = strokeDashOffset
 		self.strokeOpacity = strokeOpacity
 		self.paintOrder = paintOrder
+		self.colorInterpolation = colorInterpolation
 		self.opacity = opacity
 		self.transform = transform
 		self.visibility = visibility
@@ -106,6 +109,13 @@ public enum SVGPaintOperation: Equatable, Sendable, Hashable {
 	case markers
 
 	static let normalOrder: [SVGPaintOperation] = [.fill, .stroke, .markers]
+}
+
+/// SVG `color-interpolation` value selecting the color space for interpolation.
+public enum SVGColorInterpolation: Equatable, Sendable, Hashable {
+	case auto
+	case sRGB
+	case linearRGB
 }
 
 /// SVG visibility property value.

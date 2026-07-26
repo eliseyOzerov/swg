@@ -1237,6 +1237,51 @@ import Testing
 	expectColorApproximately(paths["invalid"]?.attributes.color, .blue)
 }
 
+@Test func svgParserAppliesColorInterpolationInitialInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.auto { color-interpolation: auto; }
+			.invalid { color-interpolation: lab; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" color-interpolation="linearRGB">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="auto" class="auto" d="M0 0 L10 10"/>
+			<path id="srgb" d="M0 0 L10 10" color-interpolation="sRGB"/>
+			<path id="inline" class="auto" d="M0 0 L10 10" style="color-interpolation: linearRGB"/>
+			<path id="invalid" class="invalid" d="M0 0 L10 10"/>
+			<path id="inherit" class="auto" d="M0 0 L10 10" style="color-interpolation: inherit"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.colorInterpolation == .sRGB)
+	#expect(paths["inherited"]?.attributes.colorInterpolation == .linearRGB)
+	#expect(paths["auto"]?.attributes.colorInterpolation == .auto)
+	#expect(paths["srgb"]?.attributes.colorInterpolation == .sRGB)
+	#expect(paths["inline"]?.attributes.colorInterpolation == .linearRGB)
+	#expect(paths["invalid"]?.attributes.colorInterpolation == .linearRGB)
+	#expect(paths["inherit"]?.attributes.colorInterpolation == .linearRGB)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">
