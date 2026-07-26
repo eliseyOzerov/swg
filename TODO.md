@@ -168,7 +168,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feImage>`.
 - [x] `<feMerge>`.
 - [x] `<feMergeNode>`.
-- [ ] `<feMorphology>`.
+- [x] `<feMorphology>`.
 - [ ] `<feOffset>`.
 - [ ] `<fePointLight>`.
 - [ ] `<feSpecularLighting>`.

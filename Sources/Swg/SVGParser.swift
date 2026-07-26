@@ -474,6 +474,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentMergePrimitiveIndex = currentFilter?.primitives.indices.last
 		case "feMergeNode":
 			appendMergeNodeInput(attributes["in"])
+		case "feMorphology":
+			let radius = parseNumberOptionalNumber(attributes["radius"], defaultValue: 0)
+			currentFilter?.primitives.append(.morphology(
+				input: attributes["in"],
+				operator: parseMorphologyOperator(attributes["operator"]),
+				radiusX: radius.first,
+				radiusY: radius.second,
+				isPassThrough: radius.first <= 0 || radius.second <= 0
+			))
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2
@@ -1391,6 +1400,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		default:
 			.alpha
 		}
+	}
+
+	private func parseMorphologyOperator(_ value: String?) -> SVGMorphologyOperator {
+		value == "dilate" ? .dilate : .erode
 	}
 
 	private func parseCrossOriginMode(_ value: String?) -> SVGCrossOriginMode? {

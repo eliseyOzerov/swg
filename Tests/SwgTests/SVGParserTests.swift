@@ -842,6 +842,48 @@ private func expectMerge(_ primitive: SVGFilterPrimitive, inputs expectedInputs:
 	expectMerge(filter.primitives[1], inputs: ["top"])
 }
 
+@Test func svgParserPreservesMorphologyPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="morphology">
+			<feMorphology/>
+			<feMorphology in="SourceAlpha" operator="dilate" radius="2.5"/>
+			<feMorphology operator="erode" radius="3 4"/>
+			<feMorphology operator="unsupported" radius="-1 2"/>
+			<feMorphology radius="bad"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["morphology"])
+	#expect(filter.primitives.count == 5)
+	expectMorphology(filter.primitives[0], input: nil, operator: .erode, radiusX: 0, radiusY: 0, isPassThrough: true)
+	expectMorphology(filter.primitives[1], input: "SourceAlpha", operator: .dilate, radiusX: 2.5, radiusY: 2.5, isPassThrough: false)
+	expectMorphology(filter.primitives[2], input: nil, operator: .erode, radiusX: 3, radiusY: 4, isPassThrough: false)
+	expectMorphology(filter.primitives[3], input: nil, operator: .erode, radiusX: -1, radiusY: 2, isPassThrough: true)
+	expectMorphology(filter.primitives[4], input: nil, operator: .erode, radiusX: 0, radiusY: 0, isPassThrough: true)
+}
+
+private func expectMorphology(
+	_ primitive: SVGFilterPrimitive,
+	input expectedInput: String?,
+	operator expectedOperator: SVGMorphologyOperator,
+	radiusX expectedRadiusX: Double,
+	radiusY expectedRadiusY: Double,
+	isPassThrough expectedIsPassThrough: Bool
+) {
+	guard case .morphology(let input, let morphologyOperator, let radiusX, let radiusY, let isPassThrough) = primitive else {
+		Issue.record("Expected parsed feMorphology primitive")
+		return
+	}
+	#expect(input == expectedInput)
+	#expect(morphologyOperator == expectedOperator)
+	#expect(radiusX == expectedRadiusX)
+	#expect(radiusY == expectedRadiusY)
+	#expect(isPassThrough == expectedIsPassThrough)
+}
+
 @Test func svgParserPreservesDistantLightAttributes() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

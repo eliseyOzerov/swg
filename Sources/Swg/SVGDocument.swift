@@ -1022,6 +1022,7 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case flood(color: Color = .black)
 	case image(href: String?, preserveAspectRatio: SVGPreserveAspectRatio = .default, crossOrigin: SVGCrossOriginMode? = nil)
 	case merge(inputs: [String?] = [])
+	case morphology(input: String?, operator: SVGMorphologyOperator = .erode, radiusX: Double = 0, radiusY: Double = 0, isPassThrough: Bool = true)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }
@@ -1043,6 +1044,12 @@ public enum SVGFilterChannelSelector: Equatable, Sendable, Hashable {
 	case green
 	case blue
 	case alpha
+}
+
+/// Morphology operation used by an SVG `<feMorphology>` primitive.
+public enum SVGMorphologyOperator: Equatable, Sendable, Hashable {
+	case erode
+	case dilate
 }
 
 /// Blend mode used by an SVG `<feBlend>` primitive.

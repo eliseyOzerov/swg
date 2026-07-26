@@ -1,0 +1,219 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-morphology
+  title: SVG feMorphology filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Requirements for preserving the feMorphology primitive's input, operation, and radius values from an SVG filter.
+  non_goals:
+    - Raster execution of the morphology algorithm.
+    - Full DOM IDL reflection or animation support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-morphology
+      title: Filter Effects Module Level 1, feMorphology element
+      url: https://www.w3.org/TR/filter-effects-1/#feMorphologyElement
+      version: Editor-independent W3C Working Draft snapshot
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C section.
+
+scope:
+  includes:
+    - feMorphology element recognition inside SVG filters.
+    - The in, operator, and radius attributes.
+    - The erode and dilate operation values.
+    - Radius pair parsing and the non-positive-radius disabled effect rule.
+  excludes:
+    - Filter image raster processing.
+    - Animation and DOM mutation behavior.
+    - Interactions with undeclared filter primitive standard attributes.
+  assumptions:
+    - A parser may preserve a primitive whose effect is disabled so downstream renderers can decide whether to skip it.
+
+terminology:
+  - id: term-morphology
+    term: Morphology
+    definition: A filter operation that fattens or thins the input graphic by applying dilation or erosion.
+    source_refs:
+      - filter-effects-fe-morphology
+
+structures:
+  - id: S001
+    name: feMorphology
+    kind: element
+    source_refs:
+      - filter-effects-fe-morphology
+    fields:
+      - name: in
+        type: string
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Identifies the input image for the primitive.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-morphology
+      - name: operator
+        type: enumeration
+        cardinality: optional
+        position: attribute
+        constraints:
+          - Allowed values are erode and dilate.
+          - Initial value is erode.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-fe-morphology
+      - name: radius
+        type: number-optional-number
+        cardinality: optional
+        position: attribute
+        constraints:
+          - One number supplies both X and Y radius components.
+          - Two numbers supply X and Y radius components respectively.
+          - Initial value is 0.
+          - Values are interpreted in the primitiveUnits coordinate system.
+        requirement_refs:
+          - R003
+          - R004
+        source_refs:
+          - filter-effects-fe-morphology
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: The feMorphology element has an input attribute corresponding to the filter primitive's input image.
+    applies_to:
+      - feMorphology
+    source_refs:
+      - filter-effects-fe-morphology
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: The operator attribute accepts erode and dilate values, with erode as the initial value.
+    applies_to:
+      - feMorphology.operator
+    source_refs:
+      - filter-effects-fe-morphology
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: The radius attribute is a number-optional-number value where a single number applies to both X and Y components.
+    applies_to:
+      - feMorphology.radius
+    source_refs:
+      - filter-effects-fe-morphology
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: A negative or zero value for either radius component disables the primitive's effect.
+    applies_to:
+      - feMorphology.radius
+    source_refs:
+      - filter-effects-fe-morphology
+    testability: testable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Morphology operation
+    kind: algorithm
+    summary: Erosion thins input graphics and dilation fattens input graphics according to the radius area.
+    steps: []
+    preconditions:
+      - A positive X and Y radius are available.
+    postconditions:
+      - The output is a dilated or eroded version of the input image.
+    requirement_refs:
+      - R002
+      - R004
+    source_refs:
+      - filter-effects-fe-morphology
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: radius has a negative or zero X or Y component.
+    source_behavior: disables the effect of the given filter primitive
+    required_behavior: The primitive must be treated as effect-disabled.
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-morphology
+  - id: I002
+    condition: operator is not erode or dilate.
+    source_behavior: UNSPECIFIED
+    required_behavior: null
+    decision_required: true
+    source_refs:
+      - filter-effects-fe-morphology
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Effect-disabled representation
+    statement: An implementation may preserve parsed radius values while marking the primitive as pass-through or otherwise disabled for rendering.
+    allowed_by:
+      - R004
+    source_refs:
+      - filter-effects-fe-morphology
+
+ambiguities:
+  - id: A001
+    question: Should unknown operator values be preserved distinctly or handled as the initial erode value by a non-DOM parser?
+    impact: This affects whether downstream renderers can report invalid author input separately from defaulted input.
+    options:
+      - Preserve an unknown enum case.
+      - Treat unknown values as the initial erode operation.
+    source_refs:
+      - filter-effects-fe-morphology
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG filter primitive standard attributes
+    reason: feMorphology includes the standard filter primitive attributes alongside its specific attributes.
+    source_refs:
+      - filter-effects-fe-morphology
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-morphology
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-morphology
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-morphology
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-morphology
+    map_item_refs: []
