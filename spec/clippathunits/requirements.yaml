@@ -1,0 +1,197 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: clippathunits
+  title: SVG clipPathUnits attribute
+  domain: CSS Masking Level 1 / SVG
+  profile: null
+  summary: Preserve the coordinate-system selection for SVG `<clipPath>` contents using the `clipPathUnits` attribute.
+  non_goals:
+    - Applying clipping during rendering.
+    - Resolving object bounding boxes for rendered clipping.
+    - Implementing `maskUnits` or `maskContentUnits`.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-masking-clippath-element
+      title: "CSS Masking Module Level 1: The clipPath element"
+      url: https://www.w3.org/TR/css-masking-1/#elementdef-clippath
+      version: Candidate Recommendation Draft, 5 August 2021
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - CSS Masking defines `clipPathUnits` on `<clipPath>` with allowed values `userSpaceOnUse` and `objectBoundingBox`.
+    - If `clipPathUnits` is omitted, the effect is as if `userSpaceOnUse` were specified.
+
+scope:
+  includes:
+    - "`clipPathUnits=\"userSpaceOnUse\"`."
+    - "`clipPathUnits=\"objectBoundingBox\"`."
+    - Omitted or invalid values using the initial `userSpaceOnUse` behavior.
+    - Parser-visible association between a clip path definition, its units value, and its child geometry.
+  excludes:
+    - Transforming child geometry into the selected coordinate system.
+    - Object bounding box calculation.
+    - Animation of `clipPathUnits`.
+  assumptions:
+    - Parser-level support can preserve the coordinate-system mode for later rendering.
+    - Existing child-only clip path lookup can remain available as a compatibility view.
+
+terminology:
+  - id: T001
+    term: clipPathUnits
+    definition: An attribute on `<clipPath>` that selects the coordinate system used for that clip path's contents.
+    source_refs:
+      - css-masking-clippath-element
+  - id: T002
+    term: userSpaceOnUse
+    definition: A mode where clip path contents are interpreted in the current user coordinate system of the referencing element.
+    source_refs:
+      - css-masking-clippath-element
+  - id: T003
+    term: objectBoundingBox
+    definition: A mode where the clip path coordinate system is based on the bounding box of the element being clipped.
+    source_refs:
+      - css-masking-clippath-element
+
+structures:
+  - id: S001
+    name: Clip path definition
+    kind: structure
+    source_refs:
+      - css-masking-clippath-element
+    fields:
+      - name: id
+        type: string
+        cardinality: one
+        position: null
+        constraints:
+          - Identifies the reusable clip path source.
+        requirement_refs:
+          - R004
+        source_refs:
+          - css-masking-clippath-element
+      - name: units
+        type: enum
+        cardinality: one
+        position: null
+        constraints:
+          - Allowed values are `userSpaceOnUse` and `objectBoundingBox`.
+          - Initial value is `userSpaceOnUse`.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - css-masking-clippath-element
+      - name: children
+        type: list
+        cardinality: zero-or-more
+        position: null
+        constraints:
+          - Contains the graphics elements that define the clipping source.
+        requirement_refs:
+          - R004
+        source_refs:
+          - css-masking-clippath-element
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: value
+    statement: "`clipPathUnits=\"userSpaceOnUse\"` must select the current user coordinate system of the referencing element for clip path contents."
+    applies_to:
+      - clipPathUnits
+    source_refs:
+      - css-masking-clippath-element
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: value
+    statement: "`clipPathUnits=\"objectBoundingBox\"` must select a coordinate system based on the bounding box of the clipped element."
+    applies_to:
+      - clipPathUnits
+    source_refs:
+      - css-masking-clippath-element
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: default
+    statement: When `clipPathUnits` is not specified, the effect must be as if `userSpaceOnUse` were specified.
+    applies_to:
+      - clipPathUnits
+    source_refs:
+      - css-masking-clippath-element
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: A parser-visible clip path definition must associate the selected units value with the clip path's child geometry.
+    applies_to:
+      - clipPath definition
+    source_refs:
+      - css-masking-clippath-element
+    testability: testable
+    notes: []
+
+algorithms: []
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `clipPathUnits` value is not `userSpaceOnUse` or `objectBoundingBox`.
+    source_behavior: invalid attribute value
+    required_behavior: Use the initial `userSpaceOnUse` behavior.
+    decision_required: false
+    source_refs:
+      - css-masking-clippath-element
+
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Compatibility lookup
+    statement: The package may keep a child-only clip path lookup for existing callers while adding a richer definition lookup that exposes `clipPathUnits`.
+    allowed_by:
+      - R004
+    source_refs:
+      - css-masking-clippath-element
+
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: work-item
+    title: SVG clipPath element
+    reason: "`clipPathUnits` is meaningful only on preserved `<clipPath>` definitions."
+    source_refs:
+      - css-masking-clippath-element
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - css-masking-clippath-element
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-masking-clippath-element
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-masking-clippath-element
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-masking-clippath-element
+    map_item_refs: []

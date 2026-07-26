@@ -530,6 +530,31 @@ import Testing
 	#expect(initial.attributes.clipRule == .winding)
 }
 
+@Test func svgParserPreservesClipPathUnits() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<clipPath id="defaultUnits">
+			<path id="defaultChild" d="M0 0 L10 0 L10 10 Z"/>
+		</clipPath>
+		<clipPath id="userSpace" clipPathUnits="userSpaceOnUse"/>
+		<clipPath id="objectBox" clipPathUnits="objectBoundingBox">
+			<path id="objectChild" d="M0 0 L1 0 L1 1 Z"/>
+		</clipPath>
+		<clipPath id="invalidUnits" clipPathUnits="definitelyNotUnits"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.clipPathDefinitions["defaultUnits"]?.units == .userSpaceOnUse)
+	#expect(document.defs.clipPathDefinitions["userSpace"]?.units == .userSpaceOnUse)
+	#expect(document.defs.clipPathDefinitions["objectBox"]?.units == .objectBoundingBox)
+	#expect(document.defs.clipPathDefinitions["invalidUnits"]?.units == .userSpaceOnUse)
+	#expect(document.defs.clipPathDefinitions["defaultUnits"]?.children.flatMap { $0.collectIDs() } == ["defaultChild"])
+	#expect(document.defs.clipPathDefinitions["objectBox"]?.children.flatMap { $0.collectIDs() } == ["objectChild"])
+	#expect(document.defs.clipPaths["objectBox"]?.flatMap { $0.collectIDs() } == ["objectChild"])
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

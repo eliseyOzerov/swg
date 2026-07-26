@@ -203,6 +203,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var maskElements: [SVGElement] = []
 	private var inClipPath = false
 	private var currentClipPathID: String?
+	private var currentClipPathUnits: SVGClipPathUnits = .userSpaceOnUse
 	private var clipPathElements: [SVGElement] = []
 	private var clipPathAttributeStack: [SVGPaintAttributes] = []
 	private var inText = false
@@ -360,6 +361,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			parseGradientStop(attributes)
 		case "clipPath":
 			currentClipPathID = attributes["id"]
+			currentClipPathUnits = parseClipPathUnits(attributes["clipPathUnits"])
 			clipPathElements = []
 			clipPathAttributeStack.append(parsePaintAttributes(attributes))
 			inClipPath = true
@@ -491,6 +493,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			}
 		case "clipPath":
 			if let id = currentClipPathID {
+				defs.clipPathDefinitions[id] = SVGClipPathDef(id: id, units: currentClipPathUnits, children: clipPathElements)
 				defs.clipPaths[id] = clipPathElements
 			}
 			if !clipPathAttributeStack.isEmpty {
@@ -498,6 +501,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			}
 			inClipPath = false
 			currentClipPathID = nil
+			currentClipPathUnits = .userSpaceOnUse
 		case "filter":
 			if let filter = currentFilter {
 				defs.filters[filter.id] = filter
@@ -554,6 +558,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		maskElements = []
 		inClipPath = false
 		currentClipPathID = nil
+		currentClipPathUnits = .userSpaceOnUse
 		clipPathElements = []
 		clipPathAttributeStack = []
 		inText = false
@@ -944,6 +949,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parsePatternContentUnits(_ value: String?) -> SVGPatternUnits {
+		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
+	}
+
+	private func parseClipPathUnits(_ value: String?) -> SVGClipPathUnits {
 		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
 	}
 

@@ -152,6 +152,7 @@ public struct SVGDefs: Equatable, Sendable {
 	public var patterns: [String: SVGPatternDef]
 	public var symbols: [String: SVGSymbolData]
 	public var views: [String: SVGViewData]
+	public var clipPathDefinitions: [String: SVGClipPathDef]
 	public var clipPaths: [String: [SVGElement]]
 	public var filters: [String: SVGFilterDef]
 	public var masks: [String: SVGMaskDef]
@@ -163,6 +164,7 @@ public struct SVGDefs: Equatable, Sendable {
 		patterns: [String: SVGPatternDef] = [:],
 		symbols: [String: SVGSymbolData] = [:],
 		views: [String: SVGViewData] = [:],
+		clipPathDefinitions: [String: SVGClipPathDef] = [:],
 		clipPaths: [String: [SVGElement]] = [:],
 		filters: [String: SVGFilterDef] = [:],
 		masks: [String: SVGMaskDef] = [:],
@@ -173,11 +175,31 @@ public struct SVGDefs: Equatable, Sendable {
 		self.patterns = patterns
 		self.symbols = symbols
 		self.views = views
+		self.clipPathDefinitions = clipPathDefinitions
 		self.clipPaths = clipPaths
 		self.filters = filters
 		self.masks = masks
 		self.reusableElements = reusableElements
 	}
+}
+
+/// A reusable SVG `<clipPath>` definition with coordinate units and clipping geometry.
+public struct SVGClipPathDef: Equatable, Sendable {
+	public var id: String
+	public var units: SVGClipPathUnits
+	public var children: [SVGElement]
+
+	public init(id: String, units: SVGClipPathUnits = .userSpaceOnUse, children: [SVGElement] = []) {
+		self.id = id
+		self.units = units
+		self.children = children
+	}
+}
+
+/// Coordinate system used for SVG `<clipPath>` child content.
+public enum SVGClipPathUnits: Equatable, Sendable, Hashable {
+	case objectBoundingBox
+	case userSpaceOnUse
 }
 
 /// A single SVG shape, group, unknown container, text, image, or use element.
