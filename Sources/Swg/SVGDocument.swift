@@ -1017,6 +1017,7 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case componentTransfer(input: String?, functions: [SVGComponentTransferChannel: SVGComponentTransferFunction] = [:])
 	case composite(input: String?, input2: String?, operator: SVGCompositeOperator = .over, k1: Double = 0, k2: Double = 0, k3: Double = 0, k4: Double = 0)
 	case convolveMatrix(input: String?, orderX: Int = 3, orderY: Int = 3, kernelMatrix: [Double], divisor: Double, bias: Double = 0, targetX: Int = 1, targetY: Int = 1, edgeMode: SVGFilterEdgeMode = .duplicate, kernelUnitLengthX: Double? = nil, kernelUnitLengthY: Double? = nil, preserveAlpha: Bool = false, isPassThrough: Bool = false)
+	case diffuseLighting(input: String?, surfaceScale: Double = 1, diffuseConstant: Double = 1, kernelUnitLengthX: Double? = nil, kernelUnitLengthY: Double? = nil)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }

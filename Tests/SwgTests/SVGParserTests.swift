@@ -568,6 +568,74 @@ private func expectConvolveMatrix(
 	#expect(isPassThrough == expectedIsPassThrough)
 }
 
+@Test func svgParserPreservesDiffuseLightingPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="diffuse">
+			<feDiffuseLighting/>
+			<feDiffuseLighting in="SourceAlpha" surfaceScale="2.5" diffuseConstant="0" kernelUnitLength="0.25"/>
+			<feDiffuseLighting surfaceScale="-3" diffuseConstant="4.5" kernelUnitLength="0.25 0.5"/>
+			<feDiffuseLighting surfaceScale="bad" diffuseConstant="-1" kernelUnitLength="-1 2"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["diffuse"])
+	#expect(filter.primitives.count == 4)
+	expectDiffuseLighting(
+		filter.primitives[0],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil
+	)
+	expectDiffuseLighting(
+		filter.primitives[1],
+		input: "SourceAlpha",
+		surfaceScale: 2.5,
+		diffuseConstant: 0,
+		kernelUnitLengthX: 0.25,
+		kernelUnitLengthY: 0.25
+	)
+	expectDiffuseLighting(
+		filter.primitives[2],
+		input: nil,
+		surfaceScale: -3,
+		diffuseConstant: 4.5,
+		kernelUnitLengthX: 0.25,
+		kernelUnitLengthY: 0.5
+	)
+	expectDiffuseLighting(
+		filter.primitives[3],
+		input: nil,
+		surfaceScale: 1,
+		diffuseConstant: 1,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil
+	)
+}
+
+private func expectDiffuseLighting(
+	_ primitive: SVGFilterPrimitive,
+	input expectedInput: String?,
+	surfaceScale expectedSurfaceScale: Double,
+	diffuseConstant expectedDiffuseConstant: Double,
+	kernelUnitLengthX expectedKernelUnitLengthX: Double?,
+	kernelUnitLengthY expectedKernelUnitLengthY: Double?
+) {
+	guard case .diffuseLighting(let input, let surfaceScale, let diffuseConstant, let kernelUnitLengthX, let kernelUnitLengthY) = primitive else {
+		Issue.record("Expected parsed feDiffuseLighting primitive")
+		return
+	}
+	#expect(input == expectedInput)
+	#expect(surfaceScale == expectedSurfaceScale)
+	#expect(diffuseConstant == expectedDiffuseConstant)
+	#expect(kernelUnitLengthX == expectedKernelUnitLengthX)
+	#expect(kernelUnitLengthY == expectedKernelUnitLengthY)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")

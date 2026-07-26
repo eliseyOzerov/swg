@@ -419,6 +419,15 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				preserveAlpha: convolveMatrix.preserveAlpha,
 				isPassThrough: convolveMatrix.isPassThrough
 			))
+		case "feDiffuseLighting":
+			let kernelUnitLength = parsePositiveNumberOptionalNumber(attributes["kernelUnitLength"])
+			currentFilter?.primitives.append(.diffuseLighting(
+				input: attributes["in"],
+				surfaceScale: attributes["surfaceScale"].flatMap(parseNumber) ?? 1,
+				diffuseConstant: attributes["diffuseConstant"].flatMap(parseNonNegativeNumber) ?? 1,
+				kernelUnitLengthX: kernelUnitLength.x,
+				kernelUnitLengthY: kernelUnitLength.y
+			))
 		case "feFuncR":
 			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .red)
 		case "feFuncG":
@@ -1277,6 +1286,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parseConvolveKernelUnitLength(_ value: String?) -> (x: Double?, y: Double?) {
+		parsePositiveNumberOptionalNumber(value)
+	}
+
+	private func parsePositiveNumberOptionalNumber(_ value: String?) -> (x: Double?, y: Double?) {
 		guard
 			let value,
 			let values = SVGListParser.parse(value, itemParser: parseNumber),
@@ -1288,6 +1301,11 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		let y = values.count == 2 ? values[1] : values[0]
 		guard x > 0, y > 0 else { return (nil, nil) }
 		return (x, y)
+	}
+
+	private func parseNonNegativeNumber(_ value: String) -> Double? {
+		guard let number = parseNumber(value), number >= 0 else { return nil }
+		return number
 	}
 
 	private func parseFilterEdgeMode(_ value: String?) -> SVGFilterEdgeMode {

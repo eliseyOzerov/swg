@@ -1,0 +1,279 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-diffuse-lighting
+  title: SVG feDiffuseLighting filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feDiffuseLighting>` filter primitives, including input, surface scale, diffuse constant, and kernel unit length attributes.
+  non_goals:
+    - Executing diffuse lighting or Phong lighting formulas.
+    - Resampling images for `kernelUnitLength`.
+    - Parsing light source child elements, which are tracked by separate TODO bullets.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-diffuse-lighting
+      title: "Filter Effects Module Level 1: Filter primitive feDiffuseLighting"
+      url: https://www.w3.org/TR/filter-effects-1/#feDiffuseLightingElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-diffuse-lighting-interface
+      title: "Filter Effects Module Level 1: Interface SVGFEDiffuseLightingElement"
+      url: https://www.w3.org/TR/filter-effects-1/#InterfaceSVGFEDiffuseLightingElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`<feDiffuseLighting>` is a filter primitive whose content model includes descriptive/script elements and exactly one light source element."
+    - "The element lists `in`, `surfaceScale`, `diffuseConstant`, and `kernelUnitLength` as primitive-specific attributes."
+    - "`surfaceScale` is a number and defaults as if `1` were specified."
+    - "`diffuseConstant` is a number representing kd; in SVG it can be any non-negative number and defaults as if `1` were specified."
+    - "`kernelUnitLength` accepts one or two numbers; the second defaults to the first, while negative or zero values use the default."
+    - "The DOM interface exposes `in1`, `surfaceScale`, `diffuseConstant`, `kernelUnitLengthX`, and `kernelUnitLengthY` for the element."
+
+scope:
+  includes:
+    - "`<feDiffuseLighting>` child elements inside `<filter>`."
+    - "`in`, `surfaceScale`, `diffuseConstant`, and `kernelUnitLength` attributes."
+  excludes:
+    - "Rendering-time diffuse lighting formulas."
+    - "Light source child parsing and validation."
+    - "Pixel-grid resampling and interpolation behavior."
+    - "Filter primitive common geometry attributes."
+  assumptions:
+    - Swg stores parsed filter primitives as `SVGFilterPrimitive` values for later renderer support.
+    - Malformed numeric attributes fall back to their initial values.
+    - Negative `surfaceScale` values are preserved because the source only restricts `diffuseConstant` to non-negative values.
+    - Non-positive `kernelUnitLength` values are represented as the omitted/default state.
+
+terminology:
+  - id: T001
+    term: feDiffuseLighting
+    definition: An SVG filter primitive that lights an alpha-channel bump map using diffuse lighting.
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+  - id: T002
+    term: diffuseConstant
+    definition: The kd factor in the diffuse component of the Phong lighting model.
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+  - id: T003
+    term: kernelUnitLength
+    definition: A one- or two-number value defining dx and dy distances for surface normal calculations.
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.diffuseLighting
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    fields:
+      - name: input
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in` attribute when present.
+        requirement_refs:
+          - R001
+      - name: surfaceScale
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `1`.
+        requirement_refs:
+          - R002
+      - name: diffuseConstant
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `1`.
+          - Values must be non-negative.
+        requirement_refs:
+          - R003
+      - name: kernelUnitLengthX
+        type: double
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Stores the first positive `kernelUnitLength` number when provided.
+        requirement_refs:
+          - R004
+      - name: kernelUnitLengthY
+        type: double
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Stores the second positive `kernelUnitLength` number, or the first when omitted.
+        requirement_refs:
+          - R004
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feDiffuseLighting>` must preserve its `in` input reference when present."
+    applies_to:
+      - SVGFilterPrimitive.diffuseLighting
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDiffuseLightingPrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`surfaceScale` must parse as a number and default to `1` when omitted or malformed."
+    applies_to:
+      - SVGFilterPrimitive.diffuseLighting
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDiffuseLightingPrimitiveAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`diffuseConstant` must parse as a non-negative number and default to `1` when omitted, malformed, or negative."
+    applies_to:
+      - SVGFilterPrimitive.diffuseLighting
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDiffuseLightingPrimitiveAttributes
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`kernelUnitLength` must parse one or two positive numbers, default Y to X when omitted, and use the default state when omitted, malformed, negative, or zero."
+    applies_to:
+      - SVGFilterPrimitive.diffuseLighting
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesDiffuseLightingPrimitiveAttributes
+  - id: R005
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feDiffuseLighting>` has exactly one light source child in its content model."
+    applies_to:
+      - SVGFilterPrimitive.diffuseLighting
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+    testability: reviewable
+    notes:
+      - Deferred to light-source TODO bullets.
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`diffuseConstant` is malformed or negative."
+    source_behavior: UNSPECIFIED
+    required_behavior: "Use the initial value `1`."
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+  - id: I002
+    condition: "`kernelUnitLength` is malformed, negative, or zero."
+    source_behavior: "Non-positive values use the default value; malformed values are not specified."
+    required_behavior: "Use the omitted/default state."
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+
+recommendations:
+  - id: N001
+    normative_strength: SHOULD
+    statement: "An explicit `kernelUnitLength` should be provided for resolution-independent diffuse-lighting results."
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Light source child storage
+    statement: "Light source parsing is deferred to the separate light-source TODO bullets; this work item only preserves the diffuse lighting primitive attributes."
+    allowed_by:
+      - R005
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+
+ambiguities:
+  - id: A001
+    question: "How should malformed `surfaceScale` and `diffuseConstant` values be handled at parse time?"
+    impact: "The source defines initial/default values but not all malformed XML attribute recovery behavior."
+    options:
+      - "Use the initial values."
+      - "Preserve invalid raw strings separately."
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: "Light source elements and properties"
+    reason: "`<feDiffuseLighting>` requires exactly one light source child element."
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+      - filter-effects-diffuse-lighting-interface
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-diffuse-lighting
+    map_item_refs: []
