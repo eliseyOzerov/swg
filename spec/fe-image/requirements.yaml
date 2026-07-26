@@ -1,0 +1,203 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-image
+  title: SVG feImage filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feImage>` filter primitives, including URI reference, preserveAspectRatio, and crossorigin attributes.
+  non_goals:
+    - Loading external resources.
+    - Rendering referenced raster or SVG content.
+    - Applying tainting, origin, or security restrictions.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-image
+      title: "Filter Effects Module Level 1: Filter primitive feImage"
+      url: https://www.w3.org/TR/filter-effects-1/#feImageElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-image-interface
+      title: "Filter Effects Module Level 1: Interface SVGFEImageElement"
+      url: https://www.w3.org/TR/filter-effects-1/#InterfaceSVGFEImageElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`<feImage>` is a filter primitive that refers to an image source through SVGURIReference."
+    - "The element exposes `preserveAspectRatio` and `crossorigin`; its interface includes SVGURIReference."
+    - "`preserveAspectRatio` corresponds to the attribute of the same name and defaults to the standard SVG default."
+    - "`crossOrigin` reflects the `crossorigin` content attribute and is limited to known values."
+
+scope:
+  includes:
+    - "`<feImage>` child elements inside `<filter>`."
+    - "`href`, `xlink:href`, `preserveAspectRatio`, and `crossorigin` attributes."
+  excludes:
+    - "Fetching referenced resources."
+    - "Image decoding and rendering."
+    - "Security tainting and origin checks."
+    - "Filter primitive common geometry attributes."
+  assumptions:
+    - Swg stores the parsed URI reference as a raw string so local and external references are both preserved.
+    - "`href` takes precedence over `xlink:href` when both are present."
+    - Malformed `preserveAspectRatio` values fall back to the default.
+    - Unknown `crossorigin` values are represented as absent.
+
+terminology:
+  - id: T001
+    term: feImage
+    definition: An SVG filter primitive that uses an external or document-local image source as a filter input.
+    source_refs:
+      - filter-effects-fe-image
+  - id: T002
+    term: crossOrigin
+    definition: Reflected value of the `crossorigin` content attribute, limited to known values.
+    source_refs:
+      - filter-effects-image-interface
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.image
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-image
+      - filter-effects-image-interface
+    fields:
+      - name: href
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves `href` or `xlink:href` when present.
+        requirement_refs:
+          - R001
+      - name: preserveAspectRatio
+        type: SVGPreserveAspectRatio
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `xMidYMid meet`.
+        requirement_refs:
+          - R002
+      - name: crossOrigin
+        type: SVGCrossOriginMode
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves only known crossorigin values.
+        requirement_refs:
+          - R003
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feImage>` must preserve its SVG URI reference when `href` or `xlink:href` is present."
+    applies_to:
+      - SVGFilterPrimitive.image
+    source_refs:
+      - filter-effects-fe-image
+      - filter-effects-image-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFilterImagePrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`preserveAspectRatio` must parse using SVG preserveAspectRatio semantics and default when omitted or malformed."
+    applies_to:
+      - SVGFilterPrimitive.image
+    source_refs:
+      - filter-effects-fe-image
+      - filter-effects-image-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFilterImagePrimitiveAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`crossorigin` must preserve known values and ignore unsupported values."
+    applies_to:
+      - SVGFilterPrimitive.image
+    source_refs:
+      - filter-effects-image-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFilterImagePrimitiveAttributes
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`preserveAspectRatio` is malformed."
+    source_behavior: UNSPECIFIED
+    required_behavior: "Use the standard default preserveAspectRatio value."
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-image
+  - id: I002
+    condition: "`crossorigin` is not a known value."
+    source_behavior: "The reflected IDL attribute is limited to known values."
+    required_behavior: "Represent it as absent."
+    decision_required: false
+    source_refs:
+      - filter-effects-image-interface
+
+recommendations: []
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: URI reference representation
+    statement: "The parser stores the raw URI reference instead of resolving or loading it."
+    allowed_by:
+      - R001
+    source_refs:
+      - filter-effects-fe-image
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: "SVG URI reference"
+    reason: "`<feImage>` includes SVGURIReference."
+    source_refs:
+      - filter-effects-image-interface
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-image
+      - filter-effects-image-interface
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-image
+      - filter-effects-image-interface
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-image-interface
+    map_item_refs: []

@@ -743,6 +743,54 @@ private func expectFlood(_ primitive: SVGFilterPrimitive, color expectedColor: C
 	#expect(color == expectedColor)
 }
 
+@Test func svgParserPreservesFilterImagePrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="image" xmlns:xlink="http://www.w3.org/1999/xlink">
+			<feImage/>
+			<feImage href="icons.svg?name=A&amp;mode=1#glyph" preserveAspectRatio="none" crossorigin="anonymous"/>
+			<feImage xlink:href="#legacy" preserveAspectRatio="xMaxYMin slice" crossorigin="use-credentials"/>
+			<feImage href="#preferred" xlink:href="#fallback" preserveAspectRatio="invalid" crossorigin="invalid"/>
+			<feImage href="bad url]"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["image"])
+	#expect(filter.primitives.count == 5)
+	expectFilterImage(filter.primitives[0], href: nil, preserveAspectRatio: .default, crossOrigin: nil)
+	expectFilterImage(
+		filter.primitives[1],
+		href: "icons.svg?name=A&mode=1#glyph",
+		preserveAspectRatio: SVGPreserveAspectRatio(align: .none, meetOrSlice: nil),
+		crossOrigin: .anonymous
+	)
+	expectFilterImage(
+		filter.primitives[2],
+		href: "#legacy",
+		preserveAspectRatio: SVGPreserveAspectRatio(align: .xMaxYMin, meetOrSlice: .slice),
+		crossOrigin: .useCredentials
+	)
+	expectFilterImage(filter.primitives[3], href: "#preferred", preserveAspectRatio: .default, crossOrigin: nil)
+	expectFilterImage(filter.primitives[4], href: "bad url]", preserveAspectRatio: .default, crossOrigin: nil)
+}
+
+private func expectFilterImage(
+	_ primitive: SVGFilterPrimitive,
+	href expectedHref: String?,
+	preserveAspectRatio expectedPreserveAspectRatio: SVGPreserveAspectRatio,
+	crossOrigin expectedCrossOrigin: SVGCrossOriginMode?
+) {
+	guard case .image(let href, let preserveAspectRatio, let crossOrigin) = primitive else {
+		Issue.record("Expected parsed feImage primitive")
+		return
+	}
+	#expect(href == expectedHref)
+	#expect(preserveAspectRatio == expectedPreserveAspectRatio)
+	#expect(crossOrigin == expectedCrossOrigin)
+}
+
 @Test func svgParserPreservesDistantLightAttributes() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

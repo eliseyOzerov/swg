@@ -165,7 +165,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feDisplacementMap>`.
 - [x] `<feDistantLight>`.
 - [x] `<feFlood>`.
-- [ ] `<feImage>`.
+- [x] `<feImage>`.
 - [ ] `<feMerge>`.
 - [ ] `<feMergeNode>`.
 - [ ] `<feMorphology>`.

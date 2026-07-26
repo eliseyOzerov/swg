@@ -1020,8 +1020,15 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case diffuseLighting(input: String?, surfaceScale: Double = 1, diffuseConstant: Double = 1, kernelUnitLengthX: Double? = nil, kernelUnitLengthY: Double? = nil, lightSource: SVGFilterLightSource? = nil)
 	case displacementMap(input: String?, input2: String?, scale: Double = 0, xChannelSelector: SVGFilterChannelSelector = .alpha, yChannelSelector: SVGFilterChannelSelector = .alpha)
 	case flood(color: Color = .black)
+	case image(href: String?, preserveAspectRatio: SVGPreserveAspectRatio = .default, crossOrigin: SVGCrossOriginMode? = nil)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
+}
+
+/// Cross-origin mode for SVG image-fetching elements.
+public enum SVGCrossOriginMode: Equatable, Sendable, Hashable {
+	case anonymous
+	case useCredentials
 }
 
 /// Light source used by an SVG lighting filter primitive.

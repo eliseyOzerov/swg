@@ -462,6 +462,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				stdDeviationY: stdDeviation.second,
 				edgeMode: parseFilterEdgeMode(attributes["edgeMode"])
 			))
+		case "feImage":
+			currentFilter?.primitives.append(.image(
+				href: parseRawHref(attributes),
+				preserveAspectRatio: parsePreserveAspectRatio(attributes["preserveAspectRatio"]),
+				crossOrigin: parseCrossOriginMode(attributes["crossorigin"])
+			))
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2
@@ -1363,6 +1369,17 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			.blue
 		default:
 			.alpha
+		}
+	}
+
+	private func parseCrossOriginMode(_ value: String?) -> SVGCrossOriginMode? {
+		switch value {
+		case "", "anonymous":
+			.anonymous
+		case "use-credentials":
+			.useCredentials
+		default:
+			nil
 		}
 	}
 
