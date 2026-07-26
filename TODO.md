@@ -216,7 +216,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<discard>`.
 - [x] `<mpath>`.
 - [x] `begin`, `dur`, `end`, `min`, `max`.
-- [ ] `restart`, `repeatCount`, `repeatDur`.
+- [x] `restart`, `repeatCount`, `repeatDur`.
 - [ ] `calcMode`, `values`, `keyTimes`, `keySplines`.
 - [ ] `additive`.
 - [ ] `accumulate`.

@@ -5282,8 +5282,9 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(fade.toValue == "0")
 	#expect(fade.byValue == nil)
 	#expect(fade.timing.dur == .clock(rawValue: "5s", seconds: 5))
+	#expect(fade.timing.repeatCount == .indefinite)
 	#expect(fade.unknownAttributes["dur"] == nil)
-	#expect(fade.unknownAttributes["repeatCount"] == "indefinite")
+	#expect(fade.unknownAttributes["repeatCount"] == nil)
 	#expect(fade.unknownAttributes["attributeType"] == "XML")
 
 	guard case .animate(let move) = document.animations[1] else {
@@ -5301,6 +5302,9 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(move.timing.end == [])
 	#expect(move.timing.min == .clock(rawValue: "0s", seconds: 0))
 	#expect(move.timing.max == nil)
+	#expect(move.timing.restart == .always)
+	#expect(move.timing.repeatCount == nil)
+	#expect(move.timing.repeatDur == nil)
 }
 
 @Test func svgParserPreservesAnimateMotionElementsAsAnimationData() throws {
@@ -5541,6 +5545,57 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(timed.unknownAttributes["min"] == nil)
 	#expect(timed.unknownAttributes["max"] == nil)
 	#expect(timed.unknownAttributes["data-note"] == "kept")
+}
+
+@Test func svgParserPreservesAnimationRestartAndRepeatAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<rect id="box" width="10" height="10">
+			<animateTransform id="spin" attributeName="transform" type="rotate"
+				restart="never"
+				repeatCount="2.5"
+				repeatDur="01:02"/>
+			<set id="blink" attributeName="visibility" to="hidden"
+				restart="whenNotActive"
+				repeatCount="indefinite"
+				repeatDur="indefinite"/>
+			<animate id="odd" attributeName="opacity"
+				restart="sometimes"
+				repeatCount="0"
+				repeatDur="forever"/>
+		</rect>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	#expect(document.animations.count == 3)
+
+	guard case .animateTransform(let spin) = document.animations[0] else {
+		Issue.record("Expected first animation to be animateTransform")
+		return
+	}
+	#expect(spin.timing.restart == .never)
+	#expect(spin.timing.repeatCount == .number(rawValue: "2.5", value: 2.5))
+	#expect(spin.timing.repeatDur == .clock(rawValue: "01:02", seconds: 62))
+	#expect(spin.unknownAttributes["restart"] == nil)
+	#expect(spin.unknownAttributes["repeatCount"] == nil)
+	#expect(spin.unknownAttributes["repeatDur"] == nil)
+
+	guard case .set(let blink) = document.animations[1] else {
+		Issue.record("Expected second animation to be set")
+		return
+	}
+	#expect(blink.timing.restart == .whenNotActive)
+	#expect(blink.timing.repeatCount == .indefinite)
+	#expect(blink.timing.repeatDur == .indefinite)
+
+	guard case .animate(let odd) = document.animations[2] else {
+		Issue.record("Expected third animation to be animate")
+		return
+	}
+	#expect(odd.timing.restart == .unresolved("sometimes"))
+	#expect(odd.timing.repeatCount == .unresolved("0"))
+	#expect(odd.timing.repeatDur == .unresolved("forever"))
 }
 
 @Test func svgParserPreservesForeignObjectGeometryAndSVGChildren() throws {

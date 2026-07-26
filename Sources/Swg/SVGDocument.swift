@@ -89,6 +89,21 @@ public enum SVGAnimationTimeValue: Equatable, Sendable {
 	case unresolved(String)
 }
 
+/// The SVG `restart` timing policy for an animation element.
+public enum SVGAnimationRestart: Equatable, Sendable {
+	case always
+	case whenNotActive
+	case never
+	case unresolved(String)
+}
+
+/// The SVG `repeatCount` timing value for an animation element.
+public enum SVGAnimationRepeatCount: Equatable, Sendable {
+	case number(rawValue: String, value: Double)
+	case indefinite
+	case unresolved(String)
+}
+
 /// Timing attributes common to SVG animation elements such as `SVGAnimateData`.
 public struct SVGAnimationTimingData: Equatable, Sendable {
 	public let begin: [SVGAnimationTimeValue]
@@ -96,19 +111,28 @@ public struct SVGAnimationTimingData: Equatable, Sendable {
 	public let end: [SVGAnimationTimeValue]
 	public let min: SVGAnimationTimeValue
 	public let max: SVGAnimationTimeValue?
+	public let restart: SVGAnimationRestart
+	public let repeatCount: SVGAnimationRepeatCount?
+	public let repeatDur: SVGAnimationTimeValue?
 
 	public init(
 		begin: [SVGAnimationTimeValue] = [.clock(rawValue: "0s", seconds: 0)],
 		dur: SVGAnimationTimeValue = .indefinite,
 		end: [SVGAnimationTimeValue] = [],
 		min: SVGAnimationTimeValue = .clock(rawValue: "0s", seconds: 0),
-		max: SVGAnimationTimeValue? = nil
+		max: SVGAnimationTimeValue? = nil,
+		restart: SVGAnimationRestart = .always,
+		repeatCount: SVGAnimationRepeatCount? = nil,
+		repeatDur: SVGAnimationTimeValue? = nil
 	) {
 		self.begin = begin
 		self.dur = dur
 		self.end = end
 		self.min = min
 		self.max = max
+		self.restart = restart
+		self.repeatCount = repeatCount
+		self.repeatDur = repeatDur
 	}
 }
 

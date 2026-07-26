@@ -26,7 +26,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		"x", "y", "cx", "cy", "r", "rx", "ry", "width", "height"
 	]
 	private static let animationTimingAttributeNames: Set<String> = [
-		"begin", "dur", "end", "min", "max"
+		"begin", "dur", "end", "min", "max", "restart", "repeatCount", "repeatDur"
 	]
 	private static let namedColors: [String: Color] = [
 		"aliceblue": Color(240 / 255, 248 / 255, 1),
@@ -1939,7 +1939,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			dur: attributes["dur"].map(parseAnimationTimeValue) ?? .indefinite,
 			end: parseAnimationTimeList(attributes["end"], defaultValue: []),
 			min: attributes["min"].map(parseAnimationTimeValue) ?? .clock(rawValue: "0s", seconds: 0),
-			max: attributes["max"].flatMap(parseAnimationTimeValue)
+			max: attributes["max"].flatMap(parseAnimationTimeValue),
+			restart: attributes["restart"].map(parseAnimationRestart) ?? .always,
+			repeatCount: attributes["repeatCount"].map(parseAnimationRepeatCount),
+			repeatDur: attributes["repeatDur"].map(parseAnimationTimeValue)
 		)
 	}
 
@@ -1962,6 +1965,31 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 		if let seconds = SVGClockValueParser.parse(trimmed) {
 			return .clock(rawValue: trimmed, seconds: seconds)
+		}
+		return .unresolved(trimmed)
+	}
+
+	private func parseAnimationRestart(_ value: String) -> SVGAnimationRestart {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		switch trimmed {
+		case "always":
+			return .always
+		case "whenNotActive":
+			return .whenNotActive
+		case "never":
+			return .never
+		default:
+			return .unresolved(trimmed)
+		}
+	}
+
+	private func parseAnimationRepeatCount(_ value: String) -> SVGAnimationRepeatCount {
+		let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+		if trimmed == "indefinite" {
+			return .indefinite
+		}
+		if let count = SVGNumberParser.parse(trimmed), count > 0 {
+			return .number(rawValue: trimmed, value: count)
 		}
 		return .unresolved(trimmed)
 	}

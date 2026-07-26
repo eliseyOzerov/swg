@@ -1,0 +1,227 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: animation-repeat-attributes
+  title: SVG animation restart and repeat timing attributes
+  domain: SVG Animation
+  profile: null
+  summary: Requirements for preserving and classifying SVG animation timing attributes `restart`, `repeatCount`, and `repeatDur` on parsed animation element data.
+  non_goals:
+    - Animation playback, scheduling, restart enforcement, repeat iteration evaluation, event dispatch, or rendering.
+    - Error processing for malformed restart or repeat values.
+    - Animation `fill` behavior, covered by a later checklist bullet.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg-animations-timing-attributes
+      title: SVG Animations Level 2, Attributes to control the timing of the animation
+      url: https://svgwg.org/specs/animations/#TimingAttributes
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg-animations-clock-values
+      title: SVG Animations Level 2, Clock values
+      url: https://svgwg.org/specs/animations/#ClockValueSyntax
+      version: W3C Editor's Draft 14 September 2025
+      publisher: W3C SVG Working Group
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - The SVG Animations draft delegates restart and repeat processing details to SMIL Animation except where SVG-specific rules are stated.
+    - This work item is parser-scoped; preserving repeat data enables later animation evaluation.
+
+scope:
+  includes:
+    - "`restart` preservation with initial value `always`."
+    - "`repeatCount` preservation for positive numbers and `indefinite`."
+    - "`repeatDur` preservation for Clock-values and `indefinite`."
+    - Raw preservation of unresolved restart or repeat values for later validation.
+    - Removal of parsed restart/repeat attributes from animation `unknownAttributes`.
+  excludes:
+    - Enforcing restart behavior while an animation is active.
+    - Repeating animation functions over presentation time.
+    - Enforcing `repeatCount` greater-than-zero as parse-time failure.
+    - Attributes `calcMode`, `values`, `keyTimes`, `keySplines`, `additive`, `accumulate`, and animation `fill`, covered by later checklist bullets.
+  assumptions:
+    - Parser output may classify recognized restart and repeat values without evaluating their runtime effect.
+    - Invalid or malformed repeat values may be preserved as unresolved raw values for later validation.
+
+terminology:
+  - id: term-restart
+    term: restart
+    definition: A timing attribute that controls whether an animation can be restarted.
+    source_refs:
+      - svg-animations-timing-attributes
+  - id: term-repeat-count
+    term: repeatCount
+    definition: A timing attribute that specifies how many iterations of the animation function occur.
+    source_refs:
+      - svg-animations-timing-attributes
+  - id: term-repeat-dur
+    term: repeatDur
+    definition: A timing attribute that specifies the total duration for repeating the animation function.
+    source_refs:
+      - svg-animations-timing-attributes
+
+structures:
+  - id: S001
+    name: animation repeat timing data
+    kind: structure
+    source_refs:
+      - svg-animations-timing-attributes
+    fields:
+      - name: restart
+        type: always | whenNotActive | never
+        cardinality: one
+        position: attribute
+        constraints:
+          - Initial value is `always`.
+        requirement_refs:
+          - R001
+        source_refs:
+          - svg-animations-timing-attributes
+      - name: repeatCount
+        type: number | indefinite
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Numeric values specify iterations and must be greater than zero during full validation or scheduling.
+          - "`indefinite` repeats until the document ends."
+        requirement_refs:
+          - R002
+        source_refs:
+          - svg-animations-timing-attributes
+      - name: repeatDur
+        type: Clock-value | indefinite
+        cardinality: zero-or-one
+        position: attribute
+        constraints:
+          - Clock-values specify the presentation-time duration for repeat.
+          - "`indefinite` repeats until the document ends."
+        requirement_refs:
+          - R003
+        source_refs:
+          - svg-animations-timing-attributes
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: "`restart` must preserve `always`, `whenNotActive`, or `never` when specified and default to `always` when omitted."
+    applies_to:
+      - restart
+    source_refs:
+      - svg-animations-timing-attributes
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`repeatCount` must preserve a specified positive numeric value or `indefinite` and remain absent when omitted."
+    applies_to:
+      - repeatCount
+    source_refs:
+      - svg-animations-timing-attributes
+    testability: testable
+    notes:
+      - Parse-time representation may preserve malformed or non-positive values as unresolved raw values.
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`repeatDur` must preserve a specified Clock-value or `indefinite` and remain absent when omitted."
+    applies_to:
+      - repeatDur
+    source_refs:
+      - svg-animations-timing-attributes
+      - svg-animations-clock-values
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: Recognized Clock-value `repeatDur` values must expose their parsed duration in seconds.
+    applies_to:
+      - repeatDur
+      - Clock-value
+    source_refs:
+      - svg-animations-clock-values
+    testability: testable
+    notes: []
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: Parsed restart and repeat attributes must not be reported as unknown attributes on animation element data.
+    applies_to:
+      - unknownAttributes
+    source_refs:
+      - svg-animations-timing-attributes
+    testability: testable
+    notes: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `restart` token other than `always`, `whenNotActive`, or `never`.
+    source_behavior: invalid for restart.
+    required_behavior: Preserve the raw token as unresolved parser timing data.
+    decision_required: false
+    source_refs:
+      - svg-animations-timing-attributes
+  - id: I002
+    condition: A `repeatCount` numeric token less than or equal to zero.
+    source_behavior: invalid because numeric repeat counts must be greater than zero.
+    required_behavior: Preserve the raw token as unresolved parser repeat-count data.
+    decision_required: false
+    source_refs:
+      - svg-animations-timing-attributes
+
+implementation_choices:
+  - id: IC001
+    topic: Parser-only repeat representation
+    statement: The package may classify recognized repeat values and preserve invalid or unsupported values as unresolved raw strings.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+    source_refs:
+      - svg-animations-timing-attributes
+
+dependencies:
+  - id: DEP001
+    kind: local-artifact
+    title: SVG animation timing attributes begin dur end min max
+    reason: The shared animation timing data structure already stores common timing attributes and can be extended with restart and repeat fields.
+    source_refs:
+      - svg-animations-timing-attributes
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+      - svg-animations-clock-values
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg-animations-clock-values
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - svg-animations-timing-attributes
+    map_item_refs: []
