@@ -70,6 +70,24 @@ import Testing
 	#expect(color == Color(0.2, 0.4, 0.6).withAlpha(0.5))
 }
 
+@Test func svgParserPreservesFilterUnits() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="defaultUnits"/>
+		<filter id="objectBox" filterUnits="objectBoundingBox"/>
+		<filter id="userSpace" filterUnits="userSpaceOnUse"/>
+		<filter id="invalidUnits" filterUnits="definitelyNotUnits"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.filters["defaultUnits"]?.filterUnits == .objectBoundingBox)
+	#expect(document.defs.filters["objectBox"]?.filterUnits == .objectBoundingBox)
+	#expect(document.defs.filters["userSpace"]?.filterUnits == .userSpaceOnUse)
+	#expect(document.defs.filters["invalidUnits"]?.filterUnits == .objectBoundingBox)
+}
+
 @Test func svgParserPreservesRadialGradientGeometryAndStops() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

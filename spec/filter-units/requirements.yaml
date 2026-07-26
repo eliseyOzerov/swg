@@ -1,0 +1,166 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: filter-units
+  title: SVG filterUnits attribute
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve the `<filter>` element's `filterUnits` coordinate-space attribute with the specification default.
+  non_goals:
+    - Resolving `x`, `y`, `width`, or `height` filter region lengths.
+    - Applying filter region clipping during rendering.
+    - Implementing `primitiveUnits`; it is tracked separately.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-filter-region
+      title: "Filter Effects Module Level 1: Filter Region"
+      url: https://www.w3.org/TR/filter-effects-1/#FilterRegion
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `filterUnits` on `<filter>` with values `userSpaceOnUse` and `objectBoundingBox`."
+    - "`filterUnits` defines the coordinate system for the `<filter>` `x`, `y`, `width`, and `height` attributes."
+    - "The initial value of `filterUnits` is `objectBoundingBox`."
+
+scope:
+  includes:
+    - "`filterUnits=\"objectBoundingBox\"`."
+    - "`filterUnits=\"userSpaceOnUse\"`."
+    - "The `objectBoundingBox` initial value when `filterUnits` is omitted or invalid."
+  excludes:
+    - Filter region geometry resolution.
+    - Filter evaluation and clipping.
+  assumptions:
+    - Swg exposes the parsed coordinate-space choice on `SVGFilterDef` for downstream renderers.
+
+terminology:
+  - id: T001
+    term: filterUnits
+    definition: The `<filter>` attribute that chooses the coordinate system for the filter region attributes.
+    source_refs:
+      - filter-effects-filter-region
+  - id: T002
+    term: objectBoundingBox
+    definition: A coordinate system where region attributes are fractions or percentages of the referencing element's bounding box.
+    source_refs:
+      - filter-effects-filter-region
+  - id: T003
+    term: userSpaceOnUse
+    definition: A coordinate system where region attributes use the current user coordinate system of the element referencing the filter.
+    source_refs:
+      - filter-effects-filter-region
+
+structures:
+  - id: S001
+    name: SVGFilterUnits
+    kind: enum
+    source_refs:
+      - filter-effects-filter-region
+    fields:
+      - name: objectBoundingBox
+        type: case
+        cardinality: exactly-one
+        position: enum-case
+        constraints:
+          - Matches the SVG `objectBoundingBox` keyword and the initial value.
+        requirement_refs:
+          - R001
+          - R003
+        source_refs:
+          - filter-effects-filter-region
+      - name: userSpaceOnUse
+        type: case
+        cardinality: exactly-one
+        position: enum-case
+        constraints:
+          - Matches the SVG `userSpaceOnUse` keyword.
+        requirement_refs:
+          - R002
+        source_refs:
+          - filter-effects-filter-region
+  - id: S002
+    name: SVGFilterDef.filterUnits
+    kind: field
+    source_refs:
+      - filter-effects-filter-region
+    fields:
+      - name: filterUnits
+        type: SVGFilterUnits
+        cardinality: exactly-one
+        position: filter-definition
+        constraints:
+          - Defaults to `objectBoundingBox`.
+          - Stores either `objectBoundingBox` or `userSpaceOnUse`.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-filter-region
+
+requirements:
+  - id: R001
+    title: Parse objectBoundingBox
+    statement: "`filterUnits=\"objectBoundingBox\"` must be preserved as the `objectBoundingBox` filter coordinate-space value."
+    keywords:
+      - filterUnits
+      - objectBoundingBox
+    source_refs:
+      - filter-effects-filter-region
+    acceptance:
+      - "`SVGFilterDef.filterUnits` is `.objectBoundingBox` for `filterUnits=\"objectBoundingBox\"`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFilterUnits
+  - id: R002
+    title: Parse userSpaceOnUse
+    statement: "`filterUnits=\"userSpaceOnUse\"` must be preserved as the `userSpaceOnUse` filter coordinate-space value."
+    keywords:
+      - filterUnits
+      - userSpaceOnUse
+    source_refs:
+      - filter-effects-filter-region
+    acceptance:
+      - "`SVGFilterDef.filterUnits` is `.userSpaceOnUse` for `filterUnits=\"userSpaceOnUse\"`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFilterUnits
+  - id: R003
+    title: Default invalid and omitted values
+    statement: Omitted or invalid `filterUnits` values must resolve to the initial `objectBoundingBox` value.
+    keywords:
+      - filterUnits
+      - initial
+      - invalid
+    source_refs:
+      - filter-effects-filter-region
+    acceptance:
+      - "A `<filter>` without `filterUnits` stores `.objectBoundingBox`."
+      - "A `<filter>` with an unsupported `filterUnits` token stores `.objectBoundingBox`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFilterUnits
+
+traceability:
+  source_to_requirements:
+    filter-effects-filter-region:
+      - R001
+      - R002
+      - R003
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesFilterUnits
+    R002:
+      - svgParserPreservesFilterUnits
+    R003:
+      - svgParserPreservesFilterUnits
