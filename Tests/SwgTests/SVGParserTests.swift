@@ -1327,6 +1327,53 @@ import Testing
 	#expect(paths["inherit"]?.attributes.colorRendering == .optimizeQuality)
 }
 
+@Test func svgParserAppliesShapeRenderingInitialInheritanceCascadeAndInvalidFallback() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<style>
+			.crisp { shape-rendering: crispEdges; }
+			.invalid { shape-rendering: optimizeQuality; }
+		</style>
+		<path id="initial" d="M0 0 L10 10"/>
+		<g id="parent" shape-rendering="geometricPrecision">
+			<path id="inherited" d="M0 0 L10 10"/>
+			<path id="crisp" class="crisp" d="M0 0 L10 10"/>
+			<path id="speed" d="M0 0 L10 10" shape-rendering="optimizeSpeed"/>
+			<path id="auto" d="M0 0 L10 10" shape-rendering="auto"/>
+			<path id="inline" class="crisp" d="M0 0 L10 10" style="shape-rendering: geometricPrecision"/>
+			<path id="invalid" class="invalid" d="M0 0 L10 10"/>
+			<path id="inherit" class="crisp" d="M0 0 L10 10" style="shape-rendering: inherit"/>
+		</g>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	var paths: [String: SVGPathData] = [:]
+	for element in document.elements {
+		switch element {
+		case .path(let path):
+			paths[path.id] = path
+		case .group(let group):
+			for child in group.children {
+				if case .path(let path) = child {
+					paths[path.id] = path
+				}
+			}
+		default:
+			break
+		}
+	}
+
+	#expect(paths["initial"]?.attributes.shapeRendering == .auto)
+	#expect(paths["inherited"]?.attributes.shapeRendering == .geometricPrecision)
+	#expect(paths["crisp"]?.attributes.shapeRendering == .crispEdges)
+	#expect(paths["speed"]?.attributes.shapeRendering == .optimizeSpeed)
+	#expect(paths["auto"]?.attributes.shapeRendering == .auto)
+	#expect(paths["inline"]?.attributes.shapeRendering == .geometricPrecision)
+	#expect(paths["invalid"]?.attributes.shapeRendering == .geometricPrecision)
+	#expect(paths["inherit"]?.attributes.shapeRendering == .geometricPrecision)
+}
+
 @Test func svgParserPreservesInitialUserCoordinateSystem() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100">

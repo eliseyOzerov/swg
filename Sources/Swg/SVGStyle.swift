@@ -17,6 +17,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var paintOrder: SVGPaintOrder
 	public var colorInterpolation: SVGColorInterpolation
 	public var colorRendering: SVGColorRendering
+	public var shapeRendering: SVGShapeRendering
 	public var opacity: Double
 	public var transform: Transform
 	public var visibility: SVGVisibility
@@ -42,6 +43,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		paintOrder: SVGPaintOrder = .normal,
 		colorInterpolation: SVGColorInterpolation = .sRGB,
 		colorRendering: SVGColorRendering = .auto,
+		shapeRendering: SVGShapeRendering = .auto,
 		opacity: Double = 1,
 		transform: Transform = .identity,
 		visibility: SVGVisibility = .visible,
@@ -66,6 +68,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.paintOrder = paintOrder
 		self.colorInterpolation = colorInterpolation
 		self.colorRendering = colorRendering
+		self.shapeRendering = shapeRendering
 		self.opacity = opacity
 		self.transform = transform
 		self.visibility = visibility
@@ -126,6 +129,14 @@ public enum SVGColorRendering: Equatable, Sendable, Hashable {
 	case auto
 	case optimizeSpeed
 	case optimizeQuality
+}
+
+/// SVG `shape-rendering` hint for vector shape speed and precision tradeoffs.
+public enum SVGShapeRendering: Equatable, Sendable, Hashable {
+	case auto
+	case optimizeSpeed
+	case crispEdges
+	case geometricPrecision
 }
 
 /// SVG visibility property value.

@@ -1279,6 +1279,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		result.paintOrder = parent.paintOrder
 		result.colorInterpolation = parent.colorInterpolation
 		result.colorRendering = parent.colorRendering
+		result.shapeRendering = parent.shapeRendering
 		result.visibility = parent.visibility
 		return result
 	}
@@ -1406,6 +1407,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				result.colorRendering = colorRendering
 			}
 		}
+		if let value = attributes["shape-rendering"] {
+			if isInheritKeyword(value) {
+				result.shapeRendering = inherited.shapeRendering
+			} else if let shapeRendering = parseShapeRendering(value) {
+				result.shapeRendering = shapeRendering
+			}
+		}
 		if let value = attributes["opacity"] {
 			if isInheritKeyword(value) {
 				result.opacity = inherited.opacity
@@ -1515,6 +1523,21 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			return .optimizeSpeed
 		case "optimizequality":
 			return .optimizeQuality
+		default:
+			return nil
+		}
+	}
+
+	private func parseShapeRendering(_ value: String) -> SVGShapeRendering? {
+		switch value.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+		case "auto":
+			return .auto
+		case "optimizespeed":
+			return .optimizeSpeed
+		case "crispedges":
+			return .crispEdges
+		case "geometricprecision":
+			return .geometricPrecision
 		default:
 			return nil
 		}
