@@ -472,6 +472,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "feMerge":
 			currentFilter?.primitives.append(.merge())
 			currentMergePrimitiveIndex = currentFilter?.primitives.indices.last
+		case "feMergeNode":
+			appendMergeNodeInput(attributes["in"])
 		case "feDropShadow":
 			let dx = attributes["dx"].flatMap(parseNumber) ?? 2
 			let dy = attributes["dy"].flatMap(parseNumber) ?? 2
@@ -1238,6 +1240,18 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		default:
 			return
 		}
+		currentFilter = filter
+	}
+
+	private func appendMergeNodeInput(_ input: String?) {
+		guard
+			let index = currentMergePrimitiveIndex,
+			var filter = currentFilter,
+			filter.primitives.indices.contains(index),
+			case .merge(var inputs) = filter.primitives[index]
+		else { return }
+		inputs.append(input)
+		filter.primitives[index] = .merge(inputs: inputs)
 		currentFilter = filter
 	}
 

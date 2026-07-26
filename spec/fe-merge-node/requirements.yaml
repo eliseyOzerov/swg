@@ -1,0 +1,172 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-merge-node
+  title: SVG feMergeNode merge node
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feMergeNode>` child elements as ordered inputs on their parent `<feMerge>` primitive.
+  non_goals:
+    - Rendering merge compositing.
+    - Defining default input resolution for omitted `in` values.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-merge-node
+      title: "Filter Effects Module Level 1: Merge node feMergeNode"
+      url: https://www.w3.org/TR/filter-effects-1/#feMergeNodeElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-merge-node-interface
+      title: "Filter Effects Module Level 1: Interface SVGFEMergeNodeElement"
+      url: https://www.w3.org/TR/filter-effects-1/#InterfaceSVGFEMergeNodeElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-fe-merge
+      title: "Filter Effects Module Level 1: Filter primitive feMerge"
+      url: https://www.w3.org/TR/filter-effects-1/#feMergeElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`<feMergeNode>` is a merge-node child of `<feMerge>`."
+    - "`<feMergeNode>` has an `in` attribute."
+    - "The DOM interface exposes `in1`, corresponding to the `in` attribute."
+    - "The order of child merge nodes determines the ordered inputs to the merge operation."
+
+scope:
+  includes:
+    - "`<feMergeNode>` child elements inside `<feMerge>`."
+    - "`in` attributes on merge nodes."
+    - "Ordering of merge-node inputs."
+  excludes:
+    - "Rendering-time compositing."
+    - "Resolving omitted `in` to previous primitive output."
+  assumptions:
+    - Swg stores merge-node inputs as an ordered list on `SVGFilterPrimitive.merge`.
+    - Omitted `in` values are preserved as `nil`.
+    - Merge nodes outside an active `<feMerge>` are ignored.
+
+terminology:
+  - id: T001
+    term: feMergeNode
+    definition: An SVG child element that contributes one input image reference to its parent merge primitive.
+    source_refs:
+      - filter-effects-fe-merge-node
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.merge.inputs
+    kind: field
+    source_refs:
+      - filter-effects-fe-merge-node
+      - filter-effects-merge-node-interface
+    fields:
+      - name: in
+        type: string
+        cardinality: optional
+        position: list-item
+        constraints:
+          - Preserves the `in` attribute when present.
+          - Preserves document order.
+        requirement_refs:
+          - R001
+          - R002
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feMergeNode>` must append its `in` value to the parent merge primitive when present."
+    applies_to:
+      - SVGFilterPrimitive.merge.inputs
+    source_refs:
+      - filter-effects-fe-merge-node
+      - filter-effects-merge-node-interface
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMergeNodeInputsInOrder
+  - id: R002
+    normative_strength: MUST
+    kind: ordering
+    statement: "Multiple `<feMergeNode>` elements must be preserved in document order."
+    applies_to:
+      - SVGFilterPrimitive.merge.inputs
+    source_refs:
+      - filter-effects-fe-merge
+      - filter-effects-fe-merge-node
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMergeNodeInputsInOrder
+  - id: R003
+    normative_strength: MUST
+    kind: structure
+    statement: "An omitted `in` attribute must remain representable instead of being discarded."
+    applies_to:
+      - SVGFilterPrimitive.merge.inputs
+    source_refs:
+      - filter-effects-fe-merge-node
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMergeNodeInputsInOrder
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`<feMergeNode>` appears outside an active `<feMerge>`."
+    source_behavior: UNSPECIFIED
+    required_behavior: "Ignore the node because it cannot be attached to a merge primitive."
+    decision_required: false
+    source_refs:
+      - filter-effects-fe-merge-node
+
+recommendations: []
+derived_requirements: []
+implementation_choices: []
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: "Filter primitive feMerge"
+    reason: "`<feMergeNode>` is meaningful as a child input of `<feMerge>`."
+    source_refs:
+      - filter-effects-fe-merge
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-merge-node
+      - filter-effects-merge-node-interface
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-merge
+      - filter-effects-fe-merge-node
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-merge-node
+    map_item_refs: []

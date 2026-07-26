@@ -818,6 +818,30 @@ private func expectMerge(_ primitive: SVGFilterPrimitive, inputs expectedInputs:
 	#expect(inputs == expectedInputs)
 }
 
+@Test func svgParserPreservesMergeNodeInputsInOrder() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="nodes">
+			<feMerge>
+				<feMergeNode in="shadow"/>
+				<feMergeNode/>
+				<feMergeNode in="SourceGraphic"/>
+			</feMerge>
+			<feMergeNode in="ignored"/>
+			<feMerge>
+				<feMergeNode in="top"/>
+			</feMerge>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["nodes"])
+	#expect(filter.primitives.count == 2)
+	expectMerge(filter.primitives[0], inputs: ["shadow", nil, "SourceGraphic"])
+	expectMerge(filter.primitives[1], inputs: ["top"])
+}
+
 @Test func svgParserPreservesDistantLightAttributes() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
