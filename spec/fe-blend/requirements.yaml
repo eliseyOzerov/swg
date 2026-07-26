@@ -1,0 +1,225 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-blend
+  title: SVG feBlend filter primitive
+  domain: SVG Filter Effects / Compositing and Blending
+  profile: null
+  summary: Preserve SVG `<feBlend>` filter primitives, including inputs, blend mode, and no-composite behavior.
+  non_goals:
+    - Executing pixel-wise blend or alpha compositing formulas.
+    - Resolving filter primitive subregion attributes.
+    - Validating filter graph references.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-blend
+      title: "Filter Effects Module Level 1: Filter primitive feBlend"
+      url: https://www.w3.org/TR/filter-effects-1/#feBlendElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: compositing-blend-mode
+      title: "Compositing and Blending Level 1: blend-mode grammar"
+      url: https://www.w3.org/TR/compositing-1/#ltblendmodegt
+      version: W3C Candidate Recommendation Draft, 21 March 2024
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feBlend>` as a filter primitive that blends two input images."
+    - "The `in` input represents the source and the `in2` input represents the backdrop for blending."
+    - "The `mode` attribute uses the Compositing and Blending `<blend-mode>` grammar and defaults to `normal`."
+    - "The `no-composite` attribute is presence-based; when present, the blend mode must not apply alpha compositing."
+
+scope:
+  includes:
+    - "`<feBlend>` child elements inside `<filter>`."
+    - "`in` and `in2` input reference attributes."
+    - "All Compositing and Blending Level 1 `<blend-mode>` keywords."
+    - "The `normal` initial value for omitted or unsupported `mode` values."
+    - "Presence of the `no-composite` attribute."
+  excludes:
+    - Rendering-time blending math.
+    - Source-over compositing execution.
+    - Filter primitive common geometry attributes.
+  assumptions:
+    - Swg stores parsed filter primitives as `SVGFilterPrimitive` values for later renderer support.
+    - Input names are preserved as strings because they may be standard source keywords or author-defined filter result names.
+
+terminology:
+  - id: T001
+    term: feBlend
+    definition: An SVG filter primitive that combines two input images using a blend mode.
+    source_refs:
+      - filter-effects-fe-blend
+  - id: T002
+    term: blend mode
+    definition: A keyword that selects the formula used to mix source colors with backdrop colors.
+    source_refs:
+      - compositing-blend-mode
+  - id: T003
+    term: no-composite
+    definition: A presence-based `<feBlend>` attribute that disables the alpha compositing step normally combined with the blend mode.
+    source_refs:
+      - filter-effects-fe-blend
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.blend
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-blend
+    fields:
+      - name: input
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in` attribute when present.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-blend
+      - name: input2
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in2` attribute when present.
+        requirement_refs:
+          - R001
+        source_refs:
+          - filter-effects-fe-blend
+      - name: mode
+        type: SVGBlendMode
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `normal`.
+          - Stores any Compositing and Blending Level 1 blend mode keyword.
+        requirement_refs:
+          - R002
+          - R003
+        source_refs:
+          - filter-effects-fe-blend
+          - compositing-blend-mode
+      - name: noComposite
+        type: boolean
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Stores true when the `no-composite` attribute is present.
+        requirement_refs:
+          - R004
+        source_refs:
+          - filter-effects-fe-blend
+  - id: S002
+    name: SVGBlendMode
+    kind: enum
+    source_refs:
+      - compositing-blend-mode
+    fields:
+      - name: keywords
+        type: enum-cases
+        cardinality: one-or-more
+        position: enum-case
+        constraints:
+          - Includes `normal`, `darken`, `multiply`, `color-burn`, `lighten`, `screen`, `color-dodge`, `overlay`, `soft-light`, `hard-light`, `difference`, `exclusion`, `hue`, `saturation`, `color`, and `luminosity`.
+        requirement_refs:
+          - R002
+        source_refs:
+          - compositing-blend-mode
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feBlend>` input attributes `in` and `in2` must be preserved when present."
+    applies_to:
+      - SVGFilterPrimitive.blend
+    source_refs:
+      - filter-effects-fe-blend
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesBlendPrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: structure
+    statement: "`mode` must preserve all Compositing and Blending Level 1 `<blend-mode>` keywords."
+    applies_to:
+      - SVGFilterPrimitive.blend
+      - SVGBlendMode
+    source_refs:
+      - filter-effects-fe-blend
+      - compositing-blend-mode
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesBlendPrimitiveAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "Omitted or unsupported `mode` values on `<feBlend>` must resolve to the initial value `normal`."
+    applies_to:
+      - SVGFilterPrimitive.blend
+    source_refs:
+      - filter-effects-fe-blend
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesBlendPrimitiveAttributes
+  - id: R004
+    normative_strength: MUST
+    kind: structure
+    statement: "The presence of `no-composite` on `<feBlend>` must be preserved separately from the selected blend mode."
+    applies_to:
+      - SVGFilterPrimitive.blend
+    source_refs:
+      - filter-effects-fe-blend
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesBlendPrimitiveAttributes
+
+implementation_choices:
+  - id: IC001
+    topic: Input reference representation
+    statement: "The source does not require a local model shape for input names; preserving them as strings keeps standard keywords and author-defined result names intact."
+    allowed_by:
+      - filter-effects-fe-blend
+    source_refs:
+      - filter-effects-fe-blend
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-blend
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-blend
+      - compositing-blend-mode
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-blend
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-blend
+    map_item_refs: []

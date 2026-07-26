@@ -171,6 +171,67 @@ import Testing
 	expectDropShadow(filter.primitives[3], dx: 2, dy: 2, stdDeviationX: 2, stdDeviationY: 2, color: .black)
 }
 
+@Test func svgParserPreservesBlendPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="blend">
+			<feBlend/>
+			<feBlend in="SourceGraphic" in2="BackgroundImage" mode="multiply" no-composite="no-composite"/>
+			<feBlend mode="normal"/>
+			<feBlend mode="darken"/>
+			<feBlend mode="color-burn"/>
+			<feBlend mode="lighten"/>
+			<feBlend mode="screen"/>
+			<feBlend mode="color-dodge"/>
+			<feBlend mode="overlay"/>
+			<feBlend mode="soft-light"/>
+			<feBlend mode="hard-light"/>
+			<feBlend mode="difference"/>
+			<feBlend mode="exclusion"/>
+			<feBlend mode="hue"/>
+			<feBlend mode="saturation"/>
+			<feBlend mode="color"/>
+			<feBlend mode="luminosity"/>
+			<feBlend mode="unsupported"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["blend"])
+	#expect(filter.primitives.count == 18)
+	guard case .blend(nil, nil, .normal, false) = filter.primitives[0] else {
+		Issue.record("Expected default feBlend primitive")
+		return
+	}
+	guard case .blend("SourceGraphic", "BackgroundImage", .multiply, true) = filter.primitives[1] else {
+		Issue.record("Expected feBlend input, in2, mode, and no-composite attributes")
+		return
+	}
+	let modes = filter.primitives.dropFirst(2).map { primitive -> SVGBlendMode? in
+		guard case .blend(_, _, let mode, _) = primitive else { return nil }
+		return mode
+	}
+	#expect(modes == [
+		.normal,
+		.darken,
+		.colorBurn,
+		.lighten,
+		.screen,
+		.colorDodge,
+		.overlay,
+		.softLight,
+		.hardLight,
+		.difference,
+		.exclusion,
+		.hue,
+		.saturation,
+		.color,
+		.luminosity,
+		.normal,
+	])
+}
+
 @Test func svgParserPreservesRadialGradientGeometryAndStops() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

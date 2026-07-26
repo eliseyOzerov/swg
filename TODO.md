@@ -152,7 +152,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `primitiveUnits`.
 - [x] `<feGaussianBlur>`.
 - [x] `<feDropShadow>`.
-- [ ] `<feBlend>`.
+- [x] `<feBlend>`.
 - [ ] `<feColorMatrix>`.
 - [ ] `<feComponentTransfer>`.
 - [ ] `<feFuncR>`.

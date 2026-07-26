@@ -373,6 +373,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				filterUnits: parseFilterUnits(attributes["filterUnits"]),
 				primitiveUnits: parseFilterPrimitiveUnits(attributes["primitiveUnits"])
 			)
+		case "feBlend":
+			currentFilter?.primitives.append(.blend(
+				input: attributes["in"],
+				input2: attributes["in2"],
+				mode: parseBlendMode(attributes["mode"]),
+				noComposite: attributes.keys.contains("no-composite")
+			))
 		case "feGaussianBlur":
 			let stdDeviation = parseNumberOptionalNumber(attributes["stdDeviation"], defaultValue: 0)
 			currentFilter?.primitives.append(.gaussianBlur(
@@ -983,6 +990,43 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseFilterPrimitiveUnits(_ value: String?) -> SVGFilterPrimitiveUnits {
 		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
+	}
+
+	private func parseBlendMode(_ value: String?) -> SVGBlendMode {
+		switch value {
+		case "darken":
+			.darken
+		case "multiply":
+			.multiply
+		case "color-burn":
+			.colorBurn
+		case "lighten":
+			.lighten
+		case "screen":
+			.screen
+		case "color-dodge":
+			.colorDodge
+		case "overlay":
+			.overlay
+		case "soft-light":
+			.softLight
+		case "hard-light":
+			.hardLight
+		case "difference":
+			.difference
+		case "exclusion":
+			.exclusion
+		case "hue":
+			.hue
+		case "saturation":
+			.saturation
+		case "color":
+			.color
+		case "luminosity":
+			.luminosity
+		default:
+			.normal
+		}
 	}
 
 	private func parseFilterEdgeMode(_ value: String?) -> SVGFilterEdgeMode {
