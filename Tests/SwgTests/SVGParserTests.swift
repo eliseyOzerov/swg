@@ -4890,6 +4890,28 @@ private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, ch
 	#expect(circle.unknownAttributes == ["data-dot": "dot-value"])
 }
 
+@Test func svgParserPreservesTextElementAsRenderableTextContent() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80">
+		<text id="label" x="12" y="34" font-family="Verdana" font-size="18" font-weight="700" fill="blue">Hello, SVG</text>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	guard case .text(let text) = document.elements.first else {
+		Issue.record("Expected parsed text element")
+		return
+	}
+	#expect(text.id == "label")
+	#expect(text.x == 12)
+	#expect(text.y == 34)
+	#expect(text.fontFamily == "Verdana")
+	#expect(text.fontSize == 18)
+	#expect(text.fontWeight == "700")
+	#expect(text.attributes.fill == .color(.blue))
+	#expect(text.spans.map(\.text) == ["Hello, SVG"])
+}
+
 @Test func svgParserNormalizesDefaultTextWhitespace() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
