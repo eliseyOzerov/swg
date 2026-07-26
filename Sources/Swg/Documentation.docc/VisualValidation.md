@@ -13,7 +13,7 @@ The SVG coverage checklist is test-gated. A feature can be checked when it has f
 
 ## Feature Gallery
 
-The README feature gallery uses larger documentation SVGs from `docs/feature-gallery/svg`. They are rendered by `docs/FeatureGallery.playground/Contents.swift`, which parses each SVG with ``SVGParser`` before painting it through ``SVG`` and writing PNG previews to `docs/feature-gallery/png`.
+The README feature gallery uses one documentation SVG per visual feature in `docs/feature-gallery/svg`. They are rendered by `docs/FeatureGallery.playground/Contents.swift`, which parses each SVG with ``SVGParser`` before painting it through ``SVG`` and writing PNG previews to `docs/feature-gallery/png`. The same playground writes `docs/feature-gallery/features.md`, a generated renderer status matrix that marks each feature as rendered, partial, static-only, or model-only.
 
 Those gallery examples are intended for human-facing documentation. The smaller fixtures below are intended for stable regression checks.
 
