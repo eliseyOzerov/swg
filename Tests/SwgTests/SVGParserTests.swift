@@ -452,6 +452,122 @@ private func expectComposite(_ primitive: SVGFilterPrimitive, input expectedInpu
 	#expect(k4 == expectedK4)
 }
 
+@Test func svgParserPreservesConvolveMatrixPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="convolve">
+			<feConvolveMatrix/>
+			<feConvolveMatrix in="SourceGraphic" order="2.9 3.1" kernelMatrix="1 2 3, 4 5 6" divisor="0" bias="0.5" targetX="1" targetY="2" edgeMode="wrap" kernelUnitLength="0.25 0.5" preserveAlpha="true"/>
+			<feConvolveMatrix order="2" kernelMatrix="0 0 0 0" divisor="5" targetX="4" targetY="-1" edgeMode="none" kernelUnitLength="-1 2" preserveAlpha="false"/>
+			<feConvolveMatrix order="0" kernelMatrix="bad" divisor="bad" bias="bad" targetX="bad" targetY="bad" edgeMode="unsupported" kernelUnitLength="bad" preserveAlpha="maybe"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["convolve"])
+	#expect(filter.primitives.count == 4)
+	expectConvolveMatrix(
+		filter.primitives[0],
+		input: nil,
+		orderX: 3,
+		orderY: 3,
+		kernelMatrix: [],
+		divisor: 1,
+		bias: 0,
+		targetX: 1,
+		targetY: 1,
+		edgeMode: .duplicate,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		preserveAlpha: false,
+		isPassThrough: true
+	)
+	expectConvolveMatrix(
+		filter.primitives[1],
+		input: "SourceGraphic",
+		orderX: 2,
+		orderY: 3,
+		kernelMatrix: [1, 2, 3, 4, 5, 6],
+		divisor: 21,
+		bias: 0.5,
+		targetX: 1,
+		targetY: 2,
+		edgeMode: .wrap,
+		kernelUnitLengthX: 0.25,
+		kernelUnitLengthY: 0.5,
+		preserveAlpha: true,
+		isPassThrough: false
+	)
+	expectConvolveMatrix(
+		filter.primitives[2],
+		input: nil,
+		orderX: 2,
+		orderY: 2,
+		kernelMatrix: [0, 0, 0, 0],
+		divisor: 5,
+		bias: 0,
+		targetX: 1,
+		targetY: 1,
+		edgeMode: .none,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		preserveAlpha: false,
+		isPassThrough: false
+	)
+	expectConvolveMatrix(
+		filter.primitives[3],
+		input: nil,
+		orderX: 3,
+		orderY: 3,
+		kernelMatrix: [],
+		divisor: 1,
+		bias: 0,
+		targetX: 1,
+		targetY: 1,
+		edgeMode: .duplicate,
+		kernelUnitLengthX: nil,
+		kernelUnitLengthY: nil,
+		preserveAlpha: false,
+		isPassThrough: true
+	)
+}
+
+private func expectConvolveMatrix(
+	_ primitive: SVGFilterPrimitive,
+	input expectedInput: String?,
+	orderX expectedOrderX: Int,
+	orderY expectedOrderY: Int,
+	kernelMatrix expectedKernelMatrix: [Double],
+	divisor expectedDivisor: Double,
+	bias expectedBias: Double,
+	targetX expectedTargetX: Int,
+	targetY expectedTargetY: Int,
+	edgeMode expectedEdgeMode: SVGFilterEdgeMode,
+	kernelUnitLengthX expectedKernelUnitLengthX: Double?,
+	kernelUnitLengthY expectedKernelUnitLengthY: Double?,
+	preserveAlpha expectedPreserveAlpha: Bool,
+	isPassThrough expectedIsPassThrough: Bool
+) {
+	guard case .convolveMatrix(let input, let orderX, let orderY, let kernelMatrix, let divisor, let bias, let targetX, let targetY, let edgeMode, let kernelUnitLengthX, let kernelUnitLengthY, let preserveAlpha, let isPassThrough) = primitive else {
+		Issue.record("Expected parsed feConvolveMatrix primitive")
+		return
+	}
+	#expect(input == expectedInput)
+	#expect(orderX == expectedOrderX)
+	#expect(orderY == expectedOrderY)
+	#expect(kernelMatrix == expectedKernelMatrix)
+	#expect(divisor == expectedDivisor)
+	#expect(bias == expectedBias)
+	#expect(targetX == expectedTargetX)
+	#expect(targetY == expectedTargetY)
+	#expect(edgeMode == expectedEdgeMode)
+	#expect(kernelUnitLengthX == expectedKernelUnitLengthX)
+	#expect(kernelUnitLengthY == expectedKernelUnitLengthY)
+	#expect(preserveAlpha == expectedPreserveAlpha)
+	#expect(isPassThrough == expectedIsPassThrough)
+}
+
 private func expectComponentTransferFunction(_ primitive: SVGFilterPrimitive, channel: SVGComponentTransferChannel, function expectedFunction: SVGComponentTransferFunction) {
 	guard case .componentTransfer(_, let functions) = primitive else {
 		Issue.record("Expected parsed feComponentTransfer primitive")

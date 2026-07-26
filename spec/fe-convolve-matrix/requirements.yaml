@@ -1,0 +1,357 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-convolve-matrix
+  title: SVG feConvolveMatrix filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feConvolveMatrix>` filter primitives, including convolution order, kernel values, divisor, bias, target coordinates, edge mode, kernel unit length, preserveAlpha, and pass-through state.
+  non_goals:
+    - Executing matrix convolution.
+    - Resampling images for `kernelUnitLength`.
+    - Resolving filter primitive subregion attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-convolve-matrix
+      title: "Filter Effects Module Level 1: Filter primitive feConvolveMatrix"
+      url: https://www.w3.org/TR/filter-effects-1/#feConvolveMatrixElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "The specification defines `<feConvolveMatrix>` as a filter primitive that applies a matrix convolution."
+    - "The `order` attribute is one or two positive numbers interpreted as integer cell counts; non-integer values are truncated toward zero."
+    - "`kernelMatrix` is a comma and/or whitespace-separated number list whose count must equal `orderX * orderY`; otherwise the primitive acts as pass-through."
+    - "`divisor` defaults to the sum of all kernel values, or `1` when that sum is zero; a specified `0` also uses that default."
+    - "`bias` defaults to `0`; `targetX` and `targetY` default to the centered kernel cell."
+    - "`edgeMode` accepts `duplicate`, `wrap`, and `none`; its initial value is `duplicate`."
+    - "`kernelUnitLength` accepts one or two positive numbers; the second defaults to the first, while negative or zero values use the default."
+    - "`preserveAlpha` accepts `false` and `true`; its initial value is `false`."
+
+scope:
+  includes:
+    - "`<feConvolveMatrix>` child elements inside `<filter>`."
+    - "`in`, `order`, `kernelMatrix`, `divisor`, `bias`, `targetX`, `targetY`, `edgeMode`, `kernelUnitLength`, and `preserveAlpha` attributes."
+    - "Pass-through state for mismatched kernel matrix length."
+  excludes:
+    - "Rendering-time convolution formulas."
+    - "Pixel-grid resampling and interpolation behavior."
+    - "Filter primitive common geometry attributes."
+  assumptions:
+    - Swg stores parsed filter primitives as `SVGFilterPrimitive` values for later renderer support.
+    - Malformed numeric attributes fall back to their initial or derived default values.
+    - Malformed `kernelMatrix` values are treated as an empty list, which usually triggers pass-through because the count does not match `orderX * orderY`.
+
+terminology:
+  - id: T001
+    term: feConvolveMatrix
+    definition: An SVG filter primitive that combines source pixels with neighboring pixels through a convolution kernel.
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+  - id: T002
+    term: kernel matrix
+    definition: The ordered list of numeric values used as the convolution kernel.
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+  - id: T003
+    term: pass-through
+    definition: Behavior where the primitive output is equal to its primary input.
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.convolveMatrix
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    fields:
+      - name: input
+        type: string
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Preserves the `in` attribute when present.
+        requirement_refs:
+          - R001
+      - name: orderX
+        type: integer
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `3`.
+          - Stores the first truncated positive `order` value.
+        requirement_refs:
+          - R002
+      - name: orderY
+        type: integer
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `3`.
+          - Stores the second truncated positive `order` value, or the first value when omitted.
+        requirement_refs:
+          - R002
+      - name: kernelMatrix
+        type: list<double>
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Parses comma and/or whitespace-separated numbers.
+        requirement_refs:
+          - R003
+      - name: divisor
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to the kernel sum, or `1` when the sum is zero.
+          - Specified zero uses the default.
+        requirement_refs:
+          - R004
+      - name: bias
+        type: double
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `0`.
+        requirement_refs:
+          - R005
+      - name: targetX
+        type: integer
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `floor(orderX / 2)`.
+          - Must satisfy `0 <= targetX < orderX`.
+        requirement_refs:
+          - R006
+      - name: targetY
+        type: integer
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `floor(orderY / 2)`.
+          - Must satisfy `0 <= targetY < orderY`.
+        requirement_refs:
+          - R006
+      - name: edgeMode
+        type: SVGFilterEdgeMode
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `duplicate`.
+        requirement_refs:
+          - R007
+      - name: kernelUnitLengthX
+        type: double
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Stores the first positive `kernelUnitLength` number when provided.
+        requirement_refs:
+          - R008
+      - name: kernelUnitLengthY
+        type: double
+        cardinality: optional
+        position: associated-value
+        constraints:
+          - Stores the second positive `kernelUnitLength` number, or the first when omitted.
+        requirement_refs:
+          - R008
+      - name: preserveAlpha
+        type: boolean
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to `false`.
+        requirement_refs:
+          - R009
+      - name: isPassThrough
+        type: boolean
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - True when the kernel count does not equal `orderX * orderY`.
+        requirement_refs:
+          - R010
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: "`<feConvolveMatrix>` must preserve its `in` input reference when present."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`order` must parse one or two positive numbers as truncated integer order values, with omitted Y defaulting to X and omitted or invalid order defaulting to `3 3`."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "`kernelMatrix` must parse as a comma and/or whitespace-separated list of numbers."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R004
+    normative_strength: MUST
+    kind: behavior
+    statement: "`divisor` must preserve non-zero numeric values; omitted, malformed, or zero values must use the kernel sum, or `1` when the sum is zero."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R005
+    normative_strength: MUST
+    kind: behavior
+    statement: "`bias` must parse as a number and default to `0` when omitted or malformed."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R006
+    normative_strength: MUST
+    kind: behavior
+    statement: "`targetX` and `targetY` must parse as bounded integers and default to the centered kernel cell when omitted, malformed, or outside the valid range."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R007
+    normative_strength: MUST
+    kind: behavior
+    statement: "`edgeMode` must preserve `duplicate`, `wrap`, and `none`, defaulting to `duplicate` when omitted or unsupported."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R008
+    normative_strength: MUST
+    kind: behavior
+    statement: "`kernelUnitLength` must parse one or two positive numbers, with omitted Y defaulting to X and negative or zero values using the default."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R009
+    normative_strength: MUST
+    kind: behavior
+    statement: "`preserveAlpha` must preserve `true` and default to `false` otherwise."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+  - id: R010
+    normative_strength: MUST
+    kind: behavior
+    statement: "When `kernelMatrix` count does not equal `orderX * orderY`, `<feConvolveMatrix>` must be marked as pass-through."
+    applies_to:
+      - SVGFilterPrimitive.convolveMatrix
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesConvolveMatrixPrimitiveAttributes
+
+recommendations:
+  - id: N001
+    normative_strength: RECOMMENDED
+    statement: "Authors should use small `order` values because large kernels may have high CPU overhead."
+    source_refs:
+      - filter-effects-fe-convolve-matrix
+
+traceability:
+  source_to_requirements:
+    filter-effects-fe-convolve-matrix:
+      - R001
+      - R002
+      - R003
+      - R004
+      - R005
+      - R006
+      - R007
+      - R008
+      - R009
+      - R010
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R002:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R003:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R004:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R005:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R006:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R007:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R008:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R009:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes
+    R010:
+      - svgParserPreservesConvolveMatrixPrimitiveAttributes

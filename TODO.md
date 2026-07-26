@@ -160,7 +160,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `<feFuncB>`.
 - [x] `<feFuncA>`.
 - [x] `<feComposite>`.
-- [ ] `<feConvolveMatrix>`.
+- [x] `<feConvolveMatrix>`.
 - [ ] `<feDiffuseLighting>`.
 - [ ] `<feDisplacementMap>`.
 - [ ] `<feDistantLight>`.

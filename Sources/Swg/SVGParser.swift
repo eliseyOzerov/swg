@@ -402,6 +402,23 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				k3: attributes["k3"].flatMap(parseNumber) ?? 0,
 				k4: attributes["k4"].flatMap(parseNumber) ?? 0
 			))
+		case "feConvolveMatrix":
+			let convolveMatrix = parseConvolveMatrix(attributes)
+			currentFilter?.primitives.append(.convolveMatrix(
+				input: attributes["in"],
+				orderX: convolveMatrix.orderX,
+				orderY: convolveMatrix.orderY,
+				kernelMatrix: convolveMatrix.kernelMatrix,
+				divisor: convolveMatrix.divisor,
+				bias: convolveMatrix.bias,
+				targetX: convolveMatrix.targetX,
+				targetY: convolveMatrix.targetY,
+				edgeMode: convolveMatrix.edgeMode,
+				kernelUnitLengthX: convolveMatrix.kernelUnitLengthX,
+				kernelUnitLengthY: convolveMatrix.kernelUnitLengthY,
+				preserveAlpha: convolveMatrix.preserveAlpha,
+				isPassThrough: convolveMatrix.isPassThrough
+			))
 		case "feFuncR":
 			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .red)
 		case "feFuncG":
@@ -1174,6 +1191,103 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		default:
 			.over
 		}
+	}
+
+	private func parseConvolveMatrix(_ attributes: [String: String]) -> (
+		orderX: Int,
+		orderY: Int,
+		kernelMatrix: [Double],
+		divisor: Double,
+		bias: Double,
+		targetX: Int,
+		targetY: Int,
+		edgeMode: SVGFilterEdgeMode,
+		kernelUnitLengthX: Double?,
+		kernelUnitLengthY: Double?,
+		preserveAlpha: Bool,
+		isPassThrough: Bool
+	) {
+		let order = parseConvolveOrder(attributes["order"])
+		let kernelMatrix = attributes["kernelMatrix"].flatMap { SVGListParser.parse($0, itemParser: parseNumber) } ?? []
+		let defaultDivisor = defaultConvolveDivisor(kernelMatrix)
+		let divisor = attributes["divisor"].flatMap(parseNumber).flatMap { $0 == 0 ? nil : $0 } ?? defaultDivisor
+		let kernelUnitLength = parseConvolveKernelUnitLength(attributes["kernelUnitLength"])
+		return (
+			orderX: order.x,
+			orderY: order.y,
+			kernelMatrix: kernelMatrix,
+			divisor: divisor,
+			bias: attributes["bias"].flatMap(parseNumber) ?? 0,
+			targetX: parseConvolveTarget(attributes["targetX"], order: order.x),
+			targetY: parseConvolveTarget(attributes["targetY"], order: order.y),
+			edgeMode: parseConvolveEdgeMode(attributes["edgeMode"]),
+			kernelUnitLengthX: kernelUnitLength.x,
+			kernelUnitLengthY: kernelUnitLength.y,
+			preserveAlpha: attributes["preserveAlpha"] == "true",
+			isPassThrough: kernelMatrix.count != order.x * order.y
+		)
+	}
+
+	private func parseConvolveOrder(_ value: String?) -> (x: Int, y: Int) {
+		guard
+			let value,
+			let values = SVGListParser.parse(value, itemParser: parseNumber),
+			values.count == 1 || values.count == 2
+		else {
+			return (3, 3)
+		}
+		let x = truncatedPositiveInteger(values[0])
+		let y = truncatedPositiveInteger(values.count == 2 ? values[1] : values[0])
+		guard let x, let y else { return (3, 3) }
+		return (x, y)
+	}
+
+	private func truncatedPositiveInteger(_ value: Double) -> Int? {
+		let integer = Int(value.rounded(.towardZero))
+		return integer > 0 ? integer : nil
+	}
+
+	private func defaultConvolveDivisor(_ kernelMatrix: [Double]) -> Double {
+		let sum = kernelMatrix.reduce(0, +)
+		return sum == 0 ? 1 : sum
+	}
+
+	private func parseConvolveTarget(_ value: String?, order: Int) -> Int {
+		let defaultValue = order / 2
+		guard
+			let value,
+			let target = SVGIntegerParser.parse(value),
+			target >= 0,
+			target < order
+		else {
+			return defaultValue
+		}
+		return target
+	}
+
+	private func parseConvolveEdgeMode(_ value: String?) -> SVGFilterEdgeMode {
+		switch value {
+		case "wrap":
+			.wrap
+		case "none":
+			.none
+		default:
+			.duplicate
+		}
+	}
+
+	private func parseConvolveKernelUnitLength(_ value: String?) -> (x: Double?, y: Double?) {
+		guard
+			let value,
+			let values = SVGListParser.parse(value, itemParser: parseNumber),
+			values.count == 1 || values.count == 2
+		else {
+			return (nil, nil)
+		}
+		let x = values[0]
+		let y = values.count == 2 ? values[1] : values[0]
+		guard x > 0, y > 0 else { return (nil, nil) }
+		return (x, y)
 	}
 
 	private func parseFilterEdgeMode(_ value: String?) -> SVGFilterEdgeMode {
