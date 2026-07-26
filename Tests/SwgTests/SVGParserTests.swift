@@ -710,6 +710,39 @@ private func expectDisplacementMap(
 	#expect(yChannelSelector == expectedYChannelSelector)
 }
 
+@Test func svgParserPreservesFloodPrimitiveAttributes() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<filter id="flood">
+			<feFlood/>
+			<feFlood flood-color="red" flood-opacity="25%"/>
+			<feFlood flood-color="rgba(0, 0, 255, 0.5)" flood-opacity="0.5"/>
+			<feFlood flood-color="bad" flood-opacity="bad"/>
+			<feFlood flood-color="#00ff00" flood-opacity="2"/>
+			<feFlood flood-color="#00ff00" flood-opacity="-1"/>
+		</filter>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let filter = try #require(document.defs.filters["flood"])
+	#expect(filter.primitives.count == 6)
+	expectFlood(filter.primitives[0], color: .black)
+	expectFlood(filter.primitives[1], color: Color(1, 0, 0, 0.25))
+	expectFlood(filter.primitives[2], color: Color(0, 0, 1, 0.25))
+	expectFlood(filter.primitives[3], color: .black)
+	expectFlood(filter.primitives[4], color: Color(0, 1, 0, 1))
+	expectFlood(filter.primitives[5], color: Color(0, 1, 0, 0))
+}
+
+private func expectFlood(_ primitive: SVGFilterPrimitive, color expectedColor: Color) {
+	guard case .flood(let color) = primitive else {
+		Issue.record("Expected parsed feFlood primitive")
+		return
+	}
+	#expect(color == expectedColor)
+}
+
 @Test func svgParserPreservesDistantLightAttributes() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

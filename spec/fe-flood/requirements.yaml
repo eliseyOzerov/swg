@@ -1,0 +1,200 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: fe-flood
+  title: SVG feFlood filter primitive
+  domain: SVG Filter Effects
+  profile: null
+  summary: Preserve SVG `<feFlood>` filter primitives, including `flood-color` and `flood-opacity` presentation attributes as a single effective color.
+  non_goals:
+    - Rendering the flood rectangle.
+    - Resolving filter primitive subregion geometry.
+    - Implementing full CSS cascade for non-inline filter presentation attributes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: filter-effects-fe-flood
+      title: "Filter Effects Module Level 1: Filter primitive feFlood"
+      url: https://www.w3.org/TR/filter-effects-1/#feFloodElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-flood-color
+      title: "Filter Effects Module Level 1: The flood-color property"
+      url: https://www.w3.org/TR/filter-effects-1/#FloodColorProperty
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-flood-opacity
+      title: "Filter Effects Module Level 1: The flood-opacity property"
+      url: https://www.w3.org/TR/filter-effects-1/#FloodOpacityProperty
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: filter-effects-flood-interface
+      title: "Filter Effects Module Level 1: Interface SVGFEFloodElement"
+      url: https://www.w3.org/TR/filter-effects-1/#InterfaceSVGFEFloodElement
+      version: W3C Working Draft, 18 December 2018
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - "`<feFlood>` creates a rectangle filled with values from `flood-color` and `flood-opacity`."
+    - "`flood-color` has value type `<color>` and initial value `black`."
+    - "`flood-opacity` has value type `<alpha-value>`, initial value `1`, and computed value clamped to `[0,1]`."
+    - "If the `flood-color` value includes alpha, that alpha is multiplied by computed `flood-opacity`."
+    - "The DOM interface has no primitive-specific attributes beyond common filter primitive attributes."
+
+scope:
+  includes:
+    - "`<feFlood>` child elements inside `<filter>`."
+    - "`flood-color` and `flood-opacity` presentation attributes on `<feFlood>`."
+  excludes:
+    - "Subregion geometry and raster output."
+    - "Non-inline cascade sources for `flood-color` and `flood-opacity`."
+    - "Animation."
+  assumptions:
+    - Swg stores the effective flood color, including alpha after opacity multiplication, as `Color`.
+    - Malformed color attributes fall back to black.
+    - Malformed opacity attributes fall back to `1`.
+
+terminology:
+  - id: T001
+    term: feFlood
+    definition: An SVG filter primitive that fills its primitive subregion with a color and opacity.
+    source_refs:
+      - filter-effects-fe-flood
+  - id: T002
+    term: flood-color
+    definition: The color used to flood the current filter primitive subregion.
+    source_refs:
+      - filter-effects-flood-color
+  - id: T003
+    term: flood-opacity
+    definition: The opacity value used across the entire filter primitive subregion.
+    source_refs:
+      - filter-effects-flood-opacity
+
+structures:
+  - id: S001
+    name: SVGFilterPrimitive.flood
+    kind: enum-case
+    source_refs:
+      - filter-effects-fe-flood
+      - filter-effects-flood-color
+      - filter-effects-flood-opacity
+      - filter-effects-flood-interface
+    fields:
+      - name: color
+        type: Color
+        cardinality: exactly-one
+        position: associated-value
+        constraints:
+          - Defaults to black.
+          - Stores effective alpha after multiplying color alpha by clamped flood opacity.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: behavior
+    statement: "`<feFlood>` must preserve the effective `flood-color`, defaulting to black when omitted or malformed."
+    applies_to:
+      - SVGFilterPrimitive.flood
+    source_refs:
+      - filter-effects-fe-flood
+      - filter-effects-flood-color
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFloodPrimitiveAttributes
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: "`flood-opacity` must parse as an alpha value, default to `1` when omitted or malformed, and clamp to `[0,1]`."
+    applies_to:
+      - SVGFilterPrimitive.flood
+    source_refs:
+      - filter-effects-flood-opacity
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFloodPrimitiveAttributes
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: "When `flood-color` includes alpha, the effective alpha must multiply that color alpha by the computed `flood-opacity`."
+    applies_to:
+      - SVGFilterPrimitive.flood
+    source_refs:
+      - filter-effects-fe-flood
+      - filter-effects-flood-opacity
+    testability: testable
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesFloodPrimitiveAttributes
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: "`flood-color` is malformed."
+    source_behavior: UNSPECIFIED
+    required_behavior: "Use the initial color black."
+    decision_required: false
+    source_refs:
+      - filter-effects-flood-color
+  - id: I002
+    condition: "`flood-opacity` is malformed."
+    source_behavior: UNSPECIFIED
+    required_behavior: "Use the initial opacity `1`."
+    decision_required: false
+    source_refs:
+      - filter-effects-flood-opacity
+
+recommendations: []
+derived_requirements: []
+implementation_choices: []
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: "Filter primitive subregion"
+    reason: "`<feFlood>` paints the filter primitive subregion."
+    source_refs:
+      - filter-effects-fe-flood
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-flood
+      - filter-effects-flood-color
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - filter-effects-flood-opacity
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - filter-effects-fe-flood
+      - filter-effects-flood-opacity
+    map_item_refs: []

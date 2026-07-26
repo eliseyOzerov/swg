@@ -443,6 +443,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				azimuth: attributes["azimuth"].flatMap(parseNumber) ?? 0,
 				elevation: attributes["elevation"].flatMap(parseNumber) ?? 0
 			))
+		case "feFlood":
+			let color = attributes["flood-color"].flatMap { parseColor($0) } ?? .black
+			let opacity = attributes["flood-opacity"].flatMap(parseAlphaValue) ?? 1
+			currentFilter?.primitives.append(.flood(color: color.withAlpha(color.alpha * opacity)))
 		case "feFuncR":
 			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .red)
 		case "feFuncG":

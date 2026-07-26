@@ -1019,6 +1019,7 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 	case convolveMatrix(input: String?, orderX: Int = 3, orderY: Int = 3, kernelMatrix: [Double], divisor: Double, bias: Double = 0, targetX: Int = 1, targetY: Int = 1, edgeMode: SVGFilterEdgeMode = .duplicate, kernelUnitLengthX: Double? = nil, kernelUnitLengthY: Double? = nil, preserveAlpha: Bool = false, isPassThrough: Bool = false)
 	case diffuseLighting(input: String?, surfaceScale: Double = 1, diffuseConstant: Double = 1, kernelUnitLengthX: Double? = nil, kernelUnitLengthY: Double? = nil, lightSource: SVGFilterLightSource? = nil)
 	case displacementMap(input: String?, input2: String?, scale: Double = 0, xChannelSelector: SVGFilterChannelSelector = .alpha, yChannelSelector: SVGFilterChannelSelector = .alpha)
+	case flood(color: Color = .black)
 	case gaussianBlur(stdDeviationX: Double, stdDeviationY: Double, edgeMode: SVGFilterEdgeMode = .none)
 	case dropShadow(dx: Double, dy: Double, stdDeviationX: Double, stdDeviationY: Double, color: Color)
 }
