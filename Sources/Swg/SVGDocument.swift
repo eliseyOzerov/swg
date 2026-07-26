@@ -530,6 +530,7 @@ public struct SVGPatternDef: Equatable, Sendable {
 	public var width: Double
 	public var height: Double
 	public var patternUnits: SVGPatternUnits
+	public var patternContentUnits: SVGPatternUnits
 	public var patternTransform: Transform
 	public var viewBox: Rect?
 	public var preserveAspectRatio: SVGPreserveAspectRatio
@@ -546,6 +547,7 @@ public struct SVGPatternDef: Equatable, Sendable {
 		width: Double = 0,
 		height: Double = 0,
 		patternUnits: SVGPatternUnits = .objectBoundingBox,
+		patternContentUnits: SVGPatternUnits = .userSpaceOnUse,
 		patternTransform: Transform = .identity,
 		viewBox: Rect? = nil,
 		preserveAspectRatio: SVGPreserveAspectRatio = .default,
@@ -561,6 +563,7 @@ public struct SVGPatternDef: Equatable, Sendable {
 		self.width = width
 		self.height = height
 		self.patternUnits = patternUnits
+		self.patternContentUnits = patternContentUnits
 		self.patternTransform = patternTransform
 		self.viewBox = viewBox
 		self.preserveAspectRatio = preserveAspectRatio

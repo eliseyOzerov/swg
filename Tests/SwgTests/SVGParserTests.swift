@@ -369,6 +369,29 @@ import Testing
 	#expect(defaults.children.isEmpty)
 }
 
+@Test func svgParserPreservesPatternContentUnits() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+		<defs>
+			<pattern id="defaultContentUnits"/>
+			<pattern id="userSpaceContent" patternContentUnits="userSpaceOnUse"/>
+			<pattern id="objectContent" patternContentUnits="objectBoundingBox"/>
+			<pattern id="invalidContent" patternContentUnits="definitelyNotUnits"/>
+			<pattern id="withViewBox" patternContentUnits="objectBoundingBox" viewBox="0 0 10 10"/>
+		</defs>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.patterns["defaultContentUnits"]?.patternContentUnits == .userSpaceOnUse)
+	#expect(document.defs.patterns["userSpaceContent"]?.patternContentUnits == .userSpaceOnUse)
+	#expect(document.defs.patterns["objectContent"]?.patternContentUnits == .objectBoundingBox)
+	#expect(document.defs.patterns["invalidContent"]?.patternContentUnits == .userSpaceOnUse)
+	#expect(document.defs.patterns["withViewBox"]?.patternContentUnits == .objectBoundingBox)
+	#expect(document.defs.patterns["withViewBox"]?.viewBox == Rect(x: 0, y: 0, width: 10, height: 10))
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

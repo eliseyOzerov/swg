@@ -814,9 +814,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		var pattern = SVGPatternDef(
 			id: attributes["id"] ?? "",
 			patternUnits: units,
+			patternContentUnits: parsePatternContentUnits(attributes["patternContentUnits"]),
 			attributes: parsePaintAttributes(attributes),
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "patternUnits", "patternTransform", "viewBox", "preserveAspectRatio", "href", "xlink:href"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "width", "height", "patternUnits", "patternContentUnits", "patternTransform", "viewBox", "preserveAspectRatio", "href", "xlink:href"])
 		)
 		setCurrentParsedElementID(pattern.id)
 		if let v = attributes["x"] { pattern.x = parsePatternTileCoord(v, units: units, percentageBasis: .horizontal) }
@@ -934,6 +935,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parsePatternUnits(_ value: String?) -> SVGPatternUnits {
 		value == "userSpaceOnUse" ? .userSpaceOnUse : .objectBoundingBox
+	}
+
+	private func parsePatternContentUnits(_ value: String?) -> SVGPatternUnits {
+		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
 	}
 
 	private func parseGradientSpreadMethod(_ value: String?) -> SVGGradientSpreadMethod? {
