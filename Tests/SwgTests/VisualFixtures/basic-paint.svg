@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
+	<rect id="background" x="0" y="0" width="8" height="8" fill="white"/>
+	<rect id="red-square" x="1" y="1" width="2" height="2" fill="red"/>
+	<path id="blue-path" d="M4 1 H7 V3 H4 Z" fill="blue"/>
+	<rect id="green-bar" x="1" y="5" width="5" height="1" fill="lime"/>
+</svg>

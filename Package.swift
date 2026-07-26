@@ -10,6 +10,12 @@ let package = Package(
 	],
 	targets: [
 		.target(name: "Swg"),
-		.testTarget(name: "SwgTests", dependencies: ["Swg"]),
+		.testTarget(
+			name: "SwgTests",
+			dependencies: ["Swg"],
+			resources: [
+				.process("VisualFixtures"),
+			]
+		),
 	]
 )

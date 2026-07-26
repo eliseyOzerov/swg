@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8">
+	<rect id="background" x="0" y="0" width="8" height="8" fill="white"/>
+	<g id="translated" transform="translate(2 1)">
+		<rect id="red-square" x="0" y="0" width="2" height="2" fill="red"/>
+	</g>
+	<g id="scaled" transform="scale(2)">
+		<path id="blue-path" d="M3 2 H4 V4 H3 Z" fill="blue"/>
+	</g>
+</svg>
