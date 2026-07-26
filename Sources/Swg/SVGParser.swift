@@ -394,6 +394,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentComponentTransferIndex = currentFilter?.primitives.indices.last
 		case "feFuncR":
 			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .red)
+		case "feFuncG":
+			setComponentTransferFunction(parseComponentTransferFunction(attributes), for: .green)
 		case "feGaussianBlur":
 			let stdDeviation = parseNumberOptionalNumber(attributes["stdDeviation"], defaultValue: 0)
 			currentFilter?.primitives.append(.gaussianBlur(
