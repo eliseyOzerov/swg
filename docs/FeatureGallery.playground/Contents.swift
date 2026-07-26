@@ -18,6 +18,7 @@ struct FeatureExample {
 
 let duotoneLight = "#e5e7eb"
 let duotoneDark = "#111827"
+let galleryAssetVersion = "duotone-stroked-fills"
 let previewImageWidth = 144
 
 let colorSpecificSlugs: Set<String> = [
@@ -656,7 +657,7 @@ enum FeatureGalleryRenderer {
 			let title = markdownEscaped(example.title)
 			let note = markdownEscaped(example.note)
 			let alt = htmlEscaped(example.title)
-			let preview = example.rendererStatus == .rendered ? "<img src=\"png/\(example.slug).png\" alt=\"\(alt)\" width=\"\(previewImageWidth)\">" : ""
+			let preview = example.rendererStatus == .rendered ? "<img src=\"png/\(example.slug).png?v=\(galleryAssetVersion)\" alt=\"\(alt)\" width=\"\(previewImageWidth)\">" : ""
 			markdown += """
 			<tr>
 			<td width="33.33%">\(title)</td>

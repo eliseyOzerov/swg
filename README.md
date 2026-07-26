@@ -40,47 +40,47 @@ Not actually rendering yet: gradients and patterns, clipping, masking, filter pr
 <tbody>
 <tr>
 <td width="33.33%">Nested &lt;svg&gt; viewport</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/nested-svg-viewport.png" alt="Nested &lt;svg&gt; viewport" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/nested-svg-viewport.png?v=duotone-stroked-fills" alt="Nested &lt;svg&gt; viewport" width="144"></td>
 <td width="33.33%">Nested SVG children paint inside their own viewport.</td>
 </tr>
 <tr>
 <td width="33.33%">viewBox meet</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/viewbox-preserve-meet.png" alt="viewBox meet" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/viewbox-preserve-meet.png?v=duotone-stroked-fills" alt="viewBox meet" width="144"></td>
 <td width="33.33%">The document is uniformly fitted into the viewport.</td>
 </tr>
 <tr>
 <td width="33.33%">preserveAspectRatio none</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/preserve-aspect-none.png" alt="preserveAspectRatio none" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/preserve-aspect-none.png?v=duotone-stroked-fills" alt="preserveAspectRatio none" width="144"></td>
 <td width="33.33%">The nested viewport uses non-uniform scaling.</td>
 </tr>
 <tr>
 <td width="33.33%">preserveAspectRatio slice</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/preserve-aspect-slice.png" alt="preserveAspectRatio slice" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/preserve-aspect-slice.png?v=duotone-stroked-fills" alt="preserveAspectRatio slice" width="144"></td>
 <td width="33.33%">The nested viewport covers and crops the viewBox.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;g&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/group-container.png" alt="&lt;g&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/group-container.png?v=duotone-stroked-fills" alt="&lt;g&gt;" width="144"></td>
 <td width="33.33%">Groups apply transforms and inherited paint to children.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;defs&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/defs-hidden.png" alt="&lt;defs&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/defs-hidden.png?v=duotone-stroked-fills" alt="&lt;defs&gt;" width="144"></td>
 <td width="33.33%">Definitions stay hidden until referenced.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;symbol&gt; + &lt;use&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/symbol-use.png" alt="&lt;symbol&gt; + &lt;use&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/symbol-use.png?v=duotone-stroked-fills" alt="&lt;symbol&gt; + &lt;use&gt;" width="144"></td>
 <td width="33.33%">Simple symbol references render through &lt;use&gt;.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;switch&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/switch-container.png" alt="&lt;switch&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/switch-container.png?v=duotone-stroked-fills" alt="&lt;switch&gt;" width="144"></td>
 <td width="33.33%">The selected switch child renders as a normal container.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;a&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/link-container.png" alt="&lt;a&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/link-container.png?v=duotone-stroked-fills" alt="&lt;a&gt;" width="144"></td>
 <td width="33.33%">Links render their SVG children; interaction metadata is preserved separately.</td>
 </tr>
 <tr>
@@ -109,47 +109,47 @@ Not actually rendering yet: gradients and patterns, clipping, masking, filter pr
 <tbody>
 <tr>
 <td width="33.33%">&lt;path&gt; element</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-path.png" alt="&lt;path&gt; element" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-path.png?v=duotone-stroked-fills" alt="&lt;path&gt; element" width="144"></td>
 <td width="33.33%">Path elements render through CGPath.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;rect&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-rect.png" alt="&lt;rect&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-rect.png?v=duotone-stroked-fills" alt="&lt;rect&gt;" width="144"></td>
 <td width="33.33%">Rectangles render with fill and stroke.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;rect rx&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-rounded-rx.png" alt="&lt;rect rx&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-rounded-rx.png?v=duotone-stroked-fills" alt="&lt;rect rx&gt;" width="144"></td>
 <td width="33.33%">Rounded x radius is converted into the path.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;rect ry&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-rounded-ry.png" alt="&lt;rect ry&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-rounded-ry.png?v=duotone-stroked-fills" alt="&lt;rect ry&gt;" width="144"></td>
 <td width="33.33%">Rounded y radius is converted into the path.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;circle&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-circle.png" alt="&lt;circle&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-circle.png?v=duotone-stroked-fills" alt="&lt;circle&gt;" width="144"></td>
 <td width="33.33%">Circles render as CGPath ellipses.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;ellipse&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-ellipse.png" alt="&lt;ellipse&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-ellipse.png?v=duotone-stroked-fills" alt="&lt;ellipse&gt;" width="144"></td>
 <td width="33.33%">Ellipses render as CGPath ellipses.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;line&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-line.png" alt="&lt;line&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-line.png?v=duotone-stroked-fills" alt="&lt;line&gt;" width="144"></td>
 <td width="33.33%">Lines render as stroked paths.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;polyline&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-polyline.png" alt="&lt;polyline&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-polyline.png?v=duotone-stroked-fills" alt="&lt;polyline&gt;" width="144"></td>
 <td width="33.33%">Polylines render as open stroked paths.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;polygon&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/shape-polygon.png" alt="&lt;polygon&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/shape-polygon.png?v=duotone-stroked-fills" alt="&lt;polygon&gt;" width="144"></td>
 <td width="33.33%">Polygons render as closed paths.</td>
 </tr>
 </tbody>
@@ -173,52 +173,52 @@ Not actually rendering yet: gradients and patterns, clipping, masking, filter pr
 <tbody>
 <tr>
 <td width="33.33%">M/L commands</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-move-line.png" alt="M/L commands" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-move-line.png?v=duotone-stroked-fills" alt="M/L commands" width="144"></td>
 <td width="33.33%">Moveto and lineto path commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">H command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-horizontal.png" alt="H command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-horizontal.png?v=duotone-stroked-fills" alt="H command" width="144"></td>
 <td width="33.33%">Horizontal line commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">V command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-vertical.png" alt="V command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-vertical.png?v=duotone-stroked-fills" alt="V command" width="144"></td>
 <td width="33.33%">Vertical line commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">C command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-cubic.png" alt="C command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-cubic.png?v=duotone-stroked-fills" alt="C command" width="144"></td>
 <td width="33.33%">Cubic Bezier commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">S command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-smooth-cubic.png" alt="S command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-smooth-cubic.png?v=duotone-stroked-fills" alt="S command" width="144"></td>
 <td width="33.33%">Smooth cubic commands paint after cubic control reflection.</td>
 </tr>
 <tr>
 <td width="33.33%">Q command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-quadratic.png" alt="Q command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-quadratic.png?v=duotone-stroked-fills" alt="Q command" width="144"></td>
 <td width="33.33%">Quadratic Bezier commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">T command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-smooth-quadratic.png" alt="T command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-smooth-quadratic.png?v=duotone-stroked-fills" alt="T command" width="144"></td>
 <td width="33.33%">Smooth quadratic commands paint.</td>
 </tr>
 <tr>
 <td width="33.33%">A command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-arc.png" alt="A command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-arc.png?v=duotone-stroked-fills" alt="A command" width="144"></td>
 <td width="33.33%">Elliptical arcs are converted to cubic path segments.</td>
 </tr>
 <tr>
 <td width="33.33%">Z command</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-close.png" alt="Z command" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-close.png?v=duotone-stroked-fills" alt="Z command" width="144"></td>
 <td width="33.33%">Closepath fills and closes the outline.</td>
 </tr>
 <tr>
 <td width="33.33%">Implicit repeated commands</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/path-implicit-repeated.png" alt="Implicit repeated commands" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/path-implicit-repeated.png?v=duotone-stroked-fills" alt="Implicit repeated commands" width="144"></td>
 <td width="33.33%">Repeated command parameters become additional path segments.</td>
 </tr>
 </tbody>
@@ -242,37 +242,37 @@ Not actually rendering yet: gradients and patterns, clipping, masking, filter pr
 <tbody>
 <tr>
 <td width="33.33%">matrix()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-matrix.png" alt="matrix()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-matrix.png?v=duotone-stroked-fills" alt="matrix()" width="144"></td>
 <td width="33.33%">Matrix transforms are applied before painting.</td>
 </tr>
 <tr>
 <td width="33.33%">translate()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-translate.png" alt="translate()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-translate.png?v=duotone-stroked-fills" alt="translate()" width="144"></td>
 <td width="33.33%">Translation moves rendered geometry.</td>
 </tr>
 <tr>
 <td width="33.33%">scale()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-scale.png" alt="scale()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-scale.png?v=duotone-stroked-fills" alt="scale()" width="144"></td>
 <td width="33.33%">Scaling affects the painted path.</td>
 </tr>
 <tr>
 <td width="33.33%">rotate(angle)</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-rotate.png" alt="rotate(angle)" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-rotate.png?v=duotone-stroked-fills" alt="rotate(angle)" width="144"></td>
 <td width="33.33%">Rotation around the origin is applied.</td>
 </tr>
 <tr>
 <td width="33.33%">rotate(angle cx cy)</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-rotate-center.png" alt="rotate(angle cx cy)" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-rotate-center.png?v=duotone-stroked-fills" alt="rotate(angle cx cy)" width="144"></td>
 <td width="33.33%">Centered rotation is applied around the provided pivot.</td>
 </tr>
 <tr>
 <td width="33.33%">skewX()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-skew-x.png" alt="skewX()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-skew-x.png?v=duotone-stroked-fills" alt="skewX()" width="144"></td>
 <td width="33.33%">Horizontal skew transforms paint.</td>
 </tr>
 <tr>
 <td width="33.33%">skewY()</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/transform-skew-y.png" alt="skewY()" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/transform-skew-y.png?v=duotone-stroked-fills" alt="skewY()" width="144"></td>
 <td width="33.33%">Vertical skew transforms paint.</td>
 </tr>
 <tr>
@@ -301,17 +301,17 @@ Not actually rendering yet: gradients and patterns, clipping, masking, filter pr
 <tbody>
 <tr>
 <td width="33.33%">Inline style</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/style-inline.png" alt="Inline style" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/style-inline.png?v=duotone-stroked-fills" alt="Inline style" width="144"></td>
 <td width="33.33%">Inline style declarations feed native paint attributes.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;style&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/style-element.png" alt="&lt;style&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/style-element.png?v=duotone-stroked-fills" alt="&lt;style&gt;" width="144"></td>
 <td width="33.33%">Simple matching style rules affect painted geometry.</td>
 </tr>
 <tr>
 <td width="33.33%">&lt;style media&gt;</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/style-media.png" alt="&lt;style media&gt;" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/style-media.png?v=duotone-stroked-fills" alt="&lt;style media&gt;" width="144"></td>
 <td width="33.33%">Matching media-filtered rules are applied by the parser.</td>
 </tr>
 </tbody>
@@ -335,92 +335,92 @@ Not actually rendering yet: gradients and patterns, clipping, masking, filter pr
 <tbody>
 <tr>
 <td width="33.33%">fill</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill.png" alt="fill" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill.png?v=duotone-stroked-fills" alt="fill" width="144"></td>
 <td width="33.33%">Solid fill paint renders.</td>
 </tr>
 <tr>
 <td width="33.33%">fill-opacity</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-opacity.png" alt="fill-opacity" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-opacity.png?v=duotone-stroked-fills" alt="fill-opacity" width="144"></td>
 <td width="33.33%">Fill opacity multiplies solid paint.</td>
 </tr>
 <tr>
 <td width="33.33%">fill-rule nonzero</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-rule-nonzero.png" alt="fill-rule nonzero" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-rule-nonzero.png?v=duotone-stroked-fills" alt="fill-rule nonzero" width="144"></td>
 <td width="33.33%">Nonzero fill rule paints nested winding normally.</td>
 </tr>
 <tr>
 <td width="33.33%">fill-rule evenodd</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-rule-evenodd.png" alt="fill-rule evenodd" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-fill-rule-evenodd.png?v=duotone-stroked-fills" alt="fill-rule evenodd" width="144"></td>
 <td width="33.33%">Even-odd fill rule cuts out the inner path.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke.png" alt="stroke" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke.png?v=duotone-stroked-fills" alt="stroke" width="144"></td>
 <td width="33.33%">Solid stroke paint renders.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-width</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke-width.png" alt="stroke-width" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke-width.png?v=duotone-stroked-fills" alt="stroke-width" width="144"></td>
 <td width="33.33%">Stroke width affects painted outlines.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-opacity</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke-opacity.png" alt="stroke-opacity" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-stroke-opacity.png?v=duotone-stroked-fills" alt="stroke-opacity" width="144"></td>
 <td width="33.33%">Stroke opacity multiplies stroke paint.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linecap butt</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-butt.png" alt="stroke-linecap butt" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-butt.png?v=duotone-stroked-fills" alt="stroke-linecap butt" width="144"></td>
 <td width="33.33%">Butt caps end exactly on the path endpoints.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linecap round</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-round.png" alt="stroke-linecap round" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-round.png?v=duotone-stroked-fills" alt="stroke-linecap round" width="144"></td>
 <td width="33.33%">Round caps extend the path with semicircles.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linecap square</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-square.png" alt="stroke-linecap square" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linecap-square.png?v=duotone-stroked-fills" alt="stroke-linecap square" width="144"></td>
 <td width="33.33%">Square caps extend the path with square ends.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linejoin miter</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-miter.png" alt="stroke-linejoin miter" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-miter.png?v=duotone-stroked-fills" alt="stroke-linejoin miter" width="144"></td>
 <td width="33.33%">Miter joins create pointed corners.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linejoin round</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-round.png" alt="stroke-linejoin round" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-round.png?v=duotone-stroked-fills" alt="stroke-linejoin round" width="144"></td>
 <td width="33.33%">Round joins create curved corners.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-linejoin bevel</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-bevel.png" alt="stroke-linejoin bevel" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-linejoin-bevel.png?v=duotone-stroked-fills" alt="stroke-linejoin bevel" width="144"></td>
 <td width="33.33%">Bevel joins flatten corners.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-miterlimit</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-miterlimit.png" alt="stroke-miterlimit" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-miterlimit.png?v=duotone-stroked-fills" alt="stroke-miterlimit" width="144"></td>
 <td width="33.33%">Miter limit affects sharp stroked corners.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-dasharray</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-dasharray.png" alt="stroke-dasharray" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-dasharray.png?v=duotone-stroked-fills" alt="stroke-dasharray" width="144"></td>
 <td width="33.33%">Dash arrays are passed to SwiftUI stroke style.</td>
 </tr>
 <tr>
 <td width="33.33%">stroke-dashoffset</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-dashoffset.png" alt="stroke-dashoffset" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-dashoffset.png?v=duotone-stroked-fills" alt="stroke-dashoffset" width="144"></td>
 <td width="33.33%">Dash offsets shift the dash phase.</td>
 </tr>
 <tr>
 <td width="33.33%">paint-order</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-order.png" alt="paint-order" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-order.png?v=duotone-stroked-fills" alt="paint-order" width="144"></td>
 <td width="33.33%">Paint order is honored for fill and stroke; marker painting is skipped.</td>
 </tr>
 <tr>
 <td width="33.33%">currentColor</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/paint-current-color.png" alt="currentColor" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/paint-current-color.png?v=duotone-stroked-fills" alt="currentColor" width="144"></td>
 <td width="33.33%">currentColor resolves into fill or stroke paint.</td>
 </tr>
 <tr>
@@ -568,7 +568,7 @@ Not actually rendering yet: gradients and patterns, clipping, masking, filter pr
 </tr>
 <tr>
 <td width="33.33%">opacity</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/opacity.png" alt="opacity" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/opacity.png?v=duotone-stroked-fills" alt="opacity" width="144"></td>
 <td width="33.33%">Element and group opacity are applied while rendering.</td>
 </tr>
 </tbody>
@@ -815,12 +815,12 @@ Not actually rendering yet: gradients and patterns, clipping, masking, filter pr
 <tbody>
 <tr>
 <td width="33.33%">href</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/href-use.png" alt="href" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/href-use.png?v=duotone-stroked-fills" alt="href" width="144"></td>
 <td width="33.33%">Unprefixed href works for simple &lt;use&gt; references.</td>
 </tr>
 <tr>
 <td width="33.33%">xlink:href</td>
-<td width="33.33%"><img src="docs/feature-gallery/png/xlink-href-use.png" alt="xlink:href" width="144"></td>
+<td width="33.33%"><img src="docs/feature-gallery/png/xlink-href-use.png?v=duotone-stroked-fills" alt="xlink:href" width="144"></td>
 <td width="33.33%">Deprecated xlink:href is preserved and works for simple &lt;use&gt; references.</td>
 </tr>
 <tr>
