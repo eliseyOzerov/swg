@@ -6,6 +6,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 	public var fill: SVGPaint
 	public var fillOpacity: Double
 	public var fillRule: FillRule
+	public var clipRule: FillRule
 	public var stroke: SVGPaint
 	public var strokeWidth: Double
 	public var strokeLineCap: LineCap
@@ -35,6 +36,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		fill: SVGPaint = .color(.black),
 		fillOpacity: Double = 1,
 		fillRule: FillRule = .winding,
+		clipRule: FillRule = .winding,
 		stroke: SVGPaint = .none,
 		strokeWidth: Double = 1,
 		strokeLineCap: LineCap = .butt,
@@ -63,6 +65,7 @@ public struct SVGPaintAttributes: Equatable, Sendable {
 		self.fill = fill
 		self.fillOpacity = fillOpacity
 		self.fillRule = fillRule
+		self.clipRule = clipRule
 		self.stroke = stroke
 		self.strokeWidth = strokeWidth
 		self.strokeLineCap = strokeLineCap

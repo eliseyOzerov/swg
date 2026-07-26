@@ -1,0 +1,260 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: clip-rule
+  title: CSS Masking clip-rule property for SVG clipping paths
+  domain: CSS Masking Level 1 / SVG
+  profile: null
+  summary: Preserve the `clip-rule` property used by graphics elements inside SVG `<clipPath>` sources to choose the winding algorithm for clipping geometry.
+  non_goals:
+    - Applying clipping during rendering.
+    - Implementing `clipPathUnits`; it is tracked as a separate TODO bullet.
+    - Evaluating point-in-path results for clipping silhouettes.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-masking-clip-rule-property
+      title: "CSS Masking Module Level 1: Winding Rules: the clip-rule property"
+      url: https://www.w3.org/TR/css-masking-1/#the-clip-rule
+      version: Candidate Recommendation Draft, 5 August 2021
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+    - id: svg2-fill-rule-property
+      title: "SVG 2 Painting: Winding rule: the fill-rule property"
+      url: https://www.w3.org/TR/SVG/painting.html#FillRule
+      version: SVG 2 Editor's Draft
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - CSS Masking defines `clip-rule` with value grammar `nonzero | evenodd`, initial value `nonzero`, inherited yes, and computed value as specified.
+    - CSS Masking states that `clip-rule` follows the `fill-rule` algorithms for `nonzero` and `evenodd`.
+    - CSS Masking limits the effect of `clip-rule` to graphics elements contained within a `<clipPath>` element.
+
+scope:
+  includes:
+    - "`clip-rule: nonzero`."
+    - "`clip-rule: evenodd`."
+    - Initial parser-visible value `nonzero`.
+    - Inheritance into graphics elements contained within `<clipPath>`.
+    - Presentation attribute, class style rule, and inline style declaration parsing.
+    - Invalid values leaving the inherited or initial value unchanged.
+  excludes:
+    - Clip silhouette rasterization.
+    - Applying `clip-rule` to CSS basic-shape clipping.
+    - Changing normal fill winding behavior through `clip-rule`.
+  assumptions:
+    - The package may reuse its existing winding-rule enum for parser-visible clip-rule state.
+    - Parser-level support may preserve the rule on any parsed element, while renderer semantics use it only for graphics elements inside `<clipPath>`.
+
+terminology:
+  - id: T001
+    term: clip-rule
+    definition: A property selecting the winding algorithm used to decide whether a point is inside clipping geometry created from a graphics element.
+    source_refs:
+      - css-masking-clip-rule-property
+  - id: T002
+    term: nonzero
+    definition: A winding rule that classifies a point as inside when signed ray crossings do not sum to zero.
+    source_refs:
+      - css-masking-clip-rule-property
+      - svg2-fill-rule-property
+  - id: T003
+    term: evenodd
+    definition: A winding rule that classifies a point as inside when a ray from the point crosses an odd number of segments.
+    source_refs:
+      - css-masking-clip-rule-property
+      - svg2-fill-rule-property
+
+structures:
+  - id: S001
+    name: Clip rule parser state
+    kind: value
+    source_refs:
+      - css-masking-clip-rule-property
+    fields:
+      - name: clipRule
+        type: winding rule
+        cardinality: one
+        position: null
+        constraints:
+          - Supported values are `nonzero` and `evenodd`.
+          - The initial value is `nonzero`.
+          - The computed value remains as specified.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - css-masking-clip-rule-property
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: default
+    statement: The initial value of `clip-rule` is `nonzero`.
+    applies_to:
+      - clip-rule
+    source_refs:
+      - css-masking-clip-rule-property
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: value
+    statement: The `clip-rule` property must accept `nonzero` and `evenodd` as valid specified values.
+    applies_to:
+      - SVG graphics elements
+    source_refs:
+      - css-masking-clip-rule-property
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: inheritance
+    statement: "`clip-rule` must inherit from parent elements."
+    applies_to:
+      - SVG graphics elements
+    source_refs:
+      - css-masking-clip-rule-property
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: MUST
+    kind: scope
+    statement: "`clip-rule` only affects graphics elements that are contained within a `<clipPath>` element."
+    applies_to:
+      - clipPath children
+    source_refs:
+      - css-masking-clip-rule-property
+    testability: testable
+    notes:
+      - Parser-visible state can still be captured outside `<clipPath>` for inheritance and diagnostics, but clipping semantics are limited by the source.
+  - id: R005
+    normative_strength: MUST_NOT
+    kind: scope
+    statement: "`clip-rule` specified on an element that references a clipping path must not change the winding rule of the graphics elements that define the referenced clipping path."
+    applies_to:
+      - clip-path referencing elements
+    source_refs:
+      - css-masking-clip-rule-property
+    testability: testable
+    notes: []
+  - id: R006
+    normative_strength: MUST
+    kind: algorithm
+    statement: The `nonzero` and `evenodd` meanings for `clip-rule` follow the definitions of the same values for `fill-rule`.
+    applies_to:
+      - clipping region geometry
+    source_refs:
+      - css-masking-clip-rule-property
+      - svg2-fill-rule-property
+    testability: reviewable
+    notes: []
+
+algorithms:
+  - id: ALG001
+    name: Nonzero clip winding
+    kind: algorithm
+    summary: A point is inside when the signed crossing count for a ray from that point is not zero.
+    steps:
+      - Draw a ray from the tested point to infinity in any direction.
+      - Start a crossing count at zero.
+      - Add one for each crossing from left to right.
+      - Subtract one for each crossing from right to left.
+      - Treat the point as outside when the count is zero, otherwise inside.
+    preconditions:
+      - The clipping source contains graphics geometry.
+    postconditions:
+      - The point is classified as inside or outside for clipping.
+    requirement_refs:
+      - R006
+    source_refs:
+      - svg2-fill-rule-property
+  - id: ALG002
+    name: Evenodd clip winding
+    kind: algorithm
+    summary: A point is inside when a ray from that point crosses an odd number of path segments.
+    steps:
+      - Draw a ray from the tested point to infinity in any direction.
+      - Count crossings with path segments.
+      - Treat the point as inside when the count is odd.
+      - Treat the point as outside when the count is even.
+    preconditions:
+      - The clipping source contains graphics geometry.
+    postconditions:
+      - The point is classified as inside or outside for clipping.
+    requirement_refs:
+      - R006
+    source_refs:
+      - svg2-fill-rule-property
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: A `clip-rule` value is neither `nonzero` nor `evenodd`.
+    source_behavior: invalid CSS property value
+    required_behavior: Preserve the inherited or initial value visible at the point where the invalid value appears.
+    decision_required: false
+    source_refs:
+      - css-masking-clip-rule-property
+
+recommendations: []
+derived_requirements: []
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: The package may represent `clip-rule` with the same winding-rule value type used for `fill-rule`, provided the two properties remain distinct.
+    allowed_by:
+      - R006
+    source_refs:
+      - css-masking-clip-rule-property
+      - svg2-fill-rule-property
+
+ambiguities: []
+dependencies:
+  - id: DEP001
+    kind: source-section
+    title: SVG fill-rule winding algorithms
+    reason: CSS Masking defines `clip-rule` value meanings by reference to the fill-rule algorithms.
+    source_refs:
+      - svg2-fill-rule-property
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-rule-property
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-rule-property
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-rule-property
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-rule-property
+    map_item_refs: []
+  - item_id: R005
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-rule-property
+    map_item_refs: []
+  - item_id: R006
+    item_type: requirement
+    source_refs:
+      - css-masking-clip-rule-property
+      - svg2-fill-rule-property
+    map_item_refs: []

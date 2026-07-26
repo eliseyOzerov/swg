@@ -478,6 +478,58 @@ import Testing
 	#expect(paths["invalid"]?.attributes.clipPathID == nil)
 }
 
+@Test func svgParserParsesClipRuleForClipPathGeometry() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" clip-rule="evenodd">
+		<style>
+			.clipRoot { clip-rule: evenodd; }
+			.invalidRule { clip-rule: sideways; }
+		</style>
+		<clipPath id="ancestorClip">
+			<path id="ancestorInherited" d="M0 0 L10 0 L10 10 Z"/>
+		</clipPath>
+		<clipPath id="classClip" class="clipRoot">
+			<path id="classInherited" d="M0 0 L10 0 L10 10 Z"/>
+			<path id="attributeOverride" d="M0 0 L10 0 L10 10 Z" clip-rule="nonzero"/>
+			<path id="inlineOverride" d="M0 0 L10 0 L10 10 Z" style="clip-rule: nonzero"/>
+			<path id="invalid" class="invalidRule" d="M0 0 L10 0 L10 10 Z"/>
+		</clipPath>
+		<path id="referencer" d="M0 0 L10 0 L10 10 Z" clip-path="url(#classClip)" clip-rule="nonzero" fill-rule="evenodd"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+	let ancestorClip = try #require(document.defs.clipPaths["ancestorClip"])
+	let classClip = try #require(document.defs.clipPaths["classClip"])
+	guard case .path(let referencer) = document.elements[0] else {
+		Issue.record("Expected referencing path")
+		return
+	}
+	let defaultDocument = try #require(SVGParser().parse(#"<svg xmlns="http://www.w3.org/2000/svg"><path id="initial" d="M0 0 L10 0 L10 10 Z"/></svg>"#))
+	guard case .path(let initial) = defaultDocument.elements[0] else {
+		Issue.record("Expected default path")
+		return
+	}
+
+	guard case .path(let ancestorInherited) = ancestorClip[0],
+		case .path(let classInherited) = classClip[0],
+		case .path(let attributeOverride) = classClip[1],
+		case .path(let inlineOverride) = classClip[2],
+		case .path(let invalid) = classClip[3] else {
+		Issue.record("Expected clip path geometry")
+		return
+	}
+
+	#expect(ancestorInherited.attributes.clipRule == .evenOdd)
+	#expect(classInherited.attributes.clipRule == .evenOdd)
+	#expect(attributeOverride.attributes.clipRule == .winding)
+	#expect(inlineOverride.attributes.clipRule == .winding)
+	#expect(invalid.attributes.clipRule == .evenOdd)
+	#expect(referencer.attributes.clipRule == .winding)
+	#expect(referencer.attributes.fillRule == .evenOdd)
+	#expect(initial.attributes.clipRule == .winding)
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

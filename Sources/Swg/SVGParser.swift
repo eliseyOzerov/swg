@@ -17,7 +17,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		"title", "tspan", "use", "view"
 	]
 	private static let globalAttributeNames: Set<String> = [
-		"class", "clip-path", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "paint-order", "stroke",
+		"class", "clip-path", "clip-rule", "color", "display", "filter", "fill", "fill-opacity", "fill-rule", "id", "mask", "opacity", "paint-order", "stroke",
 		"stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity",
 		"stroke-width", "style", "transform", "vector-effect", "visibility", "lang", "xml:lang", "xml:space", "requiredExtensions", "systemLanguage",
 		"zoomAndPan"
@@ -204,6 +204,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var inClipPath = false
 	private var currentClipPathID: String?
 	private var clipPathElements: [SVGElement] = []
+	private var clipPathAttributeStack: [SVGPaintAttributes] = []
 	private var inText = false
 	private var textBuilder: SVGTextBuilder?
 	private var currentSpanAttrs: SVGPaintAttributes?
@@ -358,9 +359,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		case "stop":
 			parseGradientStop(attributes)
 		case "clipPath":
-			inClipPath = true
 			currentClipPathID = attributes["id"]
 			clipPathElements = []
+			clipPathAttributeStack.append(parsePaintAttributes(attributes))
+			inClipPath = true
 		case "filter":
 			currentFilter = SVGFilterDef(id: attributes["id"] ?? "")
 		case "feGaussianBlur":
@@ -491,6 +493,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			if let id = currentClipPathID {
 				defs.clipPaths[id] = clipPathElements
 			}
+			if !clipPathAttributeStack.isEmpty {
+				clipPathAttributeStack.removeLast()
+			}
 			inClipPath = false
 			currentClipPathID = nil
 		case "filter":
@@ -550,6 +555,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		inClipPath = false
 		currentClipPathID = nil
 		clipPathElements = []
+		clipPathAttributeStack = []
 		inText = false
 		textBuilder = nil
 		currentSpanAttrs = nil
@@ -1447,7 +1453,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	}
 
 	private func parsePaintAttributes(_ attributes: [String: String]) -> SVGPaintAttributes {
-		let parent = patternElementStack.last?.attributes ?? patternStack.last?.attributes ?? symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
+		let parent = patternElementStack.last?.attributes ?? patternStack.last?.attributes ?? clipPathAttributeStack.last ?? symbolElementStack.last?.attributes ?? (inDefs ? defsElementStack.last?.attributes : elementStack.last?.attributes) ?? rootPaintAttributes
 		var result = inheritedPaintAttributes(from: parent)
 
 		applyPresentationAttributes(attributes, to: &result, inherited: parent)
@@ -1470,6 +1476,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		result.fill = parent.fill
 		result.fillOpacity = parent.fillOpacity
 		result.fillRule = parent.fillRule
+		result.clipRule = parent.clipRule
 		result.stroke = parent.stroke
 		result.strokeWidth = parent.strokeWidth
 		result.strokeLineCap = parent.strokeLineCap
@@ -1651,6 +1658,13 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				result.fillRule = inherited.fillRule
 			} else if let fillRule = parseFillRule(value) {
 				result.fillRule = fillRule
+			}
+		}
+		if let value = attributes["clip-rule"] {
+			if isInheritKeyword(value) {
+				result.clipRule = inherited.clipRule
+			} else if let clipRule = parseFillRule(value) {
+				result.clipRule = clipRule
 			}
 		}
 		if let value = attributes["visibility"] {
