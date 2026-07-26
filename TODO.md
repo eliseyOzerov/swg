@@ -186,7 +186,7 @@ References: SVG 2 specification (https://www.w3.org/TR/SVG/), element index (htt
 - [x] `text-anchor`.
 - [x] `dominant-baseline`.
 - [x] `alignment-baseline`.
-- [ ] `white-space`.
+- [x] `white-space`.
 
 ## Embedded Content
 

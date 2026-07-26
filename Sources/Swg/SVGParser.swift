@@ -1623,7 +1623,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseTextStart(_ attributes: [String: String]) {
 		inText = true
-		xmlSpaceStack = [parseXMLSpace(attributes["xml:space"], inherited: .default)]
+		let whiteSpace = parseTextWhiteSpace(attributes) ?? .normal
+		xmlSpaceStack = [parseTextWhitespaceMode(attributes, inherited: .default)]
 		let attrs = parsePaintAttributes(attributes)
 		let id = resolveID(attributes["id"], elementName: "Text")
 		setCurrentParsedElementID(id)
@@ -1646,15 +1647,16 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			fontWeight: attributes["font-weight"] ?? "normal",
 			textAnchor: parseTextAnchor(attributes["text-anchor"]),
 			dominantBaseline: parseTextDominantBaseline(attributes["dominant-baseline"]) ?? .auto,
+			whiteSpace: whiteSpace,
 			attributes: attrs,
 			language: currentLanguage,
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "font-size", "font-family", "font-weight", "text-anchor", "dominant-baseline"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "font-size", "font-family", "font-weight", "text-anchor", "dominant-baseline", "white-space"])
 		)
 	}
 
 	private func parseTextPathStart(_ attributes: [String: String]) {
 		appendBufferedTextSpan(attributes: nil, language: parentLanguageForCurrentElement)
-		xmlSpaceStack.append(parseXMLSpace(attributes["xml:space"], inherited: currentXMLSpaceMode))
+		xmlSpaceStack.append(parseTextWhitespaceMode(attributes, inherited: currentXMLSpaceMode))
 		textPathStack.append(SVGTextPathData(
 			path: attributes["path"],
 			href: parseRawHref(attributes),
@@ -1665,8 +1667,9 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			textAnchor: parseOptionalTextAnchor(attributes["text-anchor"]),
 			dominantBaseline: parseTextDominantBaseline(attributes["dominant-baseline"]),
 			alignmentBaseline: parseTextAlignmentBaseline(attributes["alignment-baseline"]),
+			whiteSpace: parseTextWhiteSpace(attributes),
 			attributes: parsePaintAttributes(attributes),
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side", "text-anchor", "dominant-baseline", "alignment-baseline"])
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["path", "href", "xlink:href", "startOffset", "method", "spacing", "side", "text-anchor", "dominant-baseline", "alignment-baseline", "white-space"])
 		))
 	}
 
@@ -1680,7 +1683,8 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			textAnchor: parseOptionalTextAnchor(attributes["text-anchor"]),
 			dominantBaseline: parseTextDominantBaseline(attributes["dominant-baseline"]),
 			alignmentBaseline: parseTextAlignmentBaseline(attributes["alignment-baseline"]),
-			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "text-anchor", "dominant-baseline", "alignment-baseline"])
+			whiteSpace: parseTextWhiteSpace(attributes),
+			unknownAttributes: parseUnknownAttributes(attributes, known: ["x", "y", "dx", "dy", "rotate", "text-anchor", "dominant-baseline", "alignment-baseline", "white-space"])
 		)
 	}
 
@@ -1813,7 +1817,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseTSpanStart(_ attributes: [String: String]) {
 		appendBufferedTextSpan(attributes: nil, language: parentLanguageForCurrentElement)
-		xmlSpaceStack.append(parseXMLSpace(attributes["xml:space"], inherited: currentXMLSpaceMode))
+		xmlSpaceStack.append(parseTextWhitespaceMode(attributes, inherited: currentXMLSpaceMode))
 		currentSpanAttrs = parsePaintAttributes(attributes)
 		currentSpanPositioning = parseTextSpanPositioning(attributes)
 	}
@@ -1858,6 +1862,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				fontWeight: textBuilder.fontWeight,
 				textAnchor: textBuilder.textAnchor,
 				dominantBaseline: textBuilder.dominantBaseline,
+				whiteSpace: textBuilder.whiteSpace,
 				attributes: textBuilder.attributes,
 				spans: textBuilder.spans,
 				language: textBuilder.language,
@@ -1891,6 +1896,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			textAnchor: positioning.textAnchor,
 			dominantBaseline: positioning.dominantBaseline,
 			alignmentBaseline: positioning.alignmentBaseline,
+			whiteSpace: positioning.whiteSpace,
 			attributes: attributes,
 			textPath: textPathStack.last,
 			language: language,
@@ -1936,12 +1942,52 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		}
 	}
 
+	private func parseTextWhitespaceMode(_ attributes: [String: String], inherited: SVGXMLSpaceMode) -> SVGXMLSpaceMode {
+		guard let whiteSpace = parseTextWhiteSpace(attributes) else {
+			return parseXMLSpace(attributes["xml:space"], inherited: inherited)
+		}
+		switch whiteSpace {
+		case .normal, .nowrap:
+			return .default
+		case .pre, .preWrap, .breakSpaces:
+			return .pre
+		case .preLine:
+			return .preLine
+		}
+	}
+
+	private func parseTextWhiteSpace(_ attributes: [String: String]) -> SVGTextWhiteSpace? {
+		guard let value = attributes["white-space"] ?? attributes["style"].flatMap({ parseInlineCSS($0)["white-space"] }) else {
+			return nil
+		}
+		switch value {
+		case "normal":
+			return .normal
+		case "pre":
+			return .pre
+		case "nowrap":
+			return .nowrap
+		case "pre-wrap":
+			return .preWrap
+		case "pre-line":
+			return .preLine
+		case "break-spaces":
+			return .breakSpaces
+		default:
+			return nil
+		}
+	}
+
 	private func normalizeTextWhitespace(_ value: String, mode: SVGXMLSpaceMode) -> String {
 		switch mode {
 		case .default:
 			normalizeDefaultTextWhitespace(value)
 		case .preserve:
 			normalizePreservedTextWhitespace(value)
+		case .pre:
+			normalizePreTextWhitespace(value)
+		case .preLine:
+			normalizePreLineTextWhitespace(value)
 		}
 	}
 
@@ -1984,6 +2030,53 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 				character
 			}
 		})
+	}
+
+	private func normalizePreTextWhitespace(_ value: String) -> String {
+		String(value.map { character -> Character in
+			switch character {
+			case "\r":
+				"\n"
+			default:
+				character
+			}
+		})
+	}
+
+	private func normalizePreLineTextWhitespace(_ value: String) -> String {
+		let mapped = value.map { character -> Character in
+			switch character {
+			case "\r":
+				"\n"
+			case "\t", "\u{000C}":
+				" "
+			default:
+				character
+			}
+		}
+		var result = ""
+		var previousWasSpace = true
+		for character in mapped {
+			if character == "\n" {
+				if result.last == " " {
+					result.removeLast()
+				}
+				result.append(character)
+				previousWasSpace = true
+			} else if character == " " {
+				if !previousWasSpace {
+					result.append(character)
+					previousWasSpace = true
+				}
+			} else {
+				result.append(character)
+				previousWasSpace = false
+			}
+		}
+		if result.last == " " {
+			result.removeLast()
+		}
+		return result
 	}
 
 	private func parseTextAnchor(_ value: String?) -> SVGTextAnchor {
@@ -3177,6 +3270,8 @@ private enum SVGParsedElementRole {
 private enum SVGXMLSpaceMode {
 	case `default`
 	case preserve
+	case pre
+	case preLine
 }
 
 private func splitQualifiedName(_ qualifiedName: String) -> (prefix: String?, localName: String) {
@@ -3304,12 +3399,13 @@ private final class SVGTextBuilder {
 	let fontWeight: String
 	let textAnchor: SVGTextAnchor
 	let dominantBaseline: SVGTextDominantBaseline
+	let whiteSpace: SVGTextWhiteSpace
 	let attributes: SVGPaintAttributes
 	let language: String?
 	let unknownAttributes: [String: String]
 	var spans: [SVGTextSpan] = []
 
-	init(id: String, x: Double, y: Double, xValues: [Double], yValues: [Double], dxValues: [Double], dyValues: [Double], rotateValues: [Double], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, dominantBaseline: SVGTextDominantBaseline, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
+	init(id: String, x: Double, y: Double, xValues: [Double], yValues: [Double], dxValues: [Double], dyValues: [Double], rotateValues: [Double], fontSize: Double, fontFamily: String, fontWeight: String, textAnchor: SVGTextAnchor, dominantBaseline: SVGTextDominantBaseline, whiteSpace: SVGTextWhiteSpace, attributes: SVGPaintAttributes, language: String?, unknownAttributes: [String: String]) {
 		self.id = id
 		self.x = x
 		self.y = y
@@ -3323,6 +3419,7 @@ private final class SVGTextBuilder {
 		self.fontWeight = fontWeight
 		self.textAnchor = textAnchor
 		self.dominantBaseline = dominantBaseline
+		self.whiteSpace = whiteSpace
 		self.attributes = attributes
 		self.language = language
 		self.unknownAttributes = unknownAttributes
@@ -3331,7 +3428,7 @@ private final class SVGTextBuilder {
 
 /// Mutable tspan positioning collected before the text run is finalized.
 private struct SVGTextSpanPositioning {
-	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], textAnchor: nil, dominantBaseline: nil, alignmentBaseline: nil, unknownAttributes: [:])
+	static let empty = SVGTextSpanPositioning(xValues: [], yValues: [], dxValues: [], dyValues: [], rotateValues: [], textAnchor: nil, dominantBaseline: nil, alignmentBaseline: nil, whiteSpace: nil, unknownAttributes: [:])
 
 	let xValues: [Double]
 	let yValues: [Double]
@@ -3341,6 +3438,7 @@ private struct SVGTextSpanPositioning {
 	let textAnchor: SVGTextAnchor?
 	let dominantBaseline: SVGTextDominantBaseline?
 	let alignmentBaseline: SVGTextAlignmentBaseline?
+	let whiteSpace: SVGTextWhiteSpace?
 	let unknownAttributes: [String: String]
 }
 

@@ -1,0 +1,175 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: white-space
+  title: SVG white-space property
+  domain: SVG Text
+  profile: null
+  summary: Requirements for preserving and applying the SVG 2 white-space property on text content elements.
+  non_goals:
+    - Full CSS Text line wrapping.
+    - Text-overflow behavior.
+    - Complete CSS cascade and stylesheet selector support.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: svg2-white-space
+      title: SVG 2, White space
+      url: https://www.w3.org/TR/SVG/text.html#WhiteSpace
+      version: SVG 2
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - No repository spec/map.yaml was present; this artifact is scoped directly to the canonical W3C text chapter.
+
+scope:
+  includes:
+    - Recognition of white-space on text, tspan, and textPath.
+    - Preservation of normal, pre, nowrap, pre-wrap, pre-line, and break-spaces values.
+    - Parser whitespace normalization for collapsed, preserved, and pre-line modes.
+    - white-space taking precedence over xml:space when both are present.
+  excludes:
+    - Soft wrap opportunity layout.
+    - Content area line wrapping.
+    - Complete CSS Text Level 3 behavior.
+  assumptions:
+    - Parser-level whitespace handling can normalize stored text runs enough for downstream rendering while preserving the declared white-space value.
+
+terminology:
+  - id: term-white-space-characters
+    term: white space characters
+    definition: SVG identifies tab, form feed, carriage return, line feed, and space as white space characters for text processing.
+    source_refs:
+      - svg2-white-space
+
+structures:
+  - id: S001
+    name: white-space
+    kind: property
+    source_refs:
+      - svg2-white-space
+    fields:
+      - name: value
+        type: enum
+        cardinality: optional
+        position: property
+        constraints:
+          - Applies to text content elements.
+          - Inherited.
+          - Controls whether and how white space collapses and whether lines may wrap at soft wrap opportunities.
+        requirement_refs:
+          - R001
+          - R002
+        source_refs:
+          - svg2-white-space
+
+requirements:
+  - id: R001
+    normative_strength: MUST
+    kind: structure
+    statement: white-space applies to SVG text content elements and controls whitespace collapse and soft wrapping behavior.
+    applies_to:
+      - text
+      - tspan
+      - textPath
+    source_refs:
+      - svg2-white-space
+    testability: testable
+    notes: []
+  - id: R002
+    normative_strength: MUST
+    kind: behavior
+    statement: Values pre and pre-line preserve forced line breaks in multi-line pre-formatted SVG text.
+    applies_to:
+      - white-space
+    source_refs:
+      - svg2-white-space
+    testability: testable
+    notes: []
+  - id: R003
+    normative_strength: MUST
+    kind: behavior
+    statement: When white-space and xml:space are both specified on the same element, white-space takes precedence and xml:space is ignored for that element.
+    applies_to:
+      - text
+      - tspan
+      - textPath
+    source_refs:
+      - svg2-white-space
+    testability: testable
+    notes: []
+  - id: R004
+    normative_strength: SHOULD
+    kind: behavior
+    statement: New SVG content should use white-space instead of xml:space.
+    applies_to:
+      - authoring
+    source_refs:
+      - svg2-white-space
+    testability: reviewable
+    notes: []
+
+algorithms: []
+
+invalid_or_unsupported_inputs:
+  - id: I001
+    condition: Unsupported white-space value.
+    source_behavior: UNSPECIFIED
+    required_behavior: Store no local white-space value and use inherited or legacy xml:space behavior.
+    decision_required: false
+    source_refs:
+      - svg2-white-space
+
+recommendations: []
+
+derived_requirements: []
+
+implementation_choices:
+  - id: IC001
+    topic: Parser representation
+    statement: A parser may store the declared white-space keyword as an enum while using simplified normalization modes for parsed text runs.
+    allowed_by:
+      - R001
+      - R002
+      - R003
+    source_refs:
+      - svg2-white-space
+
+ambiguities: []
+
+dependencies:
+  - id: DEP001
+    kind: external-spec
+    title: CSS Text white-space definitions
+    reason: SVG 2 delegates detailed white-space value meanings to CSS Text.
+    source_refs:
+      - svg2-white-space
+
+profile_data: {}
+
+traceability:
+  - item_id: R001
+    item_type: requirement
+    source_refs:
+      - svg2-white-space
+    map_item_refs: []
+  - item_id: R002
+    item_type: requirement
+    source_refs:
+      - svg2-white-space
+    map_item_refs: []
+  - item_id: R003
+    item_type: requirement
+    source_refs:
+      - svg2-white-space
+    map_item_refs: []
+  - item_id: R004
+    item_type: requirement
+    source_refs:
+      - svg2-white-space
+    map_item_refs: []
