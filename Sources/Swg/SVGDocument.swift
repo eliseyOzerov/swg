@@ -999,16 +999,23 @@ public enum SVGFilterPrimitive: Equatable, Sendable {
 public struct SVGMaskDef: Equatable, Sendable {
 	public let id: String
 	public var maskUnits: SVGMaskUnits
+	public var maskContentUnits: SVGMaskUnits
 	public let children: [SVGElement]
 
-	public init(id: String, maskUnits: SVGMaskUnits = .objectBoundingBox, children: [SVGElement]) {
+	public init(
+		id: String,
+		maskUnits: SVGMaskUnits = .objectBoundingBox,
+		maskContentUnits: SVGMaskUnits = .userSpaceOnUse,
+		children: [SVGElement]
+	) {
 		self.id = id
 		self.maskUnits = maskUnits
+		self.maskContentUnits = maskContentUnits
 		self.children = children
 	}
 }
 
-/// Coordinate system used for an SVG `<mask>` element's region attributes.
+/// Coordinate system used for an SVG `<mask>` element's region attributes or child contents.
 public enum SVGMaskUnits: Equatable, Sendable, Hashable {
 	case objectBoundingBox
 	case userSpaceOnUse

@@ -1,0 +1,127 @@
+schema_version: 1
+kind: spec-requirements
+status: draft
+
+work_item:
+  id: maskcontentunits
+  title: SVG maskContentUnits attribute
+  domain: CSS Masking Level 1 / SVG
+  profile: null
+  summary: Preserve the coordinate-system selection for SVG `<mask>` child contents using the `maskContentUnits` attribute.
+  non_goals:
+    - Parsing `maskUnits`; it is tracked as a separate TODO bullet.
+    - Transforming mask child geometry into object-bounding-box coordinates.
+    - Applying masks during rendering.
+
+source_context:
+  spec_map: null
+  map_items: []
+  canonical_sources:
+    - id: css-masking-mask-element
+      title: "CSS Masking Module Level 1: The mask element"
+      url: https://www.w3.org/TR/css-masking-1/#elementdef-mask
+      version: Candidate Recommendation Draft, 5 August 2021
+      publisher: W3C
+      accessed: 2026-07-26
+      normativity: normative
+  source_notes:
+    - CSS Masking defines `maskContentUnits` on `<mask>` with allowed values `userSpaceOnUse` and `objectBoundingBox`.
+    - If `maskContentUnits` is omitted, the effect is as if `userSpaceOnUse` were specified.
+
+scope:
+  includes:
+    - "`maskContentUnits=\"userSpaceOnUse\"`."
+    - "`maskContentUnits=\"objectBoundingBox\"`."
+    - Default and invalid-value fallback behavior.
+  excludes:
+    - "`maskUnits` region coordinate-system behavior."
+    - Animation of `maskContentUnits`.
+    - Render-time coordinate conversion.
+  assumptions:
+    - The parser preserves the selected content units on each mask definition for downstream renderers.
+
+terminology:
+  - id: T001
+    term: maskContentUnits
+    definition: An attribute on `<mask>` that selects the coordinate system used for the contents of the mask.
+    source_refs:
+      - css-masking-mask-element
+
+structures:
+  - id: S001
+    name: SVG mask definition content units
+    kind: field
+    source_refs:
+      - css-masking-mask-element
+    fields:
+      - name: maskContentUnits
+        type: enum<objectBoundingBox,userSpaceOnUse>
+        cardinality: exactly-one
+        position: mask-definition
+        constraints:
+          - Defaults to `userSpaceOnUse`.
+          - Invalid values fall back to `userSpaceOnUse`.
+        requirement_refs:
+          - R001
+          - R002
+          - R003
+        source_refs:
+          - css-masking-mask-element
+
+requirements:
+  - id: R001
+    title: Parse explicit maskContentUnits values
+    statement: The parser must preserve both valid `maskContentUnits` values on a mask definition.
+    keywords:
+      - maskContentUnits
+      - userSpaceOnUse
+      - objectBoundingBox
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - "`maskContentUnits=\"userSpaceOnUse\"` stores `userSpaceOnUse`."
+      - "`maskContentUnits=\"objectBoundingBox\"` stores `objectBoundingBox`."
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMaskContentUnits
+  - id: R002
+    title: Default maskContentUnits to userSpaceOnUse
+    statement: When `maskContentUnits` is omitted, the mask definition must behave as if `userSpaceOnUse` were specified.
+    keywords:
+      - maskContentUnits
+      - default
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - A mask without `maskContentUnits` stores `userSpaceOnUse`.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMaskContentUnits
+  - id: R003
+    title: Ignore invalid maskContentUnits values
+    statement: Invalid `maskContentUnits` values must not select a non-standard coordinate system.
+    keywords:
+      - maskContentUnits
+      - invalid
+    source_refs:
+      - css-masking-mask-element
+    acceptance:
+      - A mask with an unknown `maskContentUnits` value stores `userSpaceOnUse`.
+    verification:
+      strategy: automated-test
+      tests:
+        - svgParserPreservesMaskContentUnits
+
+coverage:
+  status: test-required
+  test_files:
+    - Tests/SwgTests/SVGParserTests.swift
+  requirement_to_tests:
+    R001:
+      - svgParserPreservesMaskContentUnits
+    R002:
+      - svgParserPreservesMaskContentUnits
+    R003:
+      - svgParserPreservesMaskContentUnits

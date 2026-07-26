@@ -201,6 +201,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 	private var inMask = false
 	private var currentMaskID: String?
 	private var currentMaskUnits: SVGMaskUnits = .objectBoundingBox
+	private var currentMaskContentUnits: SVGMaskUnits = .userSpaceOnUse
 	private var maskElements: [SVGElement] = []
 	private var inClipPath = false
 	private var currentClipPathID: String?
@@ -383,6 +384,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			inMask = true
 			currentMaskID = attributes["id"]
 			currentMaskUnits = parseMaskUnits(attributes["maskUnits"])
+			currentMaskContentUnits = parseMaskContentUnits(attributes["maskContentUnits"])
 			maskElements = []
 		case "use":
 			parseUse(attributes)
@@ -511,11 +513,12 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 			currentFilter = nil
 		case "mask":
 			if let id = currentMaskID {
-				defs.masks[id] = SVGMaskDef(id: id, maskUnits: currentMaskUnits, children: maskElements)
+				defs.masks[id] = SVGMaskDef(id: id, maskUnits: currentMaskUnits, maskContentUnits: currentMaskContentUnits, children: maskElements)
 			}
 			inMask = false
 			currentMaskID = nil
 			currentMaskUnits = .objectBoundingBox
+			currentMaskContentUnits = .userSpaceOnUse
 		case "text":
 			finalizeText()
 		case "tspan":
@@ -559,6 +562,7 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 		inMask = false
 		currentMaskID = nil
 		currentMaskUnits = .objectBoundingBox
+		currentMaskContentUnits = .userSpaceOnUse
 		maskElements = []
 		inClipPath = false
 		currentClipPathID = nil
@@ -962,6 +966,10 @@ public final class SVGParser: NSObject, XMLParserDelegate {
 
 	private func parseMaskUnits(_ value: String?) -> SVGMaskUnits {
 		value == "userSpaceOnUse" ? .userSpaceOnUse : .objectBoundingBox
+	}
+
+	private func parseMaskContentUnits(_ value: String?) -> SVGMaskUnits {
+		value == "objectBoundingBox" ? .objectBoundingBox : .userSpaceOnUse
 	}
 
 	private func parseGradientSpreadMethod(_ value: String?) -> SVGGradientSpreadMethod? {

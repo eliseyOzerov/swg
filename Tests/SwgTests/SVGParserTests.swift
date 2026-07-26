@@ -671,6 +671,30 @@ import Testing
 	#expect(document.defs.masks["userSpace"]?.children.flatMap { $0.collectIDs() } == ["userSpaceChild"])
 }
 
+@Test func svgParserPreservesMaskContentUnits() throws {
+	let svg = """
+	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+		<mask id="defaultContent">
+			<path id="defaultChild" d="M0 0 L10 0 L10 10 Z"/>
+		</mask>
+		<mask id="userSpaceContent" maskContentUnits="userSpaceOnUse"/>
+		<mask id="objectContent" maskContentUnits="objectBoundingBox">
+			<path id="objectChild" d="M0 0 L1 0 L1 1 Z"/>
+		</mask>
+		<mask id="invalidContent" maskContentUnits="definitelyNotUnits"/>
+	</svg>
+	"""
+
+	let document = try #require(SVGParser().parse(svg))
+
+	#expect(document.defs.masks["defaultContent"]?.maskContentUnits == .userSpaceOnUse)
+	#expect(document.defs.masks["userSpaceContent"]?.maskContentUnits == .userSpaceOnUse)
+	#expect(document.defs.masks["objectContent"]?.maskContentUnits == .objectBoundingBox)
+	#expect(document.defs.masks["invalidContent"]?.maskContentUnits == .userSpaceOnUse)
+	#expect(document.defs.masks["defaultContent"]?.children.flatMap { $0.collectIDs() } == ["defaultChild"])
+	#expect(document.defs.masks["objectContent"]?.children.flatMap { $0.collectIDs() } == ["objectChild"])
+}
+
 @Test func svgParserNormalizesGradientStopOffsets() throws {
 	let svg = """
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
