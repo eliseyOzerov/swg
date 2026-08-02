@@ -1,6 +1,11 @@
 import CoreGraphics
 import Foundation
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 /// A SwiftUI view that renders an `SVGDocument` with the package's native path renderer.
 public struct SVG: View {
@@ -73,13 +78,26 @@ public struct SVG: View {
 	/// This mirrors SwiftUI's `Image` initializer for the common bundled-asset case. Pass `"checkmark"` for `checkmark.svg`, or a relative path such as `"Icons/checkmark.svg"` for a resource in a bundle subdirectory.
 	///
 	/// - Parameters:
-	///   - assetPath: The bundled SVG resource name or relative path.
+	///   - resourcePath: The bundled SVG resource name or relative path.
 	///   - bundle: The bundle that contains the SVG resource.
 	///   - document: An optional binding that receives the parsed document after loading.
 	///   - options: Rendering and layout options for the root drawing pass.
-	public init(_ assetPath: String, bundle: Bundle = .main, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
-		let url = SVGBundleResource.url(for: assetPath, in: bundle)
+	public init(bundle resourcePath: String, in bundle: Bundle = .main, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
+		let url = SVGBundleResource.url(for: resourcePath, in: bundle)
 		self.init(initialDocument: nil, boundDocument: document, loadSource: url.map(SVGLoadSource.file), options: options)
+	}
+
+	/// Creates a SwiftUI SVG view that loads SVG XML from a bundled resource path.
+	///
+	/// Pass `"checkmark"` for `checkmark.svg`, or a relative path such as `"Icons/checkmark.svg"` for a resource in a bundle subdirectory.
+	///
+	/// - Parameters:
+	///   - resourcePath: The bundled SVG resource name or relative path.
+	///   - bundle: The bundle that contains the SVG resource.
+	///   - document: An optional binding that receives the parsed document after loading.
+	///   - options: Rendering and layout options for the root drawing pass.
+	public init(_ resourcePath: String, bundle: Bundle = .main, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
+		self.init(bundle: resourcePath, in: bundle, document: document, options: options)
 	}
 
 	/// Creates a SwiftUI SVG view that loads SVG XML from a network URL.
@@ -92,19 +110,21 @@ public struct SVG: View {
 		self.init(initialDocument: nil, boundDocument: document, loadSource: .url(url), options: options)
 	}
 
-	/// Creates a SwiftUI SVG view that loads SVG XML from a bundled resource.
+	/// Parses SVG XML from an asset catalog data asset and creates a SwiftUI SVG view when parsing succeeds.
 	///
 	/// - Parameters:
-	///   - name: The resource name in `bundle`.
-	///   - bundle: The bundle that contains the SVG resource.
-	///   - fileExtension: The resource extension, usually `"svg"`.
-	///   - subdirectory: An optional bundle subdirectory.
-	///   - document: An optional binding that receives the parsed document after loading.
+	///   - name: The asset catalog data asset name.
+	///   - bundle: The bundle that contains the asset catalog.
+	///   - parser: The parser configuration to use.
 	///   - options: Rendering and layout options for the root drawing pass.
-	public init(asset name: String, bundle: Bundle = .main, fileExtension: String? = "svg", subdirectory: String? = nil, document: Binding<SVGDocument?>? = nil, options: SVGRenderOptions = SVGRenderOptions()) {
-		let url = bundle.url(forResource: name, withExtension: fileExtension, subdirectory: subdirectory)
-			?? bundle.url(forResource: name, withExtension: fileExtension)
-		self.init(initialDocument: nil, boundDocument: document, loadSource: url.map(SVGLoadSource.file), options: options)
+	public init?(asset name: String, bundle: Bundle = .main, parser: SVGParser = SVGParser(), options: SVGRenderOptions = SVGRenderOptions()) {
+		guard
+			let source = SVGAssetCatalog.source(named: name, bundle: bundle),
+			let document = parser.parse(source)
+		else {
+			return nil
+		}
+		self.init(document, options: options)
 	}
 
 	/// Creates a SwiftUI SVG view that loads SVG XML from a file URL.
@@ -253,6 +273,17 @@ enum SVGDocumentLoader {
 			data = try Data(contentsOf: url)
 		}
 		return SVGParser().parse(data)
+	}
+}
+
+enum SVGAssetCatalog {
+	static func source(named name: String, bundle: Bundle) -> String? {
+		#if canImport(UIKit) || canImport(AppKit)
+		guard let data = NSDataAsset(name: name, bundle: bundle)?.data else { return nil }
+		return String(data: data, encoding: .utf8)
+		#else
+		return nil
+		#endif
 	}
 }
 

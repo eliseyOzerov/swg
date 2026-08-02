@@ -56,7 +56,7 @@ import Testing
 	let remoteURL = try #require(URL(string: "https://example.com/icon.svg"))
 	let simpleAssetView = SVG("basic-paint", bundle: .module)
 	let simpleAssetPathView = SVG("VisualFixtures/basic-paint.svg", bundle: .module)
-	let assetView = SVG(asset: "basic-paint", bundle: .module, fileExtension: "svg", subdirectory: "VisualFixtures")
+	let bundleView = SVG(bundle: "VisualFixtures/basic-paint.svg", in: .module)
 	let fileURL = try #require(
 		Bundle.module.url(forResource: "basic-paint", withExtension: "svg", subdirectory: "VisualFixtures")
 			?? Bundle.module.url(forResource: "basic-paint", withExtension: "svg")
@@ -69,7 +69,7 @@ import Testing
 	#expect(urlView.document == nil)
 	#expect(simpleAssetView.document == nil)
 	#expect(simpleAssetPathView.document == nil)
-	#expect(assetView.document == nil)
+	#expect(bundleView.document == nil)
 	#expect(fileURLView.document == nil)
 	#expect(filePathView.document == nil)
 }
